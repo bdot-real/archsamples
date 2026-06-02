@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCORE · AI Estate &amp; Governance Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(720px 480px at 100% 0%, rgba(116,55,201,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1260px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  /* header */
+  header{margin-bottom:16px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:820px}
+  .ctxchip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--accent);
+    background:rgba(13,110,168,.08);border:1px solid rgba(13,110,168,.22);border-radius:20px;padding:4px 11px;margin-top:10px}
+  .ctxchip .d{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:18px 0 6px}
+  @media(max-width:860px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  .kpi{padding:12px 14px}
+  .kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .kpi .kl{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+
+  /* controls */
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:8px 14px;border-radius:6px;cursor:pointer}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .lensbar{display:flex;gap:6px;flex-wrap:wrap}
+  .lens{font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);
+    padding:7px 11px;border-radius:8px;cursor:pointer;transition:.15s}
+  .lens:hover{border-color:var(--line2)}
+  .lens.on{border-color:var(--accent);color:var(--ink);background:rgba(13,110,168,.07)}
+  .lenslabel{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-right:2px;align-self:center}
+
+  .lensval{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line2);
+    border-radius:7px;padding:5px 9px;margin:0 0 10px;font-family:var(--mono);font-size:10px}
+  .lensval .ll{letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+  .lensval b{font-weight:600;font-size:11px}
+  .lenslegend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin:-4px 2px 14px}
+  .lenslegend .li{display:flex;align-items:center;gap:6px}
+  .lenslegend .sw{width:12px;height:12px;border-radius:3px}
+  /* lineage */
+  .lin-card{padding:0;overflow:hidden}
+  .lin-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .lnode{cursor:pointer}
+  .lnode rect{transition:.15s}
+  .lnode:hover rect:first-of-type{stroke-width:2.4}
+  .lnode text{font-family:var(--sans);font-size:11px;font-weight:600;fill:var(--ink)}
+  .lnode .lc{font-family:var(--mono);font-size:8px;font-weight:400;fill:var(--ink-faint)}
+  .ledge{fill:none;stroke-width:1.7;opacity:.55;transition:.15s}
+  .ledge.dim{opacity:.06}
+  .lnode.dim{opacity:.22}
+  .lcol{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;fill:var(--ink-faint)}
+  /* controls matrix */
+  .cmatrix{width:100%;border-collapse:collapse;font-size:12px}
+  .cmatrix th{font-family:var(--mono);font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);padding:9px 6px;text-align:center;vertical-align:bottom;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .cmatrix th.mh{text-align:left;width:220px}
+  .cmatrix td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:center}
+  .cmatrix tbody tr:last-child td{border-bottom:0}
+  .cmatrix td.mn{text-align:left;font-weight:700;font-size:12.5px;cursor:pointer}
+  .cmatrix td.mn:hover{color:var(--accent)}
+  .cmatrix td.mn .cc{display:block;font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);font-weight:400;margin-top:1px}
+  .cell{display:inline-flex;width:24px;height:24px;border-radius:6px;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700}
+  /* model card + events */
+  .metagrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-top:2px}
+  .metagrid .mi{display:flex;flex-direction:column;border-bottom:1px solid var(--line);padding:6px 0}
+  .metagrid .mk{font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint)}
+  .metagrid .mv2{font-family:var(--mono);font-size:11px;color:var(--ink);margin-top:1px}
+  .events{display:flex;flex-direction:column}
+  .ev{display:grid;grid-template-columns:14px 80px 1fr;gap:9px;padding:6px 0;border-bottom:1px solid var(--line);align-items:start}
+  .ev:last-child{border-bottom:0}
+  .ev .evdot{width:9px;height:9px;border-radius:50%;margin-top:3px}
+  .ev .evd{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .ev .evt{font-size:11.5px;color:var(--ink-dim)}
+  .tpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px}
+  .tp{padding:12px 13px}
+  .tp h4{margin:0 0 2px;font-size:12.5px}
+  .tp .tr{font-family:var(--mono);font-size:9.5px;color:var(--accent);margin-bottom:6px}
+  .tp p{margin:3px 0 0;font-size:11px;color:var(--ink-dim);line-height:1.4}
+  .gbar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:8px}
+  .gbar > i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+  .grefc .gc{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:5px}
+  /* layout */
+  .stage{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.stage{grid-template-columns:1fr}}
+
+  /* estate */
+  .domain{margin-bottom:18px}
+  .domain-h{display:flex;align-items:center;gap:9px;margin:0 2px 9px;font-family:var(--mono);font-size:11px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+  .domain-h .dbar{width:14px;height:14px;border-radius:4px}
+  .domain-h .dct{color:var(--ink-faint)}
+  .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:11px}
+  .mcard{position:relative;border:1px solid var(--line);border-left:6px solid var(--line2);border-radius:11px;
+    background:var(--panel);padding:12px 13px;cursor:pointer;transition:.15s}
+  .mcard:hover{border-color:var(--line2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(22,42,74,.08)}
+  .mcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.13)}
+  .mcard .mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .mcard .mname{font-weight:700;font-size:13.5px;line-height:1.25}
+  .mcard .mcode{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);letter-spacing:.05em;margin-top:2px}
+  .tierbadge{font-family:var(--mono);font-size:8.5px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .mcard .mpurpose{font-size:11.5px;color:var(--ink-dim);margin:8px 0 10px;line-height:1.4}
+  .gatestrip{display:flex;gap:4px;align-items:center}
+  .gatestrip .g{width:13px;height:6px;border-radius:2px}
+  .gatestrip .glabel{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-left:auto}
+  .mcard .mfoot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;font-family:var(--mono);font-size:9px}
+  .statuspill{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:5px;font-weight:600}
+  .statuspill .sd{width:6px;height:6px;border-radius:50%}
+  .mfoot .prod{color:var(--ink-faint)}
+
+  /* portfolio scatter */
+  .scatter-card{padding:0;overflow:hidden}
+  .scatter-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  svg{display:block;width:100%;height:auto}
+  .qfill{opacity:.55}
+  .axt{font-family:var(--mono);font-size:10px;fill:var(--ink-faint);letter-spacing:.04em}
+  .qcap{font-family:var(--mono);font-size:9.5px;fill:var(--ink-faint);letter-spacing:.03em}
+  .pt{cursor:pointer;transition:.15s}
+  .pt:hover{filter:brightness(1.05)}
+  .ptlabel{font-family:var(--mono);font-size:9px;font-weight:600;pointer-events:none}
+  .scatter-note{padding:11px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-dim)}
+  .scatter-note b{color:var(--ink)}
+
+  /* detail panel */
+  .panel{min-height:480px;overflow:hidden}
+  .panel-empty{padding:26px 20px;color:var(--ink-faint);font-family:var(--mono);font-size:11.5px;line-height:1.7}
+  .panel-empty b{color:var(--ink-dim)}
+  .ph{padding:15px 17px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022)}
+  .ph .ptype{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .ph h3{margin:5px 0 4px;font-size:16.5px;font-weight:700;line-height:1.2}
+  .ph .badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+  .pbody{padding:8px 17px 20px}
+  .note{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:6px 0}
+  .olg{font-size:12px;color:var(--ink);background:rgba(13,110,168,.06);border:1px solid rgba(13,110,168,.18);
+    border-radius:9px;padding:10px 12px;margin:10px 0 4px;line-height:1.45}
+  .olg .ol{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+  .sec-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin:17px 0 8px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .k{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.03em;text-transform:uppercase;flex:0 0 40%}
+  .row .v{font-family:var(--mono);font-size:11px;color:var(--ink);text-align:right}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;
+    border:1px solid var(--line2);color:var(--ink-dim)}
+  .chip .c{width:8px;height:8px;border-radius:50%}
+  /* gate pipeline */
+  .gates{display:flex;flex-direction:column;gap:0}
+  .gate{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);position:relative}
+  .gate:last-child{border-bottom:0}
+  .gate .gi{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+  .gate .gname{font-weight:600;font-size:12.5px}
+  .gate .gnote{font-size:11px;color:var(--ink-dim);margin-top:2px}
+  .lst{margin:0;padding-left:16px}
+  .lst li{font-size:12px;color:var(--ink-dim);margin:4px 0;line-height:1.4}
+  .lst.gap li{color:var(--orange)}
+  .meter{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px}
+  .meter > i{display:block;height:100%;border-radius:3px}
+  .mons{display:flex;flex-direction:column;gap:7px}
+  .mon{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px}
+  .mon .ml{color:var(--ink-dim)}
+  .mon .mv{font-weight:600}
+  .mon .mdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}
+
+  /* gate reference */
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+    margin:32px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .gref{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .grefc{padding:12px 13px}
+  .grefc .gn{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+  .grefc h4{margin:3px 0 5px;font-size:12.5px}
+  .grefc p{margin:0;font-size:11px;color:var(--ink-dim);line-height:1.4}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-top:10px}
+  .legend .li{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:12px;height:12px;border-radius:3px}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · SCORE Platform</div>
+    <h1>AI Estate &amp; Governance Map</h1>
+    <p class="lead">Every model SCORE runs, governed in one view: the commercial value it drives, the data it consumes, the risk tier it carries, and the governance gates it has cleared between "built" and "approved to ship." Engagement and growth on one side, responsible data use on the other, held in the same frame.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="bar">
+    <div class="tabs">
+      <button class="tab on" data-view="estate">▣ Estate</button>
+      <button class="tab" data-view="portfolio">⊹ Value × Risk</button>
+      <button class="tab" data-view="lineage">⇲ Data Lineage</button>
+      <button class="tab" data-view="matrix">▦ Controls Matrix</button>
+    </div>
+    <span class="lenslabel" id="lensLabel">colour by</span>
+    <div class="lensbar" id="lensbar"></div>
+  </div>
+  <div class="lenslegend" id="lensLegend"></div>
+
+  <div class="stage">
+    <div id="canvas"></div>
+
+    <aside class="card panel" id="panel">
+      <div class="panel-empty" id="panelEmpty">
+        <b>SELECT A MODEL</b><br><br>
+        Click any model for its full governance profile: purpose and commercial value, its governance rationale, data inputs with lawful basis and residency, the seven governance gates it has cleared, the controls in place, open items, and live monitoring.<br><br>
+        Switch to <b>Value × Risk</b> to see the whole portfolio at once. Note where the <b>Player-Wellbeing</b> model sits: high-risk, low commercial value, and fully approved. That position is deliberate. It is a duty, not a growth lever.<br><br>
+        Re-colour the estate by <b>risk tier</b>, <b>data sensitivity</b> or <b>governance status</b> using the controls above.
+      </div>
+      <div id="panelContent" style="display:none"></div>
+    </aside>
+  </div>
+
+  <!-- gate reference -->
+  <div class="section-h">The seven governance gates</div>
+  <div class="gref" id="gref"></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="section-h">Third-party AI services</div>
+  <div class="tpgrid" id="tpgrid"></div>
+
+  <div class="foot">
+    illustrative figures · the gate model maps to recognised responsible-AI controls (risk tiering, lawful basis, fairness, human oversight, robustness, monitoring)<br>
+    built by 3 Halves Labs · programmed by a cat
+  </div>
+</div>
+
+<script>
+/* ===================== config ===================== */
+const DOMAINS = {
+  growth:    {label:"Engagement & Growth",  color:"var(--blue)"},
+  integrity: {label:"Integrity & Identity", color:"var(--violet)"},
+  protection:{label:"Player Protection",    color:"var(--teal)"},
+  assist:    {label:"Insight & Assistance", color:"var(--amber)"},
+};
+const TIERS = {
+  high:      {label:"HIGH RISK",   color:"var(--red)",    bg:"rgba(214,47,38,.10)"},
+  limited:   {label:"LIMITED",     color:"var(--amber)",  bg:"rgba(169,118,10,.10)"},
+  minimal:   {label:"MINIMAL",     color:"var(--green)",  bg:"rgba(26,143,69,.10)"},
+  prohibited:{label:"PROHIBITED",  color:"#111",          bg:"rgba(0,0,0,.08)"},
+};
+const DATA = {
+  public:      {label:"Public",          color:"var(--ink-faint)", s:1},
+  behavioral:  {label:"Behavioral",      color:"var(--blue)",      s:2},
+  transactional:{label:"Transactional",  color:"var(--violet)",    s:3},
+  pii:         {label:"PII",             color:"#9b59d0",          s:4},
+  identity:    {label:"Identity doc",    color:"var(--orange)",    s:5},
+  biometric:   {label:"Biometric",       color:"var(--red)",       s:6},
+};
+const GATES = [
+  {k:"intake",     t:"Use-case intake",       d:"Registered in the AI inventory with a defined purpose and accountable owner."},
+  {k:"privacy",    t:"Data & lawful basis",   d:"Privacy review: lawful basis, data minimisation, retention and residency."},
+  {k:"tiering",    t:"Risk classification",   d:"Risk tier assigned; prohibited uses screened out before any build."},
+  {k:"fairness",   t:"Bias & fairness",       d:"Tested for disparate impact across player segments."},
+  {k:"oversight",  t:"Human oversight",       d:"Human-in-the-loop and a contestability path for consequential decisions."},
+  {k:"security",   t:"Security & robustness", d:"Adversarial, leakage and abuse testing; least-privilege access."},
+  {k:"monitoring", t:"Live monitoring",       d:"Drift, performance and fairness watched continuously in production."},
+];
+const ST = {pass:{c:"var(--green)",g:"\u2713"}, pending:{c:"var(--amber)",g:"\u25F4"}, gap:{c:"var(--red)",g:"!"}, na:{c:"var(--ink-faint)",g:"\u2013"}};
+const HEX={'var(--green)':'#1a8f45','var(--amber)':'#a9760a','var(--orange)':'#bf4f17','var(--red)':'#d62f26','var(--blue)':'#1f63c8','var(--violet)':'#7437c9','var(--teal)':'#0e8a82','var(--ink)':'#1b2433','var(--ink-dim)':'#54607a','var(--ink-faint)':'#7e8aa0','var(--accent)':'#0d6ea8','#9b59d0':'#9b59d0','#111':'#111111'};
+function tint(c,a){const h=HEX[c]||c;let v=h.replace('#','');if(v.length===3)v=v.split('').map(x=>x+x).join('');const r=parseInt(v.slice(0,2),16),g=parseInt(v.slice(2,4),16),b=parseInt(v.slice(4,6),16);return `rgba(${r},${g},${b},${a})`;}
+
+/* ===================== models ===================== */
+const M = [
+  { id:"pers", code:"PERS", name:"Player Personalization Engine", domain:"growth", tier:"limited", inProd:true,
+    type:"GBM ranker + embeddings", runtime:"Self-hosted (Hetzner)", version:"v4.2", trained:"2026-05-12", cadence:"Weekly retrain", latency:"28 ms p95", volume:"3.1M req/day", oversight:"Human on the loop",
+    sources:["evt","ids","txn"], consumers:["Loyalty portal","Lifecycle campaigns"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"p",lm:"y",au:"p"},
+    events:[{d:"2026-05-12",t:"Retrained on a 90-day window",k:"ok"},{d:"2026-04-30",t:"Segment fairness eval scheduled",k:"pending"}],
+    value:88, risk:46, owner:"Growth / Data Science",
+    purpose:"Next-best-reward and content recommendations to lift engagement and retention.",
+    olg:"Personalization drives the most commercial value in the estate. The control that matters: it defers to player-protection signals and suppresses recommendations the moment the wellbeing model flags a player.",
+    data:["behavioral","pii","transactional"], lawful:"Consent + legitimate interest", residency:"EU (Hetzner DE)",
+    controls:["Uplift measured against a holdout, not vanity engagement","'Why am I seeing this' transparency on every recommendation","Honours the player-protection suppression list in real time"],
+    gaps:["Formal segment-fairness evaluation still in progress"],
+    mons:[["Recommendation uplift","+14%","ok"],["Model drift (30d)","2.1%","ok"]],
+    gates:["pass","pass","pass","pending","pass","pass","pass"],
+    gnotes:["Registered, owner = Growth","Consent + LI documented","Limited-risk, transparency obligations","Disparate-impact eval running","Player can dismiss / opt out","Access + abuse tests passed","Drift + CTR dashboards live"] },
+
+  { id:"chrn", code:"CHRN", name:"Lapse & Churn Prediction", domain:"growth", tier:"limited", inProd:true,
+    type:"GBM classifier", runtime:"Self-hosted (Hetzner)", version:"v3.0", trained:"2026-05-01", cadence:"Monthly retrain", latency:"12 ms p95", volume:"0.4M scores/day", oversight:"Advisory only",
+    sources:["evt","txn"], consumers:["Retention campaigns"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"y",lm:"y",au:"y"},
+    events:[{d:"2026-05-01",t:"Monthly retrain, AUC 0.83",k:"ok"}],
+    value:80, risk:40, owner:"Growth / Data Science",
+    purpose:"Predicts players likely to disengage so retention can act early.",
+    olg:"Retention intelligence for growth. Outputs feed campaigns only. They never trigger protective interventions or automated account actions.",
+    data:["behavioral","transactional"], lawful:"Legitimate interest", residency:"EU (Hetzner DE)",
+    controls:["At-risk / protected players are suppressed from outreach","Scores are advisory; they trigger no automated account action"],
+    gaps:[],
+    mons:[["AUC","0.83","ok"],["Drift (30d)","1.4%","ok"]],
+    gates:["pass","pass","pass","pass","pass","pass","pass"],
+    gnotes:["Registered","LI assessment on file","Limited-risk","Fairness eval passed","Advisory only","Reviewed","Monitored"] },
+
+  { id:"ropt", code:"ROPT", name:"Reward & Allocation Optimization", domain:"growth", tier:"minimal", inProd:true,
+    type:"Constrained optimization (OSSS core)", runtime:"Self-hosted batch", version:"v2.5", trained:"Solver (no training)", cadence:"Nightly run", latency:"Batch", volume:"Nightly", oversight:"Human approves plan",
+    sources:["evt","txn"], consumers:["Reward scheduler"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"na",er:"y",ft:"y",lm:"y",au:"y"},
+    events:[{d:"2026-05-20",t:"0 constraint violations this cycle",k:"ok"}],
+    value:72, risk:22, owner:"Product / Operations",
+    purpose:"Optimizes reward mix and timing across the loyalty economy (OSSS optimization core).",
+    olg:"Optimizes the loyalty economy on de-identified aggregates rather than individuals, which keeps personal-data risk minimal.",
+    data:["behavioral","transactional"], lawful:"Aggregated / non-identifying", residency:"EU (Hetzner DE)",
+    controls:["Runs on de-identified aggregates only","Budget and fairness constraints encoded in the objective function"],
+    gaps:[],
+    mons:[["Constraint violations","0","ok"],["Budget variance","-1.2%","ok"]],
+    gates:["pass","pass","pass","pass","pass","pass","pass"],
+    gnotes:["Registered","No personal data","Minimal-risk","Fairness via constraints","No individual decisions","Reviewed","Monitored"] },
+
+  { id:"frd", code:"FRD", name:"Loyalty Fraud & Anomaly Detection", domain:"integrity", tier:"high", inProd:true,
+    type:"Anomaly + GBM ensemble", runtime:"Self-hosted (Hetzner)", version:"v5.1", trained:"2026-04-18", cadence:"Bi-weekly retrain", latency:"40 ms p95", volume:"All transactions", oversight:"Human in the loop",
+    sources:["txn","dev","ids","iddoc"], consumers:["Trust & Safety queue"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"n",lm:"y",au:"y"},
+    events:[{d:"2026-05-15",t:"False-positive rate alert (3.2%)",k:"warn"},{d:"2026-03-01",t:"Quarterly fairness re-eval overdue",k:"gap"}],
+    value:84, risk:64, owner:"Trust & Safety",
+    purpose:"Flags points fraud, multi-accounting and bonus abuse.",
+    olg:"Account-integrity protection. Every flag is human-reviewed before any sanction and carries a reason code and an appeal path.",
+    data:["transactional","device","pii","identity"], lawful:"Legitimate interest / contractual (AML where applicable)", residency:"EU (Hetzner DE)",
+    controls:["Human review required before any account sanction","Reason codes attached to every flag","Appeal and contestability path for the player"],
+    gaps:["Quarterly fairness re-evaluation is overdue"],
+    mons:[["Precision","0.91","ok"],["False-positive rate","3.2%","warn"]],
+    gates:["pass","pass","pass","gap","pass","pass","pass"],
+    gnotes:["Registered","Lawful basis documented","High-risk, consequential","Fairness re-eval OVERDUE","Human-in-the-loop enforced","Hardened + monitored","FP rate trending up"] },
+
+  { id:"idkc", code:"IDKC", name:"Identity Resolution & KYC Risk", domain:"integrity", tier:"high", inProd:true,
+    type:"Entity resolution + risk score", runtime:"Self-hosted (Hetzner)", version:"v3.4", trained:"2026-04-02", cadence:"Quarterly retrain", latency:"65 ms p95", volume:"All onboardings", oversight:"Human in the loop",
+    sources:["ids","iddoc","dev","evt"], consumers:["Onboarding","Channel SSO"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"y",lm:"y",au:"y"},
+    events:[{d:"2026-04-02",t:"Cohort bias test passed",k:"ok"}],
+    value:78, risk:70, owner:"Identity / Compliance",
+    purpose:"Links player identities across channels and scores onboarding / KYC risk.",
+    olg:"The backbone of omni-channel identity and age / KYC assurance, enforced at the identity layer across every channel, with human adjudication and an immutable audit trail.",
+    data:["pii","identity","device","behavioral"], lawful:"Legal obligation (KYC/AML) + consent", residency:"EU; identity-doc data region-locked, never exported",
+    controls:["Human adjudication on every high-risk decision","Identity-document data encrypted and region-locked","Immutable audit trail on all identity links"],
+    gaps:[],
+    mons:[["Match precision","0.97","ok"],["Manual-review rate","6%","ok"]],
+    gates:["pass","pass","pass","pass","pass","pass","pass"],
+    gnotes:["Registered","Legal obligation basis","High-risk","Bias-tested across cohorts","Adjudicated, contestable","Encryption + access controls","Precision + review-rate monitored"] },
+
+  { id:"well", code:"WELL", name:"Player-Wellbeing Risk Model", domain:"protection", tier:"high", inProd:true,
+    type:"Sequence risk model", runtime:"Self-hosted (Hetzner)", version:"v2.2", trained:"2026-05-08", cadence:"Monthly + drift-triggered", latency:"50 ms p95", volume:"All active sessions", oversight:"Human in the loop (mandatory)",
+    sources:["evt","txn"], consumers:["Protection workflow","Suppresses PERS & CHRN"], thirdParty:[],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"y",lm:"y",au:"y"},
+    events:[{d:"2026-05-08",t:"Fairness delta held under 2%",k:"ok"},{d:"2026-02-10",t:"Independent governance review passed",k:"ok"}],
+    value:35, risk:76, owner:"Player Protection / Compliance",
+    purpose:"Detects risky engagement patterns and triggers protective interventions: cool-off prompts, limit nudges, self-exclusion enforcement.",
+    olg:"The model that deliberately constrains commercial activity. It exists to protect the player and the licence to operate, not to grow revenue, and it is governed harder than anything else in the estate.",
+    data:["behavioral","transactional","session"], lawful:"Legitimate interest (player protection) / vital interest", residency:"EU (Hetzner DE)",
+    controls:["Human-in-the-loop on every consequential action","Explainable reason for each flag (auditable)","Objectives kept independent of marketing and growth","Three-lines-of-defense governance","Suppresses personalization and retention outreach the moment it triggers"],
+    gaps:[],
+    mons:[["Fairness delta (segments)","<2%","ok"],["Intervention precision","0.88","ok"],["Drift (30d)","1.1%","ok"]],
+    gates:["pass","pass","pass","pass","pass","pass","pass"],
+    gnotes:["Registered as a protection control","Protection lawful basis","High-risk, highest scrutiny","Fairness held under 2% across segments","Mandatory human oversight","Independently reviewed","Fairness + precision monitored"] },
+
+  { id:"asst", code:"ASST", name:"Player Assistant (LLM + RAG)", domain:"assist", tier:"high", inProd:true,
+    type:"LLM + retrieval (RAG)", runtime:"Claude API + pgvector", version:"app v1.3 (beta)", trained:"Foundation model (vendor)", cadence:"Weekly prompt + index updates", latency:"1.2 s p95", volume:"12k conversations/day", oversight:"Human escalation path",
+    sources:["kb","ids"], consumers:["Help centre","Support handoff"], thirdParty:["claude","pgv"],
+    matrix:{ho:"y",ex:"p",cb:"y",er:"y",ft:"na",lm:"y",au:"y"},
+    events:[{d:"2026-05-18",t:"Jailbreak red-team round 2 in progress",k:"pending"},{d:"2026-05-02",t:"Groundedness measured at 96%",k:"ok"}],
+    value:68, risk:60, owner:"Product / Support",
+    purpose:"Grounded conversational help over product, policy and support content (Claude API + pgvector retrieval).",
+    olg:"A grounded support assistant. The hard line: it never gives financial or responsible-gambling advice, and it escalates to a human when asked.",
+    data:["public","pii"], lawful:"Consent + legitimate interest", residency:"EU; no model training on player conversations",
+    controls:["Strictly grounded to approved sources via retrieval","PII redaction on input and output","Hard refusal on financial / RG advice, with human escalation","No training on player conversations"],
+    gaps:["Jailbreak red-team coverage still being expanded"],
+    mons:[["Groundedness","96%","ok"],["Refusal accuracy (RG/finance)","99%","ok"],["PII-leak test fails","0","ok"]],
+    gates:["pass","pass","pass","na","pass","pending","pass"],
+    gnotes:["Registered","Consent + redaction","High-risk (advice surface)","No segment decisions (n/a)","Human escalation path","Red-team IN PROGRESS","Groundedness + leak tests live"] },
+
+  { id:"visn", code:"VISN", name:"ScoreMotion Vision Coaching", domain:"assist", tier:"high", inProd:true,
+    type:"CV pose estimation (MoveNet) + physics", runtime:"On-device (TF.js) + server physics", version:"v1.8", trained:"MoveNet base + custom head", cadence:"Quarterly head retrain", latency:"On-device realtime", volume:"Opt-in sessions", oversight:"User controls capture",
+    sources:["vid"], consumers:["Coaching UI"], thirdParty:["tfjs"],
+    matrix:{ho:"y",ex:"y",cb:"y",er:"y",ft:"na",lm:"y",au:"y"},
+    events:[{d:"2026-04-22",t:"Audit: 0 raw frames uploaded",k:"ok"}],
+    value:60, risk:72, owner:"Product / ML",
+    purpose:"On-device pose estimation (TensorFlow.js MoveNet) with server-side physics inference for technique coaching.",
+    olg:"Proof that the hardest data class, biometric video, is handled with on-device inference and explicit consent, so raw frames never leave the client.",
+    data:["biometric","pii"], lawful:"Explicit consent (biometric)", residency:"On-device inference; only derived metrics leave the client; EU storage",
+    controls:["Inference on-device; raw video is never uploaded","Explicit biometric consent with one-tap revocation","Only derived skeletal metrics are persisted","Minors: parental consent plus additional restrictions"],
+    gaps:[],
+    mons:[["Pose accuracy (PCK)","0.92","ok"],["Raw frames uploaded","0","ok"]],
+    gates:["pass","pass","pass","na","pass","pass","pass"],
+    gnotes:["Registered","Explicit biometric consent","High-risk (biometric)","No segment scoring (n/a)","User controls capture","On-device, minimised","Accuracy + upload audit"] },
+];
+
+/* add 'device' & 'session' as data classes used above */
+DATA.device={label:"Device", color:"var(--ink-dim)", s:2};
+DATA.session={label:"Session / time", color:"var(--blue)", s:2};
+const SOURCES={
+  evt:{name:"Behavioral event stream", cls:"behavioral", sor:"Event pipeline", residency:"EU (Hetzner DE)"},
+  txn:{name:"Transaction ledger", cls:"transactional", sor:"Loyalty ledger", residency:"EU (Hetzner DE)"},
+  ids:{name:"Identity store", cls:"pii", sor:"Keycloak / profile DB", residency:"EU (Hetzner DE)"},
+  iddoc:{name:"Identity documents", cls:"identity", sor:"KYC vault", residency:"EU, region-locked"},
+  cons:{name:"Consent ledger", cls:"pii", sor:"score_consent (immutable)", residency:"EU (Hetzner DE)"},
+  dev:{name:"Device & telemetry", cls:"device", sor:"Client SDK", residency:"EU (Hetzner DE)"},
+  vid:{name:"Video / pose capture", cls:"biometric", sor:"On-device only", residency:"On-device; not stored"},
+  kb:{name:"Knowledge base & policy", cls:"public", sor:"Docs / CMS", residency:"EU (Hetzner DE)"},
+};
+const THIRD_PARTY={
+  claude:{name:"Anthropic Claude API", role:"LLM inference", posture:"No training on our data; PII redacted before send", region:"Data-residency controls"},
+  pgv:{name:"pgvector / Pinecone", role:"Vector retrieval", posture:"Embeddings of approved knowledge base only", region:"EU"},
+  vertex:{name:"Google Vertex AI", role:"Training / feature pipeline", posture:"De-identified features only", region:"EU region"},
+  tfjs:{name:"TensorFlow.js MoveNet", role:"On-device CV", posture:"Runs in the browser; no data egress", region:"On-device"},
+};
+const MATRIX_COLS=[
+  {k:"ho",t:"Human oversight"},{k:"ex",t:"Explainability"},{k:"cb",t:"Consent / lawful basis"},
+  {k:"er",t:"Encryption & residency"},{k:"ft",t:"Fairness tested"},{k:"lm",t:"Live monitoring"},{k:"au",t:"Immutable audit"},
+];
+const CELL={y:{c:"var(--green)",g:"\u2713",l:"covered"},p:{c:"var(--amber)",g:"~",l:"partial"},n:{c:"var(--red)",g:"!",l:"gap"},na:{c:"var(--ink-faint)",g:"\u2013",l:"n/a"}};
+const EVC={ok:"var(--green)",pending:"var(--amber)",warn:"var(--orange)",gap:"var(--red)"};
+
+/* ===================== derived ===================== */
+function statusOf(m){
+  const hasGap=m.gates.includes("gap"), hasPend=m.gates.includes("pending");
+  if(hasGap) return {k:"remediate", label:"NEEDS REMEDIATION", color:"var(--orange)"};
+  if(hasPend) return {k:"review", label:"IN REVIEW", color:"var(--amber)"};
+  return {k:"approved", label:"APPROVED", color:"var(--green)"};
+}
+function maxSens(m){ return Math.max(...m.data.map(d=>(DATA[d]?.s||1))); }
+function gatePct(m){ const p=m.gates.filter(g=>g==="pass"||g==="na").length; return p/m.gates.length; }
+
+/* ===================== KPIs ===================== */
+function renderKPIs(){
+  const total=M.length;
+  const prod=M.filter(m=>m.inProd).length;
+  const high=M.filter(m=>m.tier==="high").length;
+  const open=M.reduce((a,m)=>a+m.gates.filter(g=>g==="pending"||g==="gap").length,0);
+  let pass=0,all=0; M.forEach(m=>{m.gates.forEach(g=>{all++; if(g==="pass"||g==="na")pass++;});});
+  const gov=Math.round(pass/all*100);
+  const tiles=[
+    [total,"AI systems registered","var(--ink)"],
+    [prod,"In production","var(--ink)"],
+    [high,"High-risk tier","var(--red)"],
+    ["0","Prohibited uses (screened)","var(--green)"],
+    [gov+"%","Governance completeness","var(--accent)"],
+    [open,"Open governance items","var(--amber)"],
+    [Object.keys(SOURCES).length,"Data sources catalogued","var(--ink)"],
+    [Object.keys(THIRD_PARTY).length,"Third-party AI services","var(--violet)"],
+  ];
+  document.getElementById("kpis").innerHTML=tiles.map(t=>
+    `<div class="card kpi"><div class="kv" style="color:${t[2]}">${t[0]}</div><div class="kl">${t[1]}</div></div>`).join("");
+}
+
+/* ===================== lenses ===================== */
+const LENSES={tier:"Risk tier", data:"Data sensitivity", status:"Governance status", domain:"Domain"};
+let activeLens="status", activeView="estate", selected=null, linSel=null;
+function lensColor(m){
+  if(activeLens==="tier") return TIERS[m.tier].color;
+  if(activeLens==="status") return statusOf(m).color;
+  if(activeLens==="domain") return DOMAINS[m.domain].color;
+  if(activeLens==="data"){ const top=m.data.reduce((a,d)=>(DATA[d].s>DATA[a].s?d:a)); return DATA[top].color; }
+  return "var(--line2)";
+}
+function lensValue(m){
+  if(activeLens==="tier") return TIERS[m.tier].label;
+  if(activeLens==="status") return statusOf(m).label;
+  if(activeLens==="domain") return DOMAINS[m.domain].label;
+  if(activeLens==="data"){ const top=m.data.reduce((a,d)=>(DATA[d].s>DATA[a].s?d:a)); return DATA[top].label; }
+  return "";
+}
+function buildLensbar(){
+  document.getElementById("lensbar").innerHTML=Object.entries(LENSES).map(([k,v])=>
+    `<button class="lens ${k===activeLens?'on':''}" data-lens="${k}">${v}</button>`).join("");
+  document.querySelectorAll(".lens").forEach(b=>b.addEventListener("click",()=>{
+    activeLens=b.dataset.lens; document.querySelectorAll(".lens").forEach(x=>x.classList.toggle("on",x===b));
+    render();
+  }));
+}
+
+/* ===================== estate view ===================== */
+function gateStrip(m){
+  return `<div class="gatestrip">${m.gates.map(g=>`<span class="g" style="background:${ST[g].c}"></span>`).join("")}
+    <span class="glabel">${m.gates.filter(g=>g==="pass"||g==="na").length}/7</span></div>`;
+}
+function mcardHtml(m){
+  const st=statusOf(m), tier=TIERS[m.tier];
+  const lc=lensColor(m), lv=lensValue(m);
+  return `<div class="mcard ${selected===m.id?'sel':''}" data-id="${m.id}"
+      style="border-left-color:${lc};background:linear-gradient(90deg, ${tint(lc,.13)}, ${tint(lc,.03)} 55%, var(--panel))">
+    <div class="mtop">
+      <div><div class="mname">${m.name}</div><div class="mcode">${m.code} · ${m.owner}</div></div>
+      <span class="tierbadge" style="color:${tier.color};background:${tier.bg}">${tier.label}</span>
+    </div>
+    <div class="mpurpose">${m.purpose}</div>
+    <div class="lensval" style="color:${lc};background:${tint(lc,.13)};border-color:${tint(lc,.45)}">
+      <span class="ll">${LENSES[activeLens]}</span><b>${lv}</b></div>
+    ${gateStrip(m)}
+    <div class="mfoot">
+      <span class="statuspill" style="color:${st.color};background:${tint(st.color,.13)}">
+        <span class="sd" style="background:${st.color}"></span>${st.label}</span>
+      <span class="prod">${m.inProd?"● in prod":"○ pre-prod"}</span>
+    </div>
+  </div>`;
+}
+function renderEstate(){
+  const c=document.getElementById("canvas");
+  c.innerHTML=Object.entries(DOMAINS).map(([dk,d])=>{
+    const items=M.filter(m=>m.domain===dk);
+    if(!items.length) return "";
+    return `<div class="domain">
+      <div class="domain-h"><span class="dbar" style="background:${d.color}"></span>${d.label}
+        <span class="dct">· ${items.length}</span></div>
+      <div class="mgrid">${items.map(mcardHtml).join("")}</div>
+    </div>`;
+  }).join("");
+  c.querySelectorAll(".mcard").forEach(el=>el.addEventListener("click",()=>selectModel(el.dataset.id)));
+}
+
+/* ===================== portfolio (value x risk) ===================== */
+function renderPortfolio(){
+  const W=720,H=470,pad={l:64,r:26,t:30,b:52};
+  const x=v=>pad.l+(v/100)*(W-pad.l-pad.r);
+  const y=v=>pad.t+(1-v/100)*(H-pad.t-pad.b);
+  const midx=x(50), midy=y(50);
+  let pts="";
+  M.forEach(m=>{
+    const st=statusOf(m); const r=6+maxSens(m)*1.4;
+    const cx=x(m.value), cy=y(m.risk);
+    pts+=`<circle class="pt" data-id="${m.id}" cx="${cx}" cy="${cy}" r="${r}"
+      fill="${st.color}" fill-opacity="0.16" stroke="${st.color}" stroke-width="${selected===m.id?3:1.8}"></circle>
+      <text class="ptlabel" x="${cx}" y="${cy-r-4}" text-anchor="middle" fill="${st.color}">${m.code}</text>`;
+  });
+  const c=document.getElementById("canvas");
+  c.innerHTML=`<div class="card scatter-card">
+    <div class="scatter-head"><div>AI PORTFOLIO · commercial value vs inherent risk</div><div>size = data sensitivity · colour = governance status</div></div>
+    <svg viewBox="0 0 ${W} ${H}">
+      <rect x="${pad.l}" y="${pad.t}" width="${midx-pad.l}" height="${midy-pad.t}" class="qfill" fill="rgba(214,47,38,.04)"/>
+      <rect x="${midx}" y="${pad.t}" width="${W-pad.r-midx}" height="${midy-pad.t}" class="qfill" fill="rgba(169,118,10,.05)"/>
+      <rect x="${pad.l}" y="${midy}" width="${midx-pad.l}" height="${H-pad.b-midy}" class="qfill" fill="rgba(20,40,70,.02)"/>
+      <rect x="${midx}" y="${midy}" width="${W-pad.r-midx}" height="${H-pad.b-midy}" class="qfill" fill="rgba(26,143,69,.05)"/>
+      <line x1="${midx}" y1="${pad.t}" x2="${midx}" y2="${H-pad.b}" stroke="var(--line2)" stroke-dasharray="4 4"/>
+      <line x1="${pad.l}" y1="${midy}" x2="${W-pad.r}" y2="${midy}" stroke="var(--line2)" stroke-dasharray="4 4"/>
+      <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="var(--line2)"/>
+      <line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="var(--line2)"/>
+      <text class="qcap" x="${pad.l+8}" y="${pad.t+16}">protective / obligatory — keep governed</text>
+      <text class="qcap" x="${W-pad.r-8}" y="${pad.t+16}" text-anchor="end">high value — govern tightly</text>
+      <text class="qcap" x="${pad.l+8}" y="${H-pad.b-8}">low priority — maintain</text>
+      <text class="qcap" x="${W-pad.r-8}" y="${H-pad.b-8}" text-anchor="end">high value, low risk — scale</text>
+      <text class="axt" x="${(pad.l+W-pad.r)/2}" y="${H-14}" text-anchor="middle">commercial value →</text>
+      <text class="axt" x="16" y="${(pad.t+H-pad.b)/2}" text-anchor="middle" transform="rotate(-90 16 ${(pad.t+H-pad.b)/2})">inherent risk →</text>
+      ${pts}
+    </svg>
+    <div class="scatter-note"><b>Read the top-left quadrant first.</b> The Player-Wellbeing model lives there on purpose: high risk, low commercial value, fully approved. A growth-only AI strategy would never build it. A regulated one has to, and has to govern it hardest.</div>
+  </div>`;
+  c.querySelectorAll(".pt").forEach(el=>el.addEventListener("click",()=>selectModel(el.dataset.id)));
+}
+
+/* ===================== detail panel ===================== */
+function selectModel(id){
+  selected=id; const m=M.find(x=>x.id===id);
+  render();
+  document.getElementById("panelEmpty").style.display="none";
+  const pc=document.getElementById("panelContent"); pc.style.display="block";
+  const st=statusOf(m), tier=TIERS[m.tier], d=DOMAINS[m.domain];
+  const dataChips=m.data.map(k=>`<span class="chip"><span class="c" style="background:${DATA[k].color}"></span>${DATA[k].label}</span>`).join("");
+  const gatesHtml=m.gates.map((g,i)=>`
+    <div class="gate">
+      <div class="gi" style="background:${ST[g].c}">${ST[g].g}</div>
+      <div><div class="gname">${GATES[i].t}</div><div class="gnote">${m.gnotes[i]}</div></div>
+    </div>`).join("");
+  const ctrls=m.controls.map(c=>`<li>${c}</li>`).join("");
+  const gaps=m.gaps.length?`<div class="sec-h">Open items</div><ul class="lst gap">${m.gaps.map(g=>`<li>${g}</li>`).join("")}</ul>`:"";
+  const monDot={ok:"var(--green)",warn:"var(--amber)",bad:"var(--red)"};
+  const mons=m.mons.map(x=>`<div class="mon"><span class="ml"><span class="mdot" style="background:${monDot[x[2]]}"></span>${x[0]}</span><span class="mv">${x[1]}</span></div>`).join("");
+  pc.innerHTML=`
+    <div class="ph">
+      <div class="ptype">${m.code} · ${d.label}</div>
+      <h3>${m.name}</h3>
+      <div class="badges">
+        <span class="tierbadge" style="color:${tier.color};background:${tier.bg}">${tier.label}</span>
+        <span class="tierbadge" style="color:${st.color};background:${tint(st.color,.13)}">${st.label}</span>
+      </div>
+    </div>
+    <div class="pbody">
+      <p class="note">${m.purpose}</p>
+      <div class="olg"><span class="ol">Governance rationale</span>${m.olg}</div>
+
+      <div class="sec-h">Profile</div>
+      <div class="row"><span class="k">Commercial value</span><span class="v">${m.value} / 100</span></div>
+      <div class="meter"><i style="width:${m.value}%;background:var(--blue)"></i></div>
+      <div class="row" style="border-top:1px solid var(--line);margin-top:6px"><span class="k">Inherent risk</span><span class="v">${m.risk} / 100</span></div>
+      <div class="meter"><i style="width:${m.risk}%;background:${m.risk>=55?'var(--red)':'var(--amber)'}"></i></div>
+      <div class="row" style="margin-top:6px"><span class="k">Lawful basis</span><span class="v">${m.lawful}</span></div>
+      <div class="row"><span class="k">Residency</span><span class="v">${m.residency}</span></div>
+      <div class="row"><span class="k">Owner</span><span class="v">${m.owner}</span></div>
+
+      <div class="sec-h">Model card</div>
+      <div class="metagrid">${[['Type',m.type],['Runtime',m.runtime],['Version',m.version],['Last trained',m.trained],['Cadence',m.cadence],['Latency',m.latency],['Volume',m.volume],['Oversight',m.oversight]].map(x=>`<div class="mi"><span class="mk">${x[0]}</span><span class="mv2">${x[1]}</span></div>`).join("")}</div>
+
+      <div class="sec-h">Data inputs</div>
+      <div class="chips">${dataChips}</div>
+
+      <div class="sec-h">Dependencies</div>
+      <div class="row"><span class="k">Sources</span><span class="v">${m.sources.map(s=>SOURCES[s].name).join(", ")}</span></div>
+      <div class="row"><span class="k">Consumers</span><span class="v">${m.consumers.join(", ")}</span></div>
+      <div class="row"><span class="k">Third-party</span><span class="v">${m.thirdParty.length?m.thirdParty.map(t=>THIRD_PARTY[t].name).join(", "):"none"}</span></div>
+
+      <div class="sec-h">Governance gates · ${m.gates.filter(g=>g==="pass"||g==="na").length}/7 cleared</div>
+      <div class="gates">${gatesHtml}</div>
+
+      <div class="sec-h">Controls in place</div>
+      <ul class="lst">${ctrls}</ul>
+      ${gaps}
+
+      <div class="sec-h">Live monitoring</div>
+      <div class="mons">${mons}</div>
+
+      <div class="sec-h">Recent governance events</div>
+      <div class="events">${m.events.map(e=>`<div class="ev"><span class="evdot" style="background:${EVC[e.k]}"></span><span class="evd">${e.d}</span><span class="evt">${e.t}</span></div>`).join("")}</div>
+    </div>`;
+}
+
+/* ===================== gate reference + legend ===================== */
+function renderGref(){
+  document.getElementById("gref").innerHTML=GATES.map((g,i)=>{
+    const cleared=M.filter(m=>m.gates[i]==="pass"||m.gates[i]==="na").length;
+    const pct=Math.round(cleared/M.length*100);
+    return `<div class="card grefc"><div class="gn">GATE ${i+1}</div><h4>${g.t}</h4><p>${g.d}</p>
+      <div class="gbar"><i style="width:${pct}%"></i></div><div class="gc">${cleared}/${M.length} models cleared</div></div>`;
+  }).join("");
+  const sw=(c,t)=>`<div class="li"><span class="sw" style="background:${c}"></span>${t}</div>`;
+  document.getElementById("legend").innerHTML=
+    sw("var(--green)","gate cleared")+sw("var(--amber)","pending")+sw("var(--red)","gap / overdue")+sw("var(--ink-faint)","not applicable");
+}
+
+/* ===================== render switch ===================== */
+function renderLensLegend(){
+  let items=[];
+  if(activeLens==="tier") items=[["var(--red)","HIGH RISK"],["var(--amber)","LIMITED"],["var(--green)","MINIMAL"]];
+  else if(activeLens==="status") items=[["var(--green)","APPROVED"],["var(--amber)","IN REVIEW"],["var(--orange)","NEEDS REMEDIATION"]];
+  else if(activeLens==="domain") items=Object.values(DOMAINS).map(d=>[d.color,d.label]);
+  else if(activeLens==="data"){ const seen={}; Object.values(DATA).forEach(d=>{seen[d.label]=d;});
+    items=Object.values(seen).sort((a,b)=>a.s-b.s).map(d=>[d.color,d.label]); }
+  document.getElementById("lensLegend").innerHTML=items.map(([c,l])=>`<span class="li"><span class="sw" style="background:${c}"></span>${l}</span>`).join("");
+}
+/* ---- data lineage ---- */
+function renderLineage(){
+  const srcIds=[]; M.forEach(m=>m.sources.forEach(s=>{if(!srcIds.includes(s))srcIds.push(s);}));
+  const edges=[]; M.forEach(m=>m.sources.forEach(s=>edges.push({s,m:m.id})));
+  const W=720, pad=40, H=Math.max(srcIds.length,M.length)*54+50;
+  const sx=18, sw=168, mx=520, mw=184;
+  const sy=i=>pad+(H-2*pad)*(i+0.5)/srcIds.length;
+  const my=j=>pad+(H-2*pad)*(j+0.5)/M.length;
+  const col=cls=>DATA[cls].color;
+  const eLit=e=>!linSel?true:(linSel.type==="source"?e.s===linSel.id:e.m===linSel.id);
+  const sLit=id=>!linSel?true:(linSel.type==="source"?id===linSel.id:M.find(m=>m.id===linSel.id).sources.includes(id));
+  const mLit=id=>!linSel?true:(linSel.type==="model"?id===linSel.id:M.find(m=>m.id===id).sources.includes(linSel.id));
+  let svg=`<svg viewBox="0 0 ${W} ${H}"><text class="lcol" x="${sx}" y="22">Data sources</text><text class="lcol" x="${mx}" y="22">Models</text>`;
+  edges.forEach(e=>{const i=srcIds.indexOf(e.s),j=M.findIndex(m=>m.id===e.m);
+    const x1=sx+sw,y1=sy(i),x2=mx,y2=my(j),mxp=(x1+x2)/2;
+    svg+=`<path class="ledge ${eLit(e)?'':'dim'}" d="M ${x1} ${y1} C ${mxp} ${y1}, ${mxp} ${y2}, ${x2} ${y2}" stroke="${col(SOURCES[e.s].cls)}"></path>`;});
+  srcIds.forEach((s,i)=>{const y=sy(i)-17,c=col(SOURCES[s].cls);
+    svg+=`<g class="lnode ${sLit(s)?'':'dim'}" data-src="${s}"><rect x="${sx}" y="${y}" width="${sw}" height="34" rx="8" fill="var(--panel)" stroke="${c}" stroke-width="1.6"></rect><rect x="${sx}" y="${y}" width="4" height="34" rx="2" fill="${c}"></rect><text x="${sx+12}" y="${y+15}">${SOURCES[s].name}</text><text class="lc" x="${sx+12}" y="${y+27}">${DATA[SOURCES[s].cls].label} · ${SOURCES[s].sor}</text></g>`;});
+  M.forEach((m,j)=>{const y=my(j)-17,st=statusOf(m);
+    svg+=`<g class="lnode ${mLit(m.id)?'':'dim'}" data-mod="${m.id}"><rect x="${mx}" y="${y}" width="${mw}" height="34" rx="8" fill="var(--panel)" stroke="${st.color}" stroke-width="1.6"></rect><rect x="${mx}" y="${y}" width="4" height="34" rx="2" fill="${st.color}"></rect><text x="${mx+12}" y="${y+15}">${m.name}</text><text class="lc" x="${mx+12}" y="${y+27}">${m.code} · ${TIERS[m.tier].label}</text></g>`;});
+  svg+=`</svg>`;
+  document.getElementById("canvas").innerHTML=`<div class="card lin-card"><div class="lin-head"><div>DATA LINEAGE · sources → models</div><div>${linSel?"click the same node to clear":"click a node to trace its flow"}</div></div>${svg}<div class="scatter-note">Every model traces back to a system of record with a defined classification and residency. <b>Click a source</b> to see what consumes it, or <b>a model</b> to see what feeds it.</div></div>`;
+  const c=document.getElementById("canvas");
+  c.querySelectorAll("[data-src]").forEach(el=>el.addEventListener("click",()=>{const id=el.getAttribute("data-src");linSel=(linSel&&linSel.type==="source"&&linSel.id===id)?null:{type:"source",id};renderLineage();if(linSel)selectSource(id);}));
+  c.querySelectorAll("[data-mod]").forEach(el=>el.addEventListener("click",()=>{const id=el.getAttribute("data-mod");linSel=(linSel&&linSel.type==="model"&&linSel.id===id)?null:{type:"model",id};renderLineage();if(linSel)selectModel(id);}));
+}
+function selectSource(id){
+  const s=SOURCES[id],cls=DATA[s.cls],cons=M.filter(m=>m.sources.includes(id));
+  document.getElementById("panelEmpty").style.display="none";
+  const pc=document.getElementById("panelContent");pc.style.display="block";
+  pc.innerHTML=`<div class="ph"><div class="ptype">DATA SOURCE</div><h3>${s.name}</h3><div class="badges"><span class="tierbadge" style="color:${cls.color};background:${tint(cls.color,.13)}">${cls.label}</span></div></div>
+    <div class="pbody">
+      <div class="sec-h">Source profile</div>
+      <div class="row"><span class="k">Classification</span><span class="v"><span style="color:${cls.color}">●</span> ${cls.label}</span></div>
+      <div class="row"><span class="k">System of record</span><span class="v">${s.sor}</span></div>
+      <div class="row"><span class="k">Residency</span><span class="v">${s.residency}</span></div>
+      <div class="sec-h">Consumed by ${cons.length} model(s)</div>
+      <div class="chips">${cons.map(m=>`<span class="chip" style="cursor:pointer" data-jump="${m.id}"><span class="c" style="background:${statusOf(m).color}"></span>${m.name}</span>`).join("")}</div>
+    </div>`;
+  pc.querySelectorAll("[data-jump]").forEach(el=>el.addEventListener("click",()=>selectModel(el.getAttribute("data-jump"))));
+}
+/* ---- controls matrix ---- */
+function renderMatrix(){
+  const head=`<th class="mh">Model</th>`+MATRIX_COLS.map(c=>`<th>${c.t}</th>`).join("");
+  const rows=M.map(m=>{
+    const cells=MATRIX_COLS.map(c=>{const cc=CELL[m.matrix[c.k]];return `<td><span class="cell" style="color:${cc.c};background:${tint(cc.c,.15)}">${cc.g}</span></td>`;}).join("");
+    return `<tr><td class="mn" data-mod="${m.id}">${m.name}<span class="cc">${m.code} · ${TIERS[m.tier].label}</span></td>${cells}</tr>`;
+  }).join("");
+  const leg=Object.values(CELL).map(c=>`<span class="li"><span class="sw" style="background:${tint(c.c,.2)};border:1px solid ${c.c}"></span>${c.l}</span>`).join("");
+  document.getElementById("canvas").innerHTML=`<div class="card" style="padding:0;overflow:hidden"><div class="lin-head"><div>CONTROLS & COMPLIANCE COVERAGE</div><div>click a model to open it</div></div><div style="overflow-x:auto"><table class="cmatrix"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div><div class="lenslegend" style="padding:11px 16px;margin:0;border-top:1px solid var(--line)">${leg}</div></div>`;
+  document.getElementById("canvas").querySelectorAll("[data-mod]").forEach(el=>el.addEventListener("click",()=>selectModel(el.getAttribute("data-mod"))));
+}
+/* ---- third-party services ---- */
+function renderTP(){
+  document.getElementById("tpgrid").innerHTML=Object.values(THIRD_PARTY).map(t=>
+    `<div class="card tp"><h4>${t.name}</h4><div class="tr">${t.role} · ${t.region}</div><p>${t.posture}</p></div>`).join("");
+}
+function render(){
+  const ll=document.getElementById("lensLegend");
+  if(activeView==="estate"){ renderEstate(); renderLensLegend(); ll.style.display="flex"; }
+  else if(activeView==="portfolio"){ renderPortfolio(); ll.style.display="none"; }
+  else if(activeView==="lineage"){ renderLineage(); ll.style.display="none"; }
+  else { renderMatrix(); ll.style.display="none"; }
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  activeView=t.dataset.view;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
+  document.getElementById("lensLabel").style.opacity = activeView==="estate"?"1":".35";
+  document.getElementById("lensbar").style.opacity = activeView==="estate"?"1":".35";
+  document.getElementById("lensbar").style.pointerEvents = activeView==="estate"?"auto":"none";
+  render();
+}));
+
+/* init */
+renderKPIs(); buildLensbar(); renderGref(); renderTP(); render();
+</script>
+</body>
+</html>

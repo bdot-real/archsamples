@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Front-End Data Caching · Strategy Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 10% -8%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(700px 480px at 100% 0%, rgba(116,55,201,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 4px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:760px}
+
+  /* strategy selector */
+  .strat-row{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+  .strat{flex:1;min-width:150px;text-align:left;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:11px 13px;cursor:pointer;transition:.15s;position:relative}
+  .strat:hover{border-color:var(--line2)}
+  .strat.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.12)}
+  .strat .sname{font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
+  .strat .sdot{width:9px;height:9px;border-radius:50%}
+  .strat .scode{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:3px;letter-spacing:.01em}
+  .strat-desc{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;margin:8px 0 16px}
+  .strat-desc b{color:var(--ink)}
+
+  /* main grid */
+  .grid{display:grid;grid-template-columns:1fr 318px;gap:16px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  /* simulator */
+  .sim-card{padding:0;overflow:hidden}
+  .sim-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .sim{position:relative;padding:34px 26px 20px;background:
+    linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 30px,
+    linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/30px 100%;
+    background-color:#fbfcfe;background-blend-mode:normal;}
+  .sim::before{content:"";position:absolute;inset:0;background:#fbfcfecc}
+  .track{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:0}
+  .station{width:178px;border:1.5px solid var(--line2);border-radius:12px;background:var(--panel);
+    padding:12px 13px;transition:.2s;position:relative}
+  .station.active{border-color:var(--accent);box-shadow:0 0 0 4px rgba(13,110,168,.10)}
+  .station.hit{border-color:var(--green);box-shadow:0 0 0 4px rgba(26,143,69,.14)}
+  .station.miss{border-color:var(--amber);box-shadow:0 0 0 4px rgba(169,118,10,.12)}
+  .station.err{border-color:var(--red);box-shadow:0 0 0 4px rgba(214,47,38,.14)}
+  .st-tag{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .st-name{font-weight:700;font-size:14px;margin:2px 0 1px}
+  .st-sub{font-family:var(--mono);font-size:9.5px;color:var(--ink-dim)}
+  .st-layers{margin-top:9px;display:flex;flex-direction:column;gap:3px}
+  .st-layers .ly{font-family:var(--mono);font-size:9px;color:var(--ink-faint);display:flex;justify-content:space-between;
+    border-top:1px dotted var(--line);padding-top:3px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;
+    padding:3px 8px;border-radius:6px;border:1px solid var(--line2);margin-top:9px;color:var(--ink-dim)}
+  .chip .c{width:8px;height:8px;border-radius:50%}
+  .conn{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--line2) 0 6px,transparent 6px 11px);position:relative;margin:0 -2px}
+  .packet{position:absolute;z-index:5;width:18px;height:18px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 5px rgba(13,110,168,.18);left:0;top:0;opacity:0;transition:transform .3s ease, opacity .2s;pointer-events:none}
+  .packet.bg{background:var(--amber);box-shadow:0 0 0 4px rgba(169,118,10,.18);width:13px;height:13px}
+
+  /* result */
+  .result{padding:14px 16px;border-top:1px solid var(--line);min-height:74px}
+  .result .rline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .result .served{font-size:17px;font-weight:700}
+  .result .lat{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .result .reval{font-family:var(--mono);font-size:11.5px;color:var(--amber);margin-top:6px;display:none}
+  .result .reval.on{display:block}
+  .result .explain{font-size:12.5px;color:var(--ink-dim);margin-top:6px}
+  .result.idle .served{color:var(--ink-faint);font-weight:600;font-size:14px}
+
+  /* controls */
+  .controls{padding:15px 16px}
+  .ctl-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin:2px 0 10px}
+  .ctl-h:not(:first-child){margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{flex:1;font-family:var(--mono);font-size:11px;border:0;background:none;color:var(--ink-dim);
+    padding:7px 6px;border-radius:6px;cursor:pointer}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .slider-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+  input[type=range]{flex:1;accent-color:var(--accent)}
+  .slider-row .val{font-family:var(--mono);font-size:11px;color:var(--ink);min-width:54px;text-align:right}
+  .btns{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .btn{font-family:var(--sans);font-weight:600;font-size:13px;border:1px solid var(--line2);background:var(--panel);
+    color:var(--ink);padding:10px;border-radius:9px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:#0b5e90}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-row{display:flex;gap:8px}
+  .btn-row .btn{flex:1;font-size:11.5px;padding:8px}
+  .state-now{font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:flex;justify-content:space-between;margin-top:4px}
+  .state-now b{color:var(--ink)}
+
+  /* log */
+  .log-card{margin-top:16px;padding:0;overflow:hidden}
+  .log-head{padding:11px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+    display:flex;justify-content:space-between}
+  .log{max-height:220px;overflow:auto;padding:4px 0}
+  .logrow{display:grid;grid-template-columns:54px 78px 1fr;gap:10px;padding:6px 16px;font-family:var(--mono);font-size:11px;
+    border-bottom:1px solid var(--line)}
+  .logrow:last-child{border-bottom:0}
+  .logrow .t{color:var(--ink-faint)}
+  .logrow .st{font-weight:600}
+  .logrow .msg{color:var(--ink-dim)}
+  .log-empty{padding:18px 16px;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+
+  /* matrix + reference */
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+    margin:34px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .sn{font-weight:700;display:flex;align-items:center;gap:7px}
+  td .sn .sdot{width:8px;height:8px;border-radius:50%}
+  .rate{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:13px}
+  .ref{padding:14px 15px}
+  .ref h4{margin:0 0 3px;font-size:13.5px}
+  .ref .rsub{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-bottom:9px}
+  .ref code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:4px;padding:1px 5px;color:var(--ink)}
+  .ref p{margin:7px 0 0;font-size:12px;color:var(--ink-dim)}
+  .ref .kv{display:flex;gap:8px;font-size:11.5px;margin-top:6px;color:var(--ink-dim)}
+  .ref .kv code{flex:0 0 auto}
+  .foot{margin-top:30px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Front-End Engineering · Data Layer</div>
+    <h1>Caching Strategies on the Client</h1>
+    <p class="lead">Pick a strategy, then fire a read and watch the request move between the component, the client cache and the origin. Toggle the network, age the cache past its <span style="font-family:var(--mono)">staleTime</span>, or change the server data to see how each strategy trades freshness against speed and offline resilience.</p>
+  </header>
+
+  <div class="strat-row" id="stratRow"></div>
+  <div class="strat-desc" id="stratDesc"></div>
+
+  <div class="grid">
+    <!-- LEFT: simulator -->
+    <div>
+      <div class="card sim-card">
+        <div class="sim-head">
+          <div>REQUEST FLOW</div>
+          <div id="simHint">press “Fetch data”</div>
+        </div>
+        <div class="sim" id="sim">
+          <div class="track">
+            <div class="station" id="stUi">
+              <div class="st-tag">React / UI</div>
+              <div class="st-name">Component</div>
+              <div class="st-sub">useQuery() · fetch()</div>
+            </div>
+            <div class="conn"></div>
+            <div class="station" id="stCache">
+              <div class="st-tag">Client</div>
+              <div class="st-name">Cache</div>
+              <div class="st-sub">read / write</div>
+              <div class="st-layers">
+                <div class="ly"><span>memory (query)</span><span>~1ms</span></div>
+                <div class="ly"><span>IndexedDB</span><span>~12ms</span></div>
+                <div class="ly"><span>SW Cache API</span><span>~8ms</span></div>
+              </div>
+              <div class="chip" id="cacheChip"><span class="c" style="background:var(--ink-faint)"></span>empty</div>
+            </div>
+            <div class="conn"></div>
+            <div class="station" id="stNet">
+              <div class="st-tag">Origin</div>
+              <div class="st-name">CDN → Server</div>
+              <div class="st-sub" id="netSub">network</div>
+              <div class="chip" id="serverChip"><span class="c" style="background:var(--blue)"></span>server: v1</div>
+            </div>
+          </div>
+          <div class="packet" id="packet"></div>
+          <div class="packet bg" id="packetBg"></div>
+        </div>
+        <div class="result idle" id="result">
+          <div class="rline"><span class="served">Idle — no request yet</span></div>
+          <div class="explain">Choose a strategy above and press Fetch.</div>
+          <div class="reval" id="reval">↻ revalidating in background…</div>
+        </div>
+      </div>
+
+      <div class="card log-card">
+        <div class="log-head"><span>EVENT LOG</span><span id="logClock">t = 0 ms</span></div>
+        <div class="log" id="log"><div class="log-empty">No events yet.</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: controls -->
+    <div class="card controls">
+      <div class="ctl-h">Network</div>
+      <div class="seg" id="netSeg">
+        <button data-net="fast" class="on">Fast</button>
+        <button data-net="slow">Slow</button>
+        <button data-net="offline">Offline</button>
+      </div>
+
+      <div class="ctl-h">staleTime</div>
+      <div class="slider-row">
+        <input type="range" id="staleRange" min="0" max="60" value="30" step="5">
+        <span class="val" id="staleVal">30 s</span>
+      </div>
+
+      <div class="ctl-h">State</div>
+      <div class="state-now"><span>cache entry</span><b id="stCacheState">empty</b></div>
+      <div class="state-now"><span>cache age</span><b id="stCacheAge">—</b></div>
+      <div class="state-now"><span>server version</span><b id="stServerVer">v1</b></div>
+
+      <div class="ctl-h">Actions</div>
+      <div class="btns">
+        <button class="btn primary" id="btnFetch">⟶ Fetch data</button>
+        <div class="btn-row">
+          <button class="btn" id="btnAge">age +15 s</button>
+          <button class="btn" id="btnBump">server v+1</button>
+        </div>
+        <button class="btn" id="btnReset">reset cache</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIX -->
+  <div class="section-h">Strategy comparison</div>
+  <table>
+    <thead><tr><th style="width:190px">Strategy</th><th>First byte</th><th>Freshness</th><th>Offline</th><th>Network cost</th><th>Best for</th></tr></thead>
+    <tbody id="matrix"></tbody>
+  </table>
+
+  <!-- REFERENCE -->
+  <div class="section-h">Where these live in real APIs</div>
+  <div class="ref-grid">
+    <div class="card ref">
+      <h4>HTTP <code>Cache-Control</code></h4>
+      <div class="rsub">browser disk cache · CDN · the layer under everything</div>
+      <div class="kv"><code>max-age=600</code><span>fresh window before revalidation</span></div>
+      <div class="kv"><code>stale-while-revalidate=30</code><span>serve stale, refetch in background</span></div>
+      <div class="kv"><code>no-cache</code><span>store, but revalidate every time (ETag → 304)</span></div>
+      <div class="kv"><code>no-store</code><span>never cache (network-only)</span></div>
+      <p>Validators <code>ETag</code> / <code>If-None-Match</code> turn a miss into a cheap <code>304 Not Modified</code> instead of a full payload.</p>
+    </div>
+
+    <div class="card ref">
+      <h4>TanStack Query / SWR</h4>
+      <div class="rsub">in-memory query cache · the default for React data</div>
+      <div class="kv"><code>staleTime</code><span>how long data counts as fresh (no refetch)</span></div>
+      <div class="kv"><code>gcTime</code><span>how long unused data lingers before eviction</span></div>
+      <div class="kv"><code>refetchOnWindowFocus</code><span>background revalidate on focus</span></div>
+      <p>Default behaviour is <b>stale-while-revalidate</b>: instant cached render, then a background refetch. SWR is named for exactly this pattern.</p>
+    </div>
+
+    <div class="card ref">
+      <h4>Apollo Client <code>fetchPolicy</code></h4>
+      <div class="rsub">normalized GraphQL cache</div>
+      <div class="kv"><code>cache-first</code><span>default · this playground’s Cache-First</span></div>
+      <div class="kv"><code>cache-and-network</code><span>≈ stale-while-revalidate</span></div>
+      <div class="kv"><code>network-only</code><span>always fetch, still writes cache</span></div>
+      <div class="kv"><code>no-cache</code><span>fetch, never persist</span></div>
+      <div class="kv"><code>cache-only</code><span>never touch the network</span></div>
+    </div>
+
+    <div class="card ref">
+      <h4>Workbox (Service Worker)</h4>
+      <div class="rsub">Cache Storage API · powers offline / PWAs</div>
+      <div class="kv"><code>CacheFirst</code><span>static, versioned assets</span></div>
+      <div class="kv"><code>NetworkFirst</code><span>API data that must be current</span></div>
+      <div class="kv"><code>StaleWhileRevalidate</code><span>avatars, non-critical data</span></div>
+      <div class="kv"><code>NetworkOnly / CacheOnly</code><span>edge cases &amp; precache</span></div>
+    </div>
+
+    <div class="card ref">
+      <h4>Persistence layers</h4>
+      <div class="rsub">what survives a reload, and how fast</div>
+      <div class="kv"><code>Memory</code><span>fastest · lost on reload/navigation</span></div>
+      <div class="kv"><code>Cache Storage</code><span>Request/Response pairs · SW-controlled</span></div>
+      <div class="kv"><code>IndexedDB</code><span>large structured data · async</span></div>
+      <div class="kv"><code>localStorage</code><span>tiny, sync, strings only — avoid for hot data</span></div>
+    </div>
+
+    <div class="card ref">
+      <h4>Invalidation &amp; updates</h4>
+      <div class="rsub">the hard part of caching</div>
+      <div class="kv"><code>invalidateQueries</code><span>mark stale → triggers refetch</span></div>
+      <div class="kv"><code>optimistic update</code><span>write cache now, reconcile on response</span></div>
+      <div class="kv"><code>prefetch</code><span>warm the cache before the user asks</span></div>
+      <p>“There are only two hard things… cache invalidation and naming things.” Time-based <code>staleTime</code> + event-based invalidation usually beats either alone.</p>
+    </div>
+  </div>
+
+  <div class="foot">interactive model · latencies are illustrative · serve from cache vs origin depending on strategy, freshness and connectivity</div>
+</div>
+
+<script>
+/* ---------------- strategies ---------------- */
+const STRATS = {
+  cacheFirst: {name:"Cache-First", code:"cache → network", color:"var(--green)",
+    desc:"<b>Cache-First.</b> Read the cache; if anything is there, serve it and stop — even if it is stale. Only hit the network on a miss. Fastest repeat reads, but can show outdated data."},
+  networkFirst:{name:"Network-First", code:"network → cache", color:"var(--blue)",
+    desc:"<b>Network-First.</b> Try the network first and update the cache from the response. If the request fails (offline), fall back to whatever is cached. Fresh when online, resilient when not."},
+  swr:{name:"Stale-While-Revalidate", code:"cache + background", color:"var(--violet)",
+    desc:"<b>Stale-While-Revalidate.</b> Serve the cached copy instantly (even if stale), then refetch in the background so the <i>next</i> read is fresh. Best perceived performance; the default for TanStack Query &amp; SWR."},
+  networkOnly:{name:"Network-Only", code:"network, no cache", color:"var(--orange)",
+    desc:"<b>Network-Only.</b> Always go to the origin; never read the cache. Guarantees freshness, costs a round trip every time, and fails completely when offline."},
+  cacheOnly:{name:"Cache-Only", code:"cache, no network", color:"var(--ink-dim)",
+    desc:"<b>Cache-Only.</b> Only ever read the cache; never touch the network. Instant and offline-safe, but errors out if the cache is cold. Good for precached or derived data."},
+};
+
+/* ---------------- latency model (ms) ---------------- */
+const MS = {cache:2, net:{fast:140, slow:650, offline:Infinity}};
+const ANIM = {cache:340, net:{fast:720, slow:1300}};
+
+/* ---------------- state ---------------- */
+const state = {
+  strat:"swr", network:"fast", staleTime:30,
+  entry:{present:false, version:0, age:0},
+  serverVersion:1, t:0, busy:false,
+};
+
+/* ---------------- elements ---------------- */
+const $ = id=>document.getElementById(id);
+const sim=$("sim"), packet=$("packet"), packetBg=$("packetBg");
+const stUi=$("stUi"), stCache=$("stCache"), stNet=$("stNet");
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------------- strategy selector ---------------- */
+function buildStrats(){
+  $("stratRow").innerHTML=Object.entries(STRATS).map(([k,s])=>
+    `<button class="strat ${k===state.strat?'on':''}" data-strat="${k}">
+       <div class="sname"><span class="sdot" style="background:${s.color}"></span>${s.name}</div>
+       <div class="scode">${s.code}</div>
+     </button>`).join("");
+  $("stratRow").querySelectorAll(".strat").forEach(b=>b.addEventListener("click",()=>{
+    if(state.busy) return;
+    state.strat=b.dataset.strat; syncStrat();
+  }));
+  syncStrat();
+}
+function syncStrat(){
+  document.querySelectorAll(".strat").forEach(b=>b.classList.toggle("on",b.dataset.strat===state.strat));
+  $("stratDesc").innerHTML=STRATS[state.strat].desc;
+}
+
+/* ---------------- packet animation ---------------- */
+function center(station){
+  const r=station.getBoundingClientRect(), s=sim.getBoundingClientRect();
+  return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};
+}
+function place(p, station, show=true){
+  const c=center(station);
+  p.style.transform=`translate(${c.x-9}px, ${c.y-9}px)`;
+  p.style.opacity=show?"1":"0";
+}
+async function move(p, station, dur){
+  const c=center(station);
+  p.style.transition=`transform ${dur}ms cubic-bezier(.5,.05,.3,1), opacity .2s`;
+  p.style.opacity="1";
+  p.style.transform=`translate(${c.x-9}px, ${c.y-9}px)`;
+  await sleep(dur);
+}
+function setStation(st, cls){ ["active","hit","miss","err"].forEach(c=>st.classList.remove(c)); if(cls) st.classList.add(cls); }
+function clearStations(){ [stUi,stCache,stNet].forEach(s=>setStation(s,null)); }
+
+/* ---------------- log ---------------- */
+function resetLog(){ state.t=0; $("log").innerHTML=""; $("logClock").textContent="t = 0 ms"; }
+function log(station, msg, color){
+  if($("log").querySelector(".log-empty")) $("log").innerHTML="";
+  const row=document.createElement("div"); row.className="logrow";
+  row.innerHTML=`<span class="t">+${state.t}ms</span><span class="st" style="color:${color||'var(--ink)'}">${station}</span><span class="msg">${msg}</span>`;
+  $("log").appendChild(row); $("log").scrollTop=$("log").scrollHeight;
+  $("logClock").textContent=`t = ${state.t} ms`;
+}
+
+/* ---------------- helpers ---------------- */
+function isFresh(){ return state.entry.present && state.entry.age<=state.staleTime; }
+function netMs(){ return MS.net[state.network]; }
+function netAnim(){ return ANIM.net[state.network]||720; }
+function online(){ return state.network!=="offline"; }
+
+function renderState(){
+  const e=state.entry;
+  // cache chip
+  const chip=$("cacheChip");
+  if(!e.present){ chip.innerHTML=`<span class="c" style="background:var(--ink-faint)"></span>empty`; }
+  else{
+    const fresh=isFresh();
+    const outdated=e.version<state.serverVersion;
+    const col=fresh?(outdated?"var(--amber)":"var(--green)"):"var(--amber)";
+    const tag=fresh?(outdated?"fresh*":"fresh"):"stale";
+    chip.innerHTML=`<span class="c" style="background:${col}"></span>v${e.version} · ${e.age}s · ${tag}`;
+  }
+  $("serverChip").innerHTML=`<span class="c" style="background:var(--blue)"></span>server: v${state.serverVersion}`;
+  $("netSub").textContent = online()? (state.network+" network") : "offline";
+  $("stCacheState").textContent=e.present?`v${e.version} (${isFresh()?'fresh':'stale'})`:"empty";
+  $("stCacheAge").textContent=e.present?`${e.age} s / ${state.staleTime} s`:"—";
+  $("stServerVer").textContent=`v${state.serverVersion}`;
+}
+
+function showResult(servedLabel, color, latency, explain){
+  const r=$("result"); r.classList.remove("idle");
+  r.querySelector(".served").textContent=servedLabel;
+  r.querySelector(".served").style.color=color;
+  let lat=r.querySelector(".lat"); if(!lat){lat=document.createElement("span");lat.className="lat";r.querySelector(".rline").appendChild(lat);}
+  lat.textContent = latency==null?"":`· ${latency} ms to first byte`;
+  r.querySelector(".explain").innerHTML=explain;
+  $("reval").classList.remove("on");
+}
+
+/* fetch from origin: returns version, updates server-derived freshness */
+function originFetch(){ return state.serverVersion; }
+function writeCache(version){ state.entry={present:true, version, age:0}; }
+
+/* ---------------- the simulation ---------------- */
+async function runFetch(){
+  if(state.busy) return;
+  state.busy=true; $("btnFetch").disabled=true;
+  clearStations(); resetLog();
+  place(packet, stUi, true); place(packetBg, stCache, false); packetBg.style.opacity="0";
+  $("reval").classList.remove("on");
+  $("simHint").textContent="running…";
+
+  setStation(stUi,"active"); log("UI","component requests data","var(--accent)"); await sleep(260);
+
+  const s=state.strat;
+  const hit=state.entry.present;
+  const fresh=isFresh();
+  const outdated=state.entry.version<state.serverVersion;
+
+  if(s==="cacheOnly"){
+    await move(packet, stCache, ANIM.cache); state.t+=MS.cache;
+    if(hit){ setStation(stCache,"hit"); log("CACHE",`hit — serving v${state.entry.version} (${fresh?'fresh':'stale'})`,"var(--green)");
+      await move(packet, stUi, ANIM.cache);
+      finish(`Served from CACHE — v${state.entry.version}`, fresh?"var(--green)":"var(--amber)", MS.cache,
+        `Cache-only never calls the network. Instant${fresh?"":", but the data is past <code>staleTime</code> and stays stale until something else refreshes it"}.`);
+    } else { setStation(stCache,"err"); log("CACHE","miss — and no network allowed","var(--red)");
+      finish("ERROR — cache miss", "var(--red)", MS.cache,
+        "Cache-only with a cold cache fails outright. Use it only for data you know is precached.");
+    }
+  }
+
+  else if(s==="networkOnly"){
+    await move(packet, stNet, netAnim());
+    if(online()){ const v=originFetch(); state.t+=netMs(); setStation(stNet,"active"); log("ORIGIN",`200 OK — returned v${v}`,"var(--blue)");
+      await move(packet, stUi, netAnim());
+      finish(`Served from NETWORK — v${v} (fresh)`, "var(--blue)", netMs(),
+        "Network-only always fetches from the origin and never reads the cache. Always current, one round trip every time.");
+    } else { setStation(stNet,"err"); log("ORIGIN","request failed — offline","var(--red)");
+      finish("ERROR — offline, no fallback", "var(--red)", null,
+        "Network-only has no cache to fall back on, so it fails completely when the connection drops.");
+    }
+  }
+
+  else if(s==="cacheFirst"){
+    await move(packet, stCache, ANIM.cache); state.t+=MS.cache;
+    if(hit){ setStation(stCache,"hit"); log("CACHE",`hit — serving v${state.entry.version}${fresh?' (fresh)':' (stale, but used anyway)'}`,"var(--green)");
+      await move(packet, stUi, ANIM.cache);
+      finish(`Served from CACHE — v${state.entry.version}`, fresh&&!outdated?"var(--green)":"var(--amber)", MS.cache,
+        outdated?"Cache-first serves the cached copy without checking the origin — so it just handed back <b>v"+state.entry.version+"</b> while the server is already on <b>v"+state.serverVersion+"</b>. Fast, but you can show old data.":"Cache-first found a usable entry and skipped the network entirely.");
+    } else { setStation(stCache,"miss"); log("CACHE","miss — falling through to origin","var(--amber)");
+      await move(packet, stNet, netAnim());
+      if(online()){ const v=originFetch(); state.t+=netMs(); setStation(stNet,"active"); log("ORIGIN",`200 OK — v${v}`,"var(--blue)");
+        await move(packet, stCache, ANIM.cache); writeCache(v); setStation(stCache,"hit"); log("CACHE",`populated with v${v}`,"var(--green)");
+        await move(packet, stUi, ANIM.cache);
+        finish(`Served from NETWORK — v${v} (cache now warm)`, "var(--blue)", MS.cache+netMs(),
+          "First load paid the full round trip; the cache is now warm, so the next read is instant.");
+      } else { setStation(stNet,"err"); log("ORIGIN","failed — offline, empty cache","var(--red)");
+        finish("ERROR — miss + offline", "var(--red)", null, "Cache-first only helps once the cache is warm. Cold + offline still fails.");
+      }
+    }
+  }
+
+  else if(s==="networkFirst"){
+    await move(packet, stNet, netAnim());
+    if(online()){ const v=originFetch(); state.t+=netMs(); setStation(stNet,"active"); log("ORIGIN",`200 OK — v${v}`,"var(--blue)");
+      await move(packet, stCache, ANIM.cache); writeCache(v); setStation(stCache,"hit"); log("CACHE",`updated to v${v}`,"var(--green)");
+      await move(packet, stUi, ANIM.cache);
+      finish(`Served from NETWORK — v${v} (fresh)`, "var(--blue)", netMs(),
+        "Network-first got the current data and refreshed the cache. The cache exists purely as an offline safety net.");
+    } else { setStation(stNet,"miss"); log("ORIGIN","failed — offline, trying cache","var(--amber)");
+      await move(packet, stCache, ANIM.cache); state.t+=MS.cache;
+      if(hit){ setStation(stCache,"hit"); log("CACHE",`fallback hit — v${state.entry.version}`,"var(--green)");
+        await move(packet, stUi, ANIM.cache);
+        finish(`Served from CACHE (fallback) — v${state.entry.version}`, "var(--amber)", MS.cache,
+          "Network failed, so network-first fell back to the cached copy — possibly stale, but better than an error. This is what keeps an app usable offline.");
+      } else { setStation(stCache,"err"); log("CACHE","no fallback available","var(--red)");
+        finish("ERROR — offline with empty cache", "var(--red)", null, "Nothing online and nothing cached — network-first has no copy to fall back to.");
+      }
+    }
+  }
+
+  else if(s==="swr"){
+    await move(packet, stCache, ANIM.cache); state.t+=MS.cache;
+    if(hit){ setStation(stCache,"hit"); log("CACHE",`hit — serving v${state.entry.version} immediately`,"var(--green)");
+      await move(packet, stUi, ANIM.cache);
+      finish(`Served from CACHE — v${state.entry.version} (instant)`, fresh&&!outdated?"var(--green)":"var(--amber)", MS.cache,
+        (fresh&&!outdated)?"Fresh hit — served instantly. No background fetch needed within <code>staleTime</code>." :
+        "Served the cached copy right away, and now revalidating in the background so the next read is current.");
+      // background revalidation only if stale (or always-after-staleTime); skip if offline
+      if((!fresh || outdated) && online()){
+        $("reval").classList.add("on");
+        placeBg(stCache); await sleep(120);
+        log("REVALIDATE","background fetch started","var(--amber)");
+        await moveBg(stNet, netAnim()); const v=originFetch();
+        log("ORIGIN",`background 200 — v${v}`,"var(--blue)");
+        await moveBg(stCache, netAnim()); writeCache(v);
+        log("CACHE",`silently updated to v${v}`,"var(--green)");
+        $("reval").textContent=`✓ cache refreshed to v${v} — next read will be fresh`;
+        $("reval").style.color="var(--green)";
+        packetBg.style.opacity="0";
+        renderState();
+      } else if((!fresh||outdated) && !online()){
+        log("REVALIDATE","skipped — offline","var(--ink-faint)");
+      }
+    } else { setStation(stCache,"miss"); log("CACHE","empty — must wait for network","var(--amber)");
+      await move(packet, stNet, netAnim());
+      if(online()){ const v=originFetch(); state.t+=netMs(); setStation(stNet,"active"); log("ORIGIN",`200 OK — v${v}`,"var(--blue)");
+        await move(packet, stCache, ANIM.cache); writeCache(v); setStation(stCache,"hit"); log("CACHE",`populated v${v}`,"var(--green)");
+        await move(packet, stUi, ANIM.cache);
+        finish(`Served from NETWORK — v${v} (first load)`, "var(--blue)", MS.cache+netMs(),
+          "With an empty cache there is nothing stale to show, so SWR behaves like network on the first load. Every read after this is instant.");
+      } else { setStation(stNet,"err"); log("ORIGIN","failed — offline, empty cache","var(--red)");
+        finish("ERROR — cold cache + offline", "var(--red)", null, "SWR needs at least one prior successful fetch to have something to serve.");
+      }
+    }
+  }
+
+  function finish(label,color,lat,explain){ showResult(label,color,lat,explain); renderState(); }
+  $("simHint").textContent="done · press Fetch again";
+  state.busy=false; $("btnFetch").disabled=false;
+}
+
+/* background packet helpers */
+function placeBg(st){ const c=center(st); packetBg.style.transition="none"; packetBg.style.transform=`translate(${c.x-7}px,${c.y-7}px)`; packetBg.style.opacity="1"; }
+async function moveBg(st,dur){ const c=center(st); packetBg.style.transition=`transform ${dur}ms ease, opacity .2s`; packetBg.style.transform=`translate(${c.x-7}px,${c.y-7}px)`; await sleep(dur); }
+
+/* ---------------- controls ---------------- */
+$("netSeg").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+  if(state.busy) return;
+  state.network=b.dataset.net;
+  $("netSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  renderState();
+}));
+$("staleRange").addEventListener("input",e=>{ state.staleTime=+e.target.value; $("staleVal").textContent=state.staleTime+" s"; renderState(); });
+$("btnFetch").addEventListener("click",runFetch);
+$("btnAge").addEventListener("click",()=>{ if(state.entry.present){state.entry.age+=15; renderState();} });
+$("btnBump").addEventListener("click",()=>{ state.serverVersion++; renderState(); });
+$("btnReset").addEventListener("click",()=>{ if(state.busy)return; state.entry={present:false,version:0,age:0}; clearStations();
+  $("result").classList.add("idle"); $("result").querySelector(".served").textContent="Idle — cache cleared";
+  $("result").querySelector(".served").style.color="var(--ink-faint)"; $("result").querySelector(".explain").textContent="Cache reset. Fetch to warm it again.";
+  const lat=$("result").querySelector(".lat"); if(lat)lat.textContent=""; $("reval").classList.remove("on"); $("reval").textContent="↻ revalidating in background…"; $("reval").style.color="var(--amber)";
+  packet.style.opacity="0"; packetBg.style.opacity="0"; resetLog(); $("log").innerHTML='<div class="log-empty">No events yet.</div>'; renderState(); });
+
+/* ---------------- matrix ---------------- */
+const MATRIX=[
+  ["cacheFirst","instant on hit","can be stale","yes (if warm)","low","static-ish data, repeat reads"],
+  ["networkFirst","one round trip","always fresh online","yes (fallback)","high","API data that must be current"],
+  ["swr","instant on hit","fresh next read","yes (if warm)","medium","most UI data — the sane default"],
+  ["networkOnly","one round trip","always fresh","no","high","payments, one-off mutations"],
+  ["cacheOnly","instant","whatever’s cached","yes","none","precached / derived data"],
+];
+const rate=(txt)=>{
+  const t=txt.toLowerCase(); let c="var(--ink-dim)",bg="var(--panel2)";
+  if(/instant|always fresh|low|none|yes\b|fresh next/.test(t)){c="var(--green)";bg="rgba(26,143,69,.10)";}
+  if(/round trip|medium|can be stale|fallback|fresh next read/.test(t)){c="var(--amber)";bg="rgba(169,118,10,.10)";}
+  if(/high|^no$|what's|whatever/.test(t)){c="var(--orange)";bg="rgba(191,79,23,.10)";}
+  if(t==="no"){c="var(--red)";bg="rgba(214,47,38,.10)";}
+  return `<span class="rate" style="color:${c};background:${bg}">${txt}</span>`;
+};
+$("matrix").innerHTML=MATRIX.map(r=>{
+  const s=STRATS[r[0]];
+  return `<tr>
+    <td><span class="sn"><span class="sdot" style="background:${s.color}"></span>${s.name}</span></td>
+    <td>${rate(r[1])}</td><td>${rate(r[2])}</td><td>${rate(r[3])}</td><td>${rate(r[4])}</td>
+    <td style="color:var(--ink-dim)">${r[5]}</td></tr>`;
+}).join("");
+
+/* ---------------- init ---------------- */
+buildStrats();
+renderState();
+window.addEventListener("resize",()=>{ if(!state.busy){ packet.style.opacity="0"; packetBg.style.opacity="0"; }});
+</script>
+</body>
+</html>

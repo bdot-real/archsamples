@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Tracker SDK · Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(720px 480px at 100% 0%, rgba(116,55,201,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:680px}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* audience toggle */
+  .aud{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .aud .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:none;border:0;padding:8px 16px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .seg button .i{font-size:13px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:17px;font-weight:600;letter-spacing:-.01em}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+
+  .modebanner{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin:-6px 2px 14px;display:flex;align-items:center;gap:8px}
+  .modebanner .b{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+  .pkgs{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .pkgs a{font-family:var(--mono);font-size:11px;color:var(--accent);text-decoration:none;border:1px solid rgba(13,110,168,.28);background:rgba(13,110,168,.06);padding:5px 11px;border-radius:20px}
+  .pkgs a:hover{background:rgba(13,110,168,.13)}
+  .box .npm{display:inline-block;margin-top:9px;font-family:var(--mono);font-size:10px;color:var(--accent);text-decoration:none;border:1px solid rgba(13,110,168,.3);border-radius:6px;padding:3px 9px}
+  .box .npm:hover{background:rgba(13,110,168,.1)}
+  .netbound{display:flex;align-items:center;gap:12px;margin:18px 6px 4px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+  .netbound .nl{flex:1;height:0;border-top:2px dashed rgba(191,79,23,.42)}
+  /* flow */
+  .stage-wrap{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
+  @media(max-width:980px){.stage-wrap{grid-template-columns:1fr}}
+  .pipe{padding:6px 8px 12px}
+  /* lifecycle stepper */
+  .life{display:flex;gap:0;flex-wrap:wrap;padding:12px 12px 4px;align-items:stretch}
+  .lstep{flex:1;min-width:120px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin:3px;cursor:pointer;transition:.15s;position:relative}
+  .lstep:hover{border-color:var(--accent)}
+  .lstep.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.12)}
+  .lstep .ln{font-family:var(--mono);font-size:8px;color:var(--ink-faint);letter-spacing:.1em}
+  .lstep .lt{font-weight:700;font-size:12.5px;margin-top:2px}
+  .lstep .ld{font-size:10.5px;color:var(--ink-dim);margin-top:2px;line-height:1.35}
+  .lcap{font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding:2px 14px 10px}
+
+  .phase{margin:6px 6px 0}
+  .phead{display:flex;align-items:baseline;gap:9px;padding:13px 8px 8px}
+  .phead .pn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .phead .ps{font-size:11.5px;color:var(--ink-dim)}
+  .steps{position:relative}
+  .step{display:grid;grid-template-columns:26px 1fr;gap:11px;padding:8px 8px;border-radius:9px;cursor:pointer;transition:.12s;position:relative}
+  .step:hover{background:var(--panel2)}
+  .step.sel{background:rgba(13,110,168,.07)}
+  .step::before{content:"";position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .step:first-child::before{top:50%}
+  .step .dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--line2);background:var(--panel);margin:5px auto 0;z-index:1;position:relative}
+  .step.gate .dot{border-color:var(--accent)}
+  .step .sn{font-weight:600;font-size:12.5px}
+  .step .snote{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:1px}
+  .branch{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;padding:2px 8px;border-radius:5px;margin-top:5px}
+  .branch.drop{color:var(--red);background:rgba(214,47,38,.07);border:1px solid rgba(214,47,38,.25)}
+  .branch.retry{color:var(--amber);background:rgba(169,118,10,.07);border:1px solid rgba(169,118,10,.25)}
+  .pdivider{height:1px;background:var(--line);margin:6px 8px}
+
+  /* detail panel */
+  .dp{position:sticky;top:14px;min-height:420px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:16px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 10px;font-size:13px;color:var(--ink-dim);line-height:1.55}
+  .db p.exec{color:var(--ink)}
+  .why{font-size:12.5px;color:var(--ink);background:rgba(13,110,168,.06);border:1px solid rgba(13,110,168,.18);border-radius:9px;padding:10px 12px;line-height:1.45}
+  .why .wl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+  pre{background:#0e1726;color:#cdd9ec;border-radius:9px;padding:12px 13px;overflow:auto;font-family:var(--mono);font-size:11px;line-height:1.55;margin:8px 0 0}
+  pre .k{color:#7fb2e8}.pre .s{color:#8fd6a0}
+  .facts{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .fact{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px}
+  .fact:last-child{border-bottom:0}
+  .fact .fk{color:var(--ink-faint)} .fact .fv{color:var(--ink);text-align:right}
+  .sech{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:15px 0 7px}
+
+  /* system map */
+  .layer{margin-bottom:6px}
+  .layer .ll2{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0 2px 8px}
+  .boxes{display:flex;gap:11px;flex-wrap:wrap}
+  .box{flex:1;min-width:200px;border:1px solid var(--line2);border-radius:11px;padding:12px 13px;cursor:pointer;background:var(--panel);transition:.15s;border-top:4px solid var(--line2)}
+  .box:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 6px 16px rgba(22,42,74,.08)}
+  .box.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.12)}
+  .box .bn{font-weight:700;font-size:13.5px}
+  .box .bc{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:2px}
+  .box .bo{font-size:11.5px;color:var(--ink-dim);margin-top:7px;line-height:1.4}
+  .boundary{display:flex;align-items:center;gap:12px;margin:14px 2px;font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .boundary .bl{flex:1;height:0;border-top:2px dashed rgba(13,110,168,.4)}
+  .arrow-down{text-align:center;color:var(--ink-faint);font-size:18px;margin:2px 0}
+
+  /* subsystems */
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin:6px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sgroup{margin-bottom:20px}
+  .scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px}
+  .sub{padding:13px 14px}
+  .sub h4{margin:0 0 2px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .sub .tk{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);white-space:nowrap}
+  .sub .one{font-size:11.5px;color:var(--ink-dim);margin:0 0 8px;line-height:1.4}
+  .sub .body{font-size:12px;color:var(--ink);line-height:1.5}
+  .sub .body.exec{color:var(--ink-dim)}
+  .sub code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* contract */
+  .inv{display:flex;flex-direction:column;gap:0}
+  .inv .iv{display:grid;grid-template-columns:18px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-dim);line-height:1.45}
+  .inv .iv:last-child{border-bottom:0}
+  .inv .iv .ic{color:var(--green);font-weight:700;font-family:var(--mono)}
+  .inv .iv b{color:var(--ink)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .fm{font-weight:600;font-family:var(--mono);font-size:11.5px}
+  td code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .foot{margin-top:28px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">3 Halves Labs · Score Anything Loyalty</div>
+      <h1>Tracking SDK Architecture</h1>
+      <p class="lead">How a browser signal becomes loyalty points, end to end. <code>@3halves-labs/score-tracker</code> captures behaviour, gates it behind consent, scrubs PII, batches it, and ships one stable envelope to the platform. Switch the audience to change the depth.</p>
+      <div class="pkgs">
+        <a href="https://www.npmjs.com/package/@3halves-labs/score-tracker" target="_blank" rel="noopener">↗ npm · score-tracker</a>
+        <a href="https://www.npmjs.com/package/@3halves-labs/score-loyalty-sdk" target="_blank" rel="noopener">↗ npm · score-loyalty-sdk</a>
+      </div>
+    </div>
+    <div class="aud">
+      <span class="al">Audience</span>
+      <div class="seg" id="audSeg">
+        <button data-mode="exec" class="on"><span class="i">◐</span> Executive</button>
+        <button data-mode="dev"><span class="i">⌨</span> Developer</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="flow">⤳ Data Flow</button>
+    <button class="tab" data-tab="system">▦ System Map</button>
+    <button class="tab" data-tab="subs">▤ Subsystems</button>
+    <button class="tab" data-tab="contract">⛓ Contract &amp; Resilience</button>
+  </div>
+
+  <div class="modebanner" id="modeBanner"></div>
+  <div id="view"></div>
+
+  <div class="foot">grounded in ARCHITECTURE.md + README.md · the envelope is the only integration boundary · publishing is local-only<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+let MODE="exec";
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ===================== LIFECYCLE ===================== */
+const LIFE=[
+  {k:"construct",n:"new ScoreTracker()",d:"Set up, no I/O",
+   exec:"Creates the tracker object. Nothing is observed or sent yet — safe to build anywhere, including during server-side rendering.",
+   dev:"Synchronous and I/O-free. Merges options over defaults, picks the storage backend, runs cross-domain linker adoption first, loads/generates anonymousId + sessionId, bumps the session counter, resolves PII / privacy / group config. No listeners, no timers."},
+  {k:"init",n:"await init()",d:"Resolve policy + consent",
+   exec:"The recommended start. Works out the regional privacy posture, checks consent, fetches an auth token, and reopens any events that survived a crash — then starts tracking.",
+   dev:"Ordering is load-bearing: resolvePrivacy() → refreshConsent() (deny ⇒ stay idle) → prefetch JWT → openDurableQueue() (rehydrate, age-evict, emit delivery_failed for evicted criticals) → start(). Privacy must resolve before consent so the policy's consentDefault is in effect."},
+  {k:"start",n:"start()",d:"Install instrumentation",
+   exec:"Turns on the automatic listeners: page views, route changes, scroll depth, video, sponsor surfaces, and so on.",
+   dev:"Sync legacy entry. Honours DNT and synchronous consent predicates (cannot await async — that's why init() exists). Anchors the dwell timer, starts the flush interval, installs all auto-instrumentation. Idempotent."},
+  {k:"run",n:"track() / flush()",d:"Capture → batch → ship",
+   exec:"The steady state: signals come in, get checked and queued, and are sent to the platform in small batches.",
+   dev:"track()/page()/auto-events → enqueue() (gate, stamp, queue, IDB) → flush() on interval / size / foreground → post()/envelope() → POST. See the Data Flow above."},
+  {k:"shutdown",n:"shutdown()",d:"Flush + lock",
+   exec:"Called when a user revokes consent or logs out. Flushes what's in flight, stops everything, and locks the gate so nothing more is collected.",
+   dev:"Clears the timer, unbinds listeners, restores monkey-patched history.pushState/replaceState, sendBeacon-flushes the queue, closes IDB (survivors rehydrate next init), and locks the consent gate. Re-opening needs a fresh init()."},
+];
+
+/* ===================== FLOW ===================== */
+const FLOW=[
+ {pn:"1 · Capture",ps:"signals enter the SDK",steps:[
+   {k:"act",n:"User action / auto-listener",note:"pageview · route · scroll · video · form · sponsor · custom track()",
+    exec:"Something happens in the browser — a page view, a scroll, a video play, a sponsor logo coming into view — or your code calls track() directly.",
+    dev:"Auto-instrumentation listeners installed in start() plus explicit track()/page()/emit() calls all feed the same pipe. Each is tagged with the consent categories it requires."},
+   {k:"track",n:"track() / page() / emit()",note:"interactionCount++ (feeds engagement)",
+    exec:"The signal is handed to the SDK and counts toward the user's passive engagement score.",
+    dev:"Entry methods normalise the call into a TrackEvent and bump interactionCount for the engagement model, then call enqueue()."},
+ ]},
+ {pn:"2 · enqueue()",ps:"gate, stamp, queue",steps:[
+   {k:"consent",gate:1,n:"Consent gate (global)",branch:{t:"drop",l:"denied → dropped silently, never buffered"},
+    exec:"First question: has the user consented? If not, the event is discarded immediately and never stored — a user who never says yes leaves no trail.",
+    dev:"Global consentGranted check (any category true). Fail drops silently with no buffering. getConsent throwing is treated as denied (fail-closed)."},
+   {k:"requires",gate:1,n:"Per-event category gate (requires[])",branch:{t:"drop",l:"category off → drop + consent.dropped++"},
+    exec:"Second question: does this specific event need a category the user declined (say advertising)? If so, it's dropped and counted so you can see it.",
+    dev:"If any category in the event's requires[] is currently false, drop and increment inspect().consent.dropped. Built-ins declare their own (analytics / advertising)."},
+   {k:"strip",n:"Strip local-only metadata + resolve delivery",note:"requires & delivery never reach the wire; delivery = best-effort | critical",
+    exec:"Internal routing notes are removed so they never leave the device, and the event is marked normal or critical.",
+    dev:"requires and delivery are stripped (conformance invariant). delivery resolves to best-effort | critical (critical = flush priority + bypass visibility-pause + delivery_failed on age-eviction)."},
+   {k:"id",n:"Assign id (uuid)",note:"enables downstream dedupe",
+    exec:"Each event gets a unique id so the warehouse can recognise duplicates.",
+    dev:"uuid assigned at enqueue. Because delivery is at-least-once, consumers dedupe on event.id — which is why id is recommended in the contract."},
+   {k:"stamp",n:"Stamp match + group context",note:"at-event-time state, survives rehydration",
+    exec:"The event is stamped with the live moment it happened in — the match minute and score, the user's groups — so analytics keeps that context forever.",
+    dev:"context.match (provider ?? manual, respects pre-existing) and context.groups stamped at enqueue time so mid-membership events keep their at-event-time state even after IDB rehydration."},
+   {k:"mw",n:"Run middlewares (use())",branch:{t:"drop",l:"returns null → drop + middleware.dropped++"},
+    exec:"Your own enrichment or filtering logic runs here — you can add fields or veto an event entirely.",
+    dev:"tracker.use((evt,next)=>…) chain for enrichment / transformation / custom drops. Returning null drops + increments middleware.dropped."},
+   {k:"queue",n:"queue.push + FIFO cap",note:"maxQueueSize 1000 · overflow drops oldest",
+    exec:"The event joins the outgoing queue. If the queue ever overflows, the oldest (stalest) events are dropped first.",
+    dev:"In-memory FIFO capped at maxQueueSize (1000). Overflow drops oldest, increments droppedEvents. Same cap reapplied after a failed POST re-queue."},
+   {k:"idb",n:"IndexedDB write-through (durable)",note:"fire-and-forget · survives reload / tab crash / stadium WiFi",
+    exec:"Optionally, the event is also written to disk so it survives a reload or a crash — important on flaky stadium connections.",
+    dev:"Opt-in queueStorage:{type:'indexeddb'}. enqueue() fires-and-forgets idbStore.put so track() stays sync. Survivors rehydrate next init; ack-cleanup on POST. Unavailable IDB ⇒ in-memory, never blocks tracking."},
+   {k:"replay",n:"Mirror to replay buffer",note:"if still anonymous · for identify() backfill",
+    exec:"While the user is still anonymous, recent events are mirrored so that when they log in, their earlier activity can be linked to them.",
+    dev:"Capped FIFO replayBuffer (default 100). On identify(…, {replayAnonymousEvents:true}) each is re-emitted with _backfill + _originalEventId, preserving original occurredAt/context for warehouse join/dedupe."},
+ ]},
+ {pn:"3 · flush()",ps:"triggered by interval / size / foreground",steps:[
+   {k:"guard",gate:1,n:"Consent + non-empty guard",
+    exec:"Before sending, it re-checks consent and that there's actually something to send.",
+    dev:"Guards on consentGranted and a non-empty queue; bails otherwise."},
+   {k:"pause",n:"Adaptive hidden-pause skip",note:"unless a critical event is queued",
+    exec:"If the tab is hidden and the connection is under strain, routine sends pause to save battery and data — unless something critical is waiting.",
+    dev:"Adaptive batching (opt-in) reacts to flush latency, page visibility and Save-Data. Hidden-pause is skipped if any critical event is queued."},
+   {k:"sort",n:"sortCriticalFirst()",
+    exec:"Critical events jump the queue.",
+    dev:"Stable sort that moves delivery:'critical' events to the front of the batch."},
+   {k:"jwt",n:"Refresh JWT (single-flight)",note:"freshest token per flush · fail → continue anonymously",
+    exec:"It grabs a fresh login token so the batch is authenticated — and if that fails, it keeps going anonymously rather than stalling.",
+    dev:"await refreshToken() (single-flight) so the envelope carries the freshest JWT. getToken throw ⇒ clear cached JWT, continue anonymously (logout must call shutdown())."},
+   {k:"batch",n:"Splice batch (effective size)",
+    exec:"It takes a batch off the queue and hands it to the sender.",
+    dev:"splice(effectiveBatchSize) — effective size adapts under backpressure — then post(batch)."},
+ ]},
+ {pn:"4 · post() / envelope()",ps:"build the wire contract & POST",steps:[
+   {k:"context",n:"Build context",note:"ids, jwt, url/path/utm/ua; screen+locale unless fingerprinting disabled",
+    exec:"It assembles the shared context for the batch: who (anonymously), where, and how they arrived.",
+    dev:"context = sessionId, anonymousId, userId, jwt, ts, url, path, title, referrer, utm, ua, and screen+locale unless the active privacy policy disables fingerprinting (ua always rides in HTTP headers anyway)."},
+   {k:"scrub",gate:1,n:"scrubPii(context + props)",note:"drop · redact · tokenize · hash",
+    exec:"Personal data is scrubbed out of every field right before sending — removed, masked, or replaced with a stable token.",
+    dev:"Field-level scrub over context and every event's props, recursively. Strategies: drop / redact / tokenize (stable t:N) / hash (h:+FNV-1a, NOT cryptographic, warehouse joins only). Inputs never mutated."},
+   {k:"stripdel",n:"Strip delivery from events",
+    exec:"The last internal-only marker is removed.",
+    dev:"delivery removed from each event (local-only invariant) so the wire shape matches the conformance schema's \"not\" constraint."},
+   {k:"postfetch",gate:1,n:"fetch POST /api/tracking/website",note:"keepalive",branch:{t:"retry",l:"!ok → re-queue to head, recap, retry next interval"},
+    exec:"The batch is sent to the platform. If the network fails, it's put back at the front of the queue to retry — nothing is lost.",
+    dev:"fetch POST opts.endpoint with keepalive. Same envelope/route for every platform. On !ok: re-queue to head, recap to maxQueueSize, retry next interval."},
+   {k:"ack",n:"On ok → ack + IDB deleteByIds",note:"at-least-once · dedupe on event.id",
+    exec:"On success, the durable copies are cleaned up. In rare cases an event may send twice rather than be lost — the warehouse de-duplicates on id.",
+    dev:"criticalDelivered++, deleteByIds(shipped). If that delete fails, survivors re-ship next init → at-least-once. Consumers dedupe on event.id."},
+ ]},
+ {pn:"5 · Middleware ingest",ps:"synchronous request · returns 202 before any processing",boundary:"network boundary — leaves the SDK, enters score-middleware",steps:[
+   {k:"cors",n:"CORS + body-parse",note:"raw body retained",
+    exec:"The platform receives the batch over the network and reads it.",
+    dev:"CORS handling + body-parse; the raw body is retained for validation and debugging."},
+   {k:"auth",gate:1,n:"Auth + origin guard + rate-limit",note:"site-key (Redis 60s cache) or JWT · 429 on abuse",branch:{t:"drop",l:"bad key / over limit → 401 / 429"},
+    exec:"It checks the request comes from a known site and is not abusive before doing any work.",
+    dev:"Publishable site-key validated (cached in Redis ~60s) + origin guard + rate-limit (429), or a JWT path."},
+   {k:"ajv",gate:1,n:"AJV schema validate",branch:{t:"drop",l:"bad payload → 400"},
+    exec:"The envelope is validated against the contract; malformed data is rejected outright.",
+    dev:"AJV validates the envelope against the JSON Schema — the same conformance shape the SDK guarantees. 400 on a bad payload."},
+   {k:"siteid",n:"Derive siteId from DB siteCode",note:"anti-spoof · tenant isolation",
+    exec:"It resolves which tenant this really is from the database, so a key can't be spoofed into another site.",
+    dev:"siteId is derived server-side from the DB siteCode rather than trusted from the client (anti-spoof / tenant isolation)."},
+   {k:"fanout",n:"Fan batch → RabbitMQ",note:"1 message / event · {tenant}_score_tracking · durable, 24h TTL",
+    exec:"Each event is placed on a durable queue, so nothing is lost even if processing is busy or briefly down.",
+    dev:"The batch is fanned out to one message per event onto a durable per-tenant queue ({tenant}_score_tracking, 24h TTL)."},
+   {k:"accepted",n:"202 Accepted",note:"returns BEFORE processing — async / eventual",
+    exec:"The platform immediately confirms receipt. The actual points are calculated a moment later, in the background.",
+    dev:"Responds 202 Accepted before any rule runs. Ingest and processing are decoupled — eventual, not synchronous."},
+ ]},
+ {pn:"6 · Async worker",ps:"tracking processor · drains the queue, one event at a time",boundary:"async boundary — a background worker consumes the queue",steps:[
+   {k:"idem",gate:1,n:"Idempotency gate",note:"Redis score:evt:{id}, 24h",branch:{t:"drop",l:"duplicate id → skip (collapses double-sends)"},
+    exec:"First it checks it has not already processed this event — this is what neutralises the rare double-send.",
+    dev:"Redis key score:evt:{id} (24h). A second copy of the same id is dropped: the consumer-side dedupe the at-least-once contract relies on."},
+   {k:"rollout",gate:1,n:"Rollout gate",note:"DISABLED_TRACKED_ACTIONS",branch:{t:"drop",l:"disabled action → skip"},
+    exec:"It honours feature flags that can switch specific action types off without a deploy.",
+    dev:"Checks DISABLED_TRACKED_ACTIONS so action types can be dark-launched or killed at runtime."},
+   {k:"resolveuser",n:"Resolve user",note:"verify JWT RS256/HS256 → users · null = anonymous, still processes",
+    exec:"It works out who the user is, if known — but anonymous events are still processed.",
+    dev:"Verifies the envelope JWT (RS256/HS256) → ERP res.users. A null user is fine: anonymous events still run the rules."},
+   {k:"fetchrules",n:"Fetch rules",note:"ERP score.tracking.rule · Redis 10s / siteId",
+    exec:"It loads the business rules for this site, cached for speed.",
+    dev:"Loads the ERP rules model (score.tracking.rule), cached in Redis ~10s per siteId to keep the hot path fast."},
+   {k:"audit",n:"Optional audit log",note:"score.website.event.log",
+    exec:"Optionally records the raw event for audit and replay.",
+    dev:"Optional write to the ERP event-log model (score.website.event.log)."},
+   {k:"match",gate:1,n:"Match rules + limits",note:"once / cooldown in Redis · type/url/selector/threshold/payload",branch:{t:"drop",l:"limit hit / no match → no award"},
+    exec:"For each rule it checks the user has not already hit a limit, then tests whether the event matches.",
+    dev:"Per rule: limit check (once / cooldown counters in Redis) then match on type/url/selector/threshold/payload."},
+   {k:"award",n:"Award",note:"gamification.karma.tracking: points, challenge_id, goal_id",
+    exec:"On a match the user is awarded points and progress toward challenges and goals.",
+    dev:"Writes ERP gamification.karma.tracking with points + challenge_id / goal_id."},
+   {k:"ack",n:"Mark processed + ack",note:"mark limits + score:evt processed",
+    exec:"It records that limits were used, marks the event done, and acknowledges the queue.",
+    dev:"Marks limit counters + score:evt processed, then acks the RabbitMQ message."},
+ ]},
+ {pn:"7 · Outcomes",ps:"earned state, read back by the apps",steps:[
+   {k:"gam",n:"ERP gamification",note:"karma rolls up",
+    exec:"Points roll up into the user's standing.",
+    dev:"ERP gamification aggregates karma tracking into totals."},
+   {k:"addons",n:"Custom addons",note:"badges / tiers",
+    exec:"Custom logic turns points into badges and loyalty tiers.",
+    dev:"Custom ERP addons compute badges / tiers on top of karma."},
+   {k:"loyaltyapi",n:"Loyalty APIs",note:"read via score-loyalty-sdk",
+    exec:"The app reads all of this back to show points, challenges, rewards and the leaderboard. The loop closes.",
+    dev:"Exposed via loyalty APIs, consumed by @3halves-labs/score-loyalty-sdk (typed REST + React Query)."},
+ ]},
+];
+
+/* ===================== SYSTEM ===================== */
+const SYS={
+  web:{n:"Web tracker",c:"@3halves-labs/score-tracker · sdk/",color:"var(--accent)",link:"https://www.npmjs.com/package/@3halves-labs/score-tracker",
+    exec:"The main SDK. Runs in the browser, captures behaviour, and ships it. This is where the engineering depth is.",
+    dev:"One long-lived ScoreTracker class (~2k LOC) plus pure helper modules (privacy, pii, idbQueue, crossDomain, sponsorship, debugOverlay). Dual ESM/CJS build via tsup, framework-agnostic core + optional React subpath."},
+  loyalty:{n:"Loyalty client",c:"@3halves-labs/score-loyalty-sdk · loyalty-sdk/",color:"var(--violet)",link:"https://www.npmjs.com/package/@3halves-labs/score-loyalty-sdk",
+    exec:"A separate, smaller SDK for reading and writing loyalty state — points, challenges, rewards, leaderboard.",
+    dev:"Typed REST client + React Query hooks. Authenticates with an X-API-Key header. Production wiring blocked on path reconciliation with score-middleware."},
+  mobile:{n:"Mobile",c:"@3halves-labs/score-tracker-ios · -android",color:"var(--orange)",
+    exec:"The iOS and Android SDKs are live in production. They satisfy the same wire contract as the web tracker, so the platform treats every client identically.",
+    dev:"Native iOS and Android trackers in production on the same ingest route. They satisfy the conformance contract (golden envelopes + JSON Schema) validated against the live web tracker: persistent anonymousId, per-session sessionId, fail-closed consent, per-flush JWT, and a disk-persisted offline queue."},
+  cmp:{n:"Consent platform (CMP)",c:"OneTrust / Cookiebot",color:"var(--teal)",
+    exec:"Your existing cookie-consent tool decides what's allowed. The SDK obeys it; it never makes the consent decision itself.",
+    dev:"Wired via getConsent predicate; (re-)init()/shutdown() on OneTrustGroupsUpdated keeps the tracker in lock-step with the user's choice."},
+  middleware:{n:"score-middleware · ingest",c:"POST /api/tracking/website · 202",color:"var(--blue)",
+    exec:"The platform's front door. Authenticates the request, validates the envelope, and queues the events — then confirms receipt instantly.",
+    dev:"CORS → site-key auth (Redis ~60s) + origin + rate-limit → AJV validate → derive siteId from DB siteCode → fan to RabbitMQ → 202 Accepted (before processing)."},
+  rabbitmq:{n:"RabbitMQ",c:"{tenant}_score_tracking · durable, 24h TTL",color:"var(--orange)",
+    exec:"A durable queue that holds events safely until the worker processes them. It is why a traffic spike or a brief outage never loses data.",
+    dev:"One message per event on a durable per-tenant queue. Decouples ingest from processing; survives worker restarts within a 24h TTL."},
+  worker:{n:"Tracking processor",c:"async worker · processMessage()",color:"var(--violet)",
+    exec:"The background worker that turns each queued event into points — the part that runs a moment after the 202.",
+    dev:"Drains the queue: idempotency gate (Redis) → rollout gate → resolve user (JWT) → fetch rules (Redis) → match + limits → award karma → ack."},
+  erp:{n:"ERP · gamification",c:"rules · karma · addons",color:"var(--blue)",
+    exec:"Where an event becomes a reward — the rules that turn a poll vote or a video watch into points, badges and tiers.",
+    dev:"score.tracking.rule matched per event; awards gamification.karma.tracking (points, challenge_id, goal_id); custom addons compute badges / tiers."},
+  redis:{n:"Redis",c:"cache · idempotency · limits",color:"var(--teal)",
+    exec:"A fast in-memory store that keeps the platform quick and stops users being double-counted.",
+    dev:"Site-key cache (~60s), rules cache (~10s/siteId), idempotency keys (score:evt:{id}, 24h), and once/cooldown limit counters."},
+  warehouse:{n:"Warehouse",c:"analytics · dedupe on event.id",color:"var(--green)",
+    exec:"Long-term analytics. Because delivery is at-least-once, it removes the occasional duplicate using each event's id.",
+    dev:"Consumes the same stream; dedupes on event.id; joins de-identified data via tokenize/hash; can re-weight engagement sub-scores."},
+};
+const SYS_LAYERS=[
+  ["Client SDKs (surfaces)",["web","loyalty","mobile"]],
+  ["Middleware ingest (synchronous, returns 202)",["middleware","rabbitmq"]],
+  ["Async processing",["worker","erp"]],
+  ["Caching & state",["redis"]],
+  ["Consumers",["warehouse"]],
+];
+
+/* ===================== SUBSYSTEMS ===================== */
+const SUBS=[
+  ["Identity & continuity",[
+    ["Layered identity","anonymousId · sessionId · userId · jwt · groups","#136",
+     "One person is tracked anonymously by default, sessionised per visit, and only tied to a known user when they log in.",
+     "anonymousId (long-lived), sessionId (per session), userId (in-memory, set on identify/alias), jwt (refreshed per flush), groups[] (persisted, stamped per event)."],
+    ["Identity graph","alias / group / ungroup","#135",
+     "Links a user's identities together and tracks the groups they belong to, so activity stays connected.",
+     "alias(prev,userId) emits $alias; group/ungroup maintain a persisted membership list and stamp context.groups on every subsequent event."],
+    ["Pre-identify replay","backfill anonymous activity","#136",
+     "When an anonymous user logs in, their earlier activity can be re-attributed to them.",
+     "Capped replayBuffer; identify(…,{replayAnonymousEvents:true}) re-emits each with _backfill + _originalEventId, preserving occurredAt/context."],
+    ["Cross-domain stitching","carry identity between your domains","#134",
+     "Keeps a user recognised as they move between cooperating sites you own.",
+     "base64url _score linker param carries anonymousId+sessionId. Inbound adoption requires freshness + referrer match. Unsigned — analytics continuity, not a security boundary."],
+  ]],
+  ["Consent & privacy",[
+    ["Consent gate","global + per-category, fails closed","#108",
+     "Nothing is tracked without consent, and if the consent check ever errors, the SDK assumes 'no'.",
+     "getConsent ⇒ boolean | {analytics,personalization,advertising} | Promise. Two gates in enqueue: global + per-event requires[]. Throw ⇒ denied. Pre-consent events dropped, not buffered."],
+    ["Regional privacy engine","auto-adjusts per jurisdiction","#138",
+     "One setting behaves correctly across GDPR, Quebec, Brazil, California — defaults, retention and fingerprinting adapt to the region.",
+     "Modes auto/gdpr/cpra/lgpd/quebec/off. Enforced: consentDefault, retentionMaxHours (only tightens), disableFingerprinting (strips screen+locale). Unknown region ⇒ GDPR (fail-safe). Per-instance overridable."],
+    ["PII scrubbing","field-level, before the wire","§8",
+     "Personal data is stripped out of every event just before it's sent.",
+     "scrubPii over context + props, recursive. denylist or classify(drop|redact|tokenize|hash). hash = FNV-1a, non-cryptographic, for warehouse joins. Stable across input ordering; inputs never mutated."],
+    ["DNT + fingerprint suppression","respect the browser","§21",
+     "Honours the browser's Do-Not-Track signal and drops fingerprint-ish signals under strict regimes.",
+     "respectDNT default on (navigator.doNotTrack==='1' ⇒ idle). Under gdpr/quebec/lgpd, screen+locale stripped; ua intentionally retained (rides in headers)."],
+  ]],
+  ["Reliability & delivery",[
+    ["In-memory queue","FIFO with overflow protection","§9.1",
+     "Events wait in line to be sent; if the line gets too long, the stalest are dropped first.",
+     "FIFO capped at maxQueueSize (1000). Overflow drops oldest, increments droppedEvents."],
+    ["Durable queue (IndexedDB)","survives reload & crash","#129",
+     "Optionally saves events to disk so a reload, tab crash, or dead-zone WiFi doesn't lose them.",
+     "Opt-in. Write-through put; rehydrate on init after age-evict + trim; ack-cleanup on POST; unavailable ⇒ in-memory. Age cap clamped by privacy retentionMaxHours."],
+    ["Adaptive batching","backpressure-aware","#142",
+     "Sends less aggressively when the tab is hidden or the connection is constrained, to save battery and data.",
+     "Opt-in batch.adaptive reacts to flush latency, page visibility and Save-Data. Hidden-pause skipped when a critical event is queued."],
+    ["Delivery guarantees","critical events + at-least-once","README",
+     "Important events get priority and a failure signal; nothing is silently lost.",
+     "delivery:'critical' ⇒ flush priority, bypass visibility-pause, delivery_failed on age-eviction. Overall at-least-once; dedupe on event.id."],
+  ]],
+  ["Value signals (the loyalty edge)",[
+    ["Engagement scoring","passive 0–100 score","#131",
+     "A live engagement score per user, derived from data already collected — useful for loyalty tiers, sponsor valuation and superfan detection.",
+     "getEngagementScore(): frozen formula over dwell(25%)+scrollDepth(20%)+interactions(20%)+videoCompletion(15%)+returnFrequency(20%). Null until ≥10s dwell or ≥1 interaction. Raw counters exposed for re-weighting."],
+    ["Match-state context","stamp the live moment","#130",
+     "Every event carries the game minute and score state of the moment it happened — so you know an action happened at minute 67 with the team leading.",
+     "matchContext provider (or setMatchContext) stamps context.match per event. Zero allocation when unconfigured."],
+    ["Sponsor surface tracking","measure what's actually seen","#132",
+     "Measures when sponsor inventory is genuinely viewed, not just rendered — the basis for value-per-impression pricing.",
+     "data-score-sponsor tagging + IntersectionObserver. Emits sponsor_impression / _dwell / _click, once per element per session, auto-picking up match context. MutationObserver handles dynamic DOM. Zero overhead when off."],
+    ["Typed events","compile-time safety","README",
+     "Custom events are checked at build time, so a typo or wrong field is caught before it ships.",
+     "defineEvent() gives compile-time prop checking with no runtime cost; composes with consent categories."],
+  ]],
+  ["Developer experience",[
+    ["Middleware pipeline","enrich / transform / drop","README",
+     "Lets you plug in your own logic to add fields to events or filter them.",
+     "tracker.use((evt,next)=>…) chain runs inside enqueue(); returning null drops the event."],
+    ["React API","provider, hooks, components","#140",
+     "First-class React: a provider, a hook, and declarative components for marketing/CMS-friendly wiring.",
+     "ScoreProvider, useScore, plus <Track>, <TrackVisibility>, <Sponsor>. Ships as a separate ./react subpath so non-React consumers don't pay for it."],
+    ["Web vitals capture","opt-in performance","README",
+     "Optionally records page-performance metrics (load, responsiveness, layout shift).",
+     "Opt-in LCP/CLS/INP/TTFB/FCP via web-vitals as an optional, code-split dynamic import (~10KB only when enabled)."],
+    ["Debug overlay + inspect()","see live state","#145",
+     "A live on-screen panel (and a snapshot method) showing exactly what the SDK is doing — queue, consent, identity, engagement.",
+     "Opt-in floating panel polls inspect(); inspect() returns queue/consent/identity/persistence/engagement/sponsorship (withholds raw JWT + group traits)."],
+  ]],,
+  ["Platform processing (server-side)",[
+    ["Durable message queue","RabbitMQ · decouples ingest from processing","§25",
+     "Events land on a durable queue the instant they arrive, so a burst or a brief outage never loses data; the points are computed a moment later.",
+     "Batch fanned to one message per event on a durable per-tenant queue ({tenant}_score_tracking, 24h TTL). Ingest returns 202 before processing — async / eventual."],
+    ["Caching (Redis)","hot-path caches + counters","§25",
+     "A fast in-memory store keeps the platform quick and stops users from being double-counted.",
+     "Site-key auth cache (~60s), rules cache (~10s / siteId), idempotency keys (score:evt:{id}, 24h) and once / cooldown limit counters."],
+    ["Idempotent processing","collapses double-sends","§25",
+     "Even if an event is delivered twice, it only ever counts once.",
+     "Redis score:evt:{id} (24h) gate at the top of the worker — the consumer-side dedupe the at-least-once contract assumes."],
+    ["Rule engine & limits","match → award karma","§25",
+     "Configurable rules decide what each event is worth, with per-user limits and cooldowns.",
+     "Per rule: limit check (once / cooldown) then match on type/url/selector/threshold/payload; award gamification.karma.tracking (points, challenge_id, goal_id)."],
+    ["Tenant isolation & auth","site-key, origin, rate-limit","§25",
+     "Each client is authenticated and scoped to its own tenant, and abuse is rate-limited.",
+     "Publishable site-key (+ origin guard, 429 rate-limit) or JWT; siteId derived server-side from the DB siteCode (anti-spoof); AJV validates the envelope (400 on bad payload)."],
+  ]]
+];
+
+/* ===================== CONTRACT ===================== */
+const ENVELOPE=`type BatchEnvelope = {
+  v: 1;                       // frozen version
+  publishableKey: string;
+  siteId: string;
+  sdk: { name: string; version: string };
+  context: Record<string, any>;   // identity + page/device, PII-scrubbed
+  events: TrackEvent[];            // requires/delivery stripped, props scrubbed
+};`;
+const TRACKEVENT=`type TrackEvent = {
+  id?: string;                // uuid @ enqueue — dedupe key
+  type: 'pageview'|'track'|'scroll'|'video'
+      | 'form'|'route'|'alias'|'group'; // + 'screen' (mobile)
+  name?: string;
+  props?: Record<string, unknown>;
+  occurredAt?: string;        // when it happened, not when flushed
+  context?: { match?; groups?; [k]: unknown };
+  requires?: ConsentCategory[]; // LOCAL-ONLY — stripped
+  delivery?: DeliveryMode;      // LOCAL-ONLY — stripped
+};`;
+const INVARIANTS=[
+  ["Same ingest, no new route","Every platform POSTs the same envelope to <code>/api/tracking/website</code>. Middleware reads <b>publishableKey</b>, resolves <b>siteId</b>."],
+  ["Required context keys","<code>sessionId</code>, <code>anonymousId</code>, <code>ts</code> on all platforms. Web adds url/path/utm/ua/screen; mobile adds appVersion/os/device."],
+  ["Local-only never ships","<code>requires</code> and <code>delivery</code> are forbidden on the wire — the schema enforces it. Stripped in enqueue/envelope."],
+  ["Behavioural parity","Identity, consent (pre-consent dropped not buffered), JWT (per-flush, fail→anonymous) and the offline queue behave identically across web, iOS and Android."],
+  ["One enforced boundary","A dedicated <code>conformance.test.ts</code> asserts the live tracker honours these invariants, so the spec can't drift from the code."],
+];
+const FAILURES=[
+  ["getConsent throws","Fail closed — all categories denied, tracker idle."],
+  ["getToken throws","Swallow, clear JWT, continue anonymously (logout must shutdown())."],
+  ["Middleware throws","Swallow, treat as pass-through."],
+  ["IndexedDB unavailable","Persistence → 'unavailable', run in-memory. Never blocks tracking."],
+  ["POST fails","Re-queue to head, recap, retry. IDB survivors re-ship next init (at-least-once)."],
+  ["Storage blocked (private mode)","MemoryStorage fallback; ids live only in heap."],
+  ["SSR (no window)","All DOM access typeof-guarded; construction is I/O-free."],
+  ["Region resolution fails","Fall back to strictest policy (GDPR)."],
+  ["Queue overflow","Drop oldest (FIFO), increment droppedEvents."],
+  ["Critical event age-evicted","Emit delivery_failed, increment criticalFailed."],
+];
+
+/* ===================== KPIs ===================== */
+function renderKPIs(){
+  const t=[
+    ["3","SDK surfaces","var(--ink)"],
+    ["~2k LOC","ScoreTracker engine","var(--ink)"],
+    ["v1","Envelope (frozen)","var(--accent)"],
+    ["fails closed","Consent posture","var(--green)"],
+    ["at-least-once","Delivery semantics","var(--violet)"],
+    ["5","Privacy regimes","var(--teal)"],
+    ["async","ingest → 202 → queue","var(--violet)"],
+    ["idempotent","worker dedupe (Redis)","var(--green)"],
+  ];
+  document.getElementById("kpis").innerHTML=t.map(x=>`<div class="card kpi"><div class="kv" style="color:${x[2]}">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");
+}
+
+/* ===================== detail panel (flow / system / lifecycle) ===================== */
+let sel=null;
+function openDetail(o){
+  sel=o.key;
+  document.querySelectorAll("[data-node]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-node")===o.key));
+  const pc=document.getElementById("detail"); if(!pc) return;
+  let body="";
+  if(MODE==="exec"){
+    body=`<p class="exec">${o.exec}</p>`+(o.why?`<div class="why"><span class="wl">Why it matters</span>${o.why}</div>`:"");
+  } else {
+    body=`<p>${o.dev}</p>`+(o.code?`<pre>${esc(o.code)}</pre>`:"")+(o.facts?`<div class="facts">${o.facts.map(f=>`<div class="fact"><span class="fk">${f[0]}</span><span class="fv">${f[1]}</span></div>`).join("")}</div>`:"");
+  }
+  pc.innerHTML=`<div class="dh"><div class="dt">${o.type}</div><h3>${o.title}</h3></div><div class="db">${body}</div>`;
+}
+
+/* ===================== render: FLOW ===================== */
+function renderFlow(){
+  const life=`<div class="card"><div class="life">${LIFE.map(l=>`<div class="lstep" data-node="L:${l.k}" data-life="${l.k}"><div class="ln">PHASE</div><div class="lt">${l.n}</div><div class="ld">${l.d}</div></div>`).join("")}</div><div class="lcap">privacy resolves before consent, which resolves before any capture — the ordering is load-bearing.</div></div>`;
+  let pipe=`<div class="card pipe">`;
+  FLOW.forEach((ph,pi)=>{
+    if(pi>0 && ph.boundary){ pipe+=`<div class="netbound"><span class="nl"></span>${ph.boundary}<span class="nl"></span></div>`; }
+    pipe+=`<div class="phase"><div class="phead"><span class="pn">${ph.pn}</span><span class="ps">${ph.ps}</span></div><div class="steps">`;
+    ph.steps.forEach(s=>{
+      pipe+=`<div class="step ${s.gate?'gate':''}" data-node="${s.k}" data-step="${s.k}">
+        <div class="dot"></div>
+        <div><div class="sn">${s.n}</div>${s.note?`<div class="snote">${s.note}</div>`:""}${s.branch?`<div class="branch ${s.branch.t}">${s.branch.t==='drop'?'✕':'↻'} ${s.branch.l}</div>`:""}</div></div>`;
+    });
+    pipe+=`</div></div>`;
+    if(pi<FLOW.length-1 && !FLOW[pi+1].boundary) pipe+=`<div class="pdivider"></div>`;
+  });
+  pipe+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="stage-wrap"><div>${life}<div style="height:14px"></div>${pipe}</div>
+    <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT ANY STEP</b><br><br>Click a lifecycle phase or a pipeline step to see what it does. The depth follows the audience toggle: ${MODE==='exec'?'plain-language narrative now':'developer detail now'}.<br><br>Red branches are where an event is dropped. Amber is a retry.</div></div></div></div>`;
+  // wire
+  document.querySelectorAll("[data-step]").forEach(el=>el.addEventListener("click",()=>{
+    const k=el.getAttribute("data-step"); let st; FLOW.forEach(p=>p.steps.forEach(s=>{if(s.k===k)st=s;}));
+    openDetail({key:k,type:"Pipeline step",title:st.n,exec:st.exec,dev:st.dev,why:st.why});
+  }));
+  document.querySelectorAll("[data-life]").forEach(el=>el.addEventListener("click",()=>{
+    const k=el.getAttribute("data-life"); const l=LIFE.find(x=>x.k===k);
+    openDetail({key:"L:"+k,type:"Lifecycle phase",title:l.n,exec:l.exec,dev:l.dev});
+  }));
+}
+
+/* ===================== render: SYSTEM ===================== */
+function renderSystem(){
+  let html="";
+  SYS_LAYERS.forEach((ly,i)=>{
+    html+=`<div class="layer"><div class="ll2">${ly[0]}</div><div class="boxes">`;
+    html+=ly[1].map(k=>{const s=SYS[k];return `<div class="box" data-node="${k}" data-sys="${k}" style="border-top-color:${s.color}">
+      <div class="bn">${s.n}</div><div class="bc">${s.c}</div><div class="bo">${MODE==='exec'?s.exec:s.dev}</div>${s.link?`<a class="npm" href="${s.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ npm</a>`:''}</div>`;}).join("");
+    html+=`</div></div>`;
+    if(i===0) html+=`<div class="boundary"><span class="bl"></span>BatchEnvelope v1 — the only integration boundary<span class="bl"></span></div>`;
+    else if(i<SYS_LAYERS.length-1) html+=`<div class="arrow-down">↓</div>`;
+  });
+  // CMP + warehouse note row already covered; add CMP box inline at top context
+  html=`<div class="card box" data-node="cmp" data-sys="cmp" style="border-top-color:${SYS.cmp.color};margin-bottom:14px;min-width:auto">
+      <div class="bn">${SYS.cmp.n}</div><div class="bc">${SYS.cmp.c}</div><div class="bo">${MODE==='exec'?SYS.cmp.exec:SYS.cmp.dev}</div></div>`+html;
+  document.getElementById("view").innerHTML=html;
+  document.querySelectorAll("[data-sys]").forEach(el=>el.addEventListener("click",()=>{
+    const s=SYS[el.getAttribute("data-sys")];
+    openDetail({key:el.getAttribute("data-sys"),type:"System component",title:s.n,exec:s.exec,dev:s.dev});
+    // system has no side panel; show inline as a temporary highlight + scroll note
+  }));
+  // since no detail panel in system view, attach a lightweight popout
+}
+
+/* ===================== render: SUBSYSTEMS ===================== */
+function renderSubs(){
+  document.getElementById("view").innerHTML=SUBS.map(([g,items])=>`<div class="sgroup">
+    <div class="section-h">${g}</div>
+    <div class="scards">${items.map(it=>`<div class="card sub">
+      <h4>${it[0]}<span class="tk">${it[2]}</span></h4>
+      <div class="one">${it[1]}</div>
+      <div class="body ${MODE==='exec'?'exec':''}">${MODE==='exec'?it[3]:it[4]}</div></div>`).join("")}</div></div>`).join("");
+}
+
+/* ===================== render: CONTRACT ===================== */
+function renderContract(){
+  const inv=`<div class="inv">${INVARIANTS.map(i=>`<div class="iv"><span class="ic">✓</span><div><b>${i[0]}.</b> ${i[1]}</div></div>`).join("")}</div>`;
+  const fails=`<table><thead><tr><th style="width:230px">Failure</th><th>Behaviour</th></tr></thead><tbody>${FAILURES.map(f=>`<tr><td><span class="fm">${f[0]}</span></td><td>${f[1]}</td></tr>`).join("")}</tbody></table>`;
+  let head;
+  if(MODE==="exec"){
+    head=`<div class="card" style="padding:15px 16px;margin-bottom:16px"><p style="margin:0;font-size:13px;color:var(--ink)">Everything downstream depends on <b>one stable shape</b> — the envelope. It is frozen at version 1 and is identical whether it comes from the web or from the iOS and Android apps, all in production. That single contract is what lets the platform, the warehouse, and the mobile clients all rely on the same data without coordination. The table below is the reassuring part: <b>every failure mode keeps tracking working</b> or fails safely.</p></div>`;
+  } else {
+    head=`<div class="twocol" style="margin-bottom:16px"><div><div class="sech">BatchEnvelope · the wire contract</div><div class="card" style="padding:6px 12px 12px"><pre>${esc(ENVELOPE)}</pre></div></div>
+      <div><div class="sech">TrackEvent · internal shape</div><div class="card" style="padding:6px 12px 12px"><pre>${esc(TRACKEVENT)}</pre></div></div></div>`;
+  }
+  document.getElementById("view").innerHTML=head+
+    `<div class="section-h">Conformance invariants (cross-platform)</div><div class="card" style="padding:6px 16px 10px">${inv}</div>
+     <div class="section-h" style="margin-top:24px">Failure modes &amp; resilience</div>${fails}
+     <div class="section-h" style="margin-top:24px">Delivery &amp; security notes</div>
+     <div class="card" style="padding:14px 16px"><div class="inv">
+       <div class="iv"><span class="ic">→</span><div><b>At-least-once delivery.</b> The IDB ack-cleanup window can cause a double-send rather than a loss. Consumers dedupe on <code>event.id</code>.</div></div>
+       <div class="iv"><span class="ic">→</span><div><b>Consent fails closed.</b> Pre-consent events are dropped, never buffered — a user who never grants leaves no attributable trail.</div></div>
+       <div class="iv"><span class="ic">→</span><div><b>hash is not cryptographic</b> (FNV-1a) — for de-identified warehouse joins only. The cross-domain linker is unsigned (analytics continuity, not a security boundary).</div></div>
+       <div class="iv"><span class="ic">→</span><div><b>Secrets are never logged.</b> The tracker carries a JWT in <code>context.jwt</code>; the loyalty client uses <code>X-API-Key</code>. <code>inspect()</code> withholds the raw JWT and group traits.</div></div>
+     </div></div>`;
+}
+
+/* ===================== shell ===================== */
+function setMode(m){
+  MODE=m;
+  document.querySelectorAll("#audSeg button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+  document.getElementById("modeBanner").innerHTML=`<span class="b"></span>${m==='exec'?'Executive view — plain-language narrative, the "what" and the "why". Toggle to Developer for contracts, config and failure semantics.':'Developer view — exact gates, the wire contract, config and failure modes. Toggle to Executive for the narrative.'}`;
+  renderTab(CUR);
+}
+let CUR="flow";
+function renderTab(name){
+  CUR=name; sel=null;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="flow") renderFlow();
+  else if(name==="system") renderSystem();
+  else if(name==="subs") renderSubs();
+  else renderContract();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+document.querySelectorAll("#audSeg button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+
+/* init */
+renderKPIs(); setMode("exec");
+</script>
+</body>
+</html>
