@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCORE ↔ URC — Architecture Risk Overlay Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4;
+    --bg2:#f2f5f9;
+    --panel:#ffffff;
+    --panel2:#f5f8fc;
+    --line:#d8e0ec;
+    --line2:#bcc7d8;
+    --ink:#1b2433;
+    --ink-dim:#54607a;
+    --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45;
+    --amber:#a9760a;
+    --orange:#bf4f17;
+    --red:#d62f26;
+    --violet:#7437c9;
+    --pink:#bd2f7c;
+    --blue:#1f63c8;
+    --gray:#697489;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(900px 600px at 12% -5%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(700px 500px at 100% 0%, rgba(214,47,38,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1480px;margin:0 auto;padding:18px 22px 40px}
+
+  /* header */
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px}
+  .brand{display:flex;flex-direction:column;gap:3px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;color:var(--ink-faint);text-transform:uppercase}
+  h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+  h1 .sep{color:var(--accent);font-weight:500}
+  .sub{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim)}
+  .sub b{color:var(--accent);font-weight:500}
+  .meta{display:flex;gap:14px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:right;flex-wrap:wrap;justify-content:flex-end}
+  .meta div span{display:block;color:var(--ink-dim);font-size:12px;letter-spacing:0}
+
+  /* tabs + lens bar */
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:7px 13px;border-radius:6px;cursor:pointer;letter-spacing:.02em}
+  .tab.on{background:var(--line);color:var(--ink)}
+  .lensbar{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .lens{font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);
+    padding:7px 11px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.15s}
+  .lens:hover{border-color:var(--line2);color:var(--ink)}
+  .lens.on{border-color:var(--accent);color:var(--ink);background:rgba(13,110,168,.10)}
+  .lens .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8}
+  .lens.on .dot{background:var(--accent)}
+
+  /* layout */
+  .stage{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:1080px){.stage{grid-template-columns:1fr}}
+  .canvas-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
+  .canvas-head{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .canvas-head .lens-title{color:var(--ink);letter-spacing:.04em}
+  .canvas-head .lens-desc{color:var(--ink-faint);font-size:10.5px}
+  svg{display:block;width:100%;height:auto}
+  .grid-bg{fill:none;stroke:var(--line);stroke-width:1;opacity:.55}
+
+  /* zones */
+  .zone rect{fill:rgba(20,40,70,.022);stroke:var(--line2);stroke-width:1;stroke-dasharray:3 4;rx:10}
+  .zone .zlabel{font-family:var(--mono);font-size:10px;fill:var(--ink-faint);letter-spacing:.16em;text-transform:uppercase}
+  .zone .zsub{font-family:var(--mono);font-size:9px;fill:var(--ink-faint);opacity:.7}
+
+  /* edges */
+  .edge{fill:none;stroke:var(--line2);stroke-width:1.6;transition:stroke .2s, stroke-width .2s, opacity .2s}
+  .edge.async{stroke-dasharray:6 4}
+  .edge-hit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer}
+  .elabel{font-family:var(--mono);font-size:8.5px;fill:var(--ink-faint);pointer-events:none;letter-spacing:.02em}
+  .edge.dim,.node.dim{opacity:.16}
+  .edge.flash{stroke:var(--red)!important;stroke-width:3.2!important}
+
+  /* nodes */
+  .node{cursor:pointer}
+  .node rect{rx:9;stroke-width:1.4;transition:.2s}
+  .node .nbody{fill:var(--panel);stroke:var(--line2)}
+  .node:hover .nbody{stroke:var(--accent)}
+  .node.sel .nbody{stroke:var(--accent);stroke-width:2}
+  .node .ntitle{font-family:var(--sans);font-size:12px;font-weight:600;fill:var(--ink)}
+  .node .nsub{font-family:var(--mono);font-size:8.5px;fill:var(--ink-dim)}
+  .node .ntag{font-family:var(--mono);font-size:8px;fill:var(--ink-faint);letter-spacing:.04em}
+  .node .pill{rx:4}
+  .node.blast .nbody{stroke:var(--red);stroke-width:2.2}
+  .node.origin .nbody{stroke:#10233f;stroke-width:2.4}
+  .badge{font-family:var(--mono);font-size:8px;font-weight:600}
+
+  /* legend */
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding:11px 15px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+  .legend .li{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:12px;height:12px;border-radius:3px}
+  .legend .swl{width:16px;height:0;border-top:2.4px solid;}
+
+  /* detail panel */
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:0;min-height:420px;overflow:hidden}
+  .panel-empty{padding:26px 20px;color:var(--ink-faint);font-family:var(--mono);font-size:11.5px;line-height:1.7}
+  .panel-empty b{color:var(--ink-dim)}
+  .ph{padding:15px 17px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.025)}
+  .ph .ptype{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint)}
+  .ph h3{margin:4px 0 2px;font-size:16px;font-weight:700}
+  .ph .pid{font-family:var(--mono);font-size:10.5px;color:var(--accent)}
+  .pbody{padding:6px 17px 18px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .k{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.04em;text-transform:uppercase;flex:0 0 38%}
+  .row .v{font-family:var(--mono);font-size:11px;color:var(--ink);text-align:right}
+  .sec-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 8px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid var(--line2);margin:0 5px 5px 0;color:var(--ink-dim)}
+  .chip .d{width:7px;height:7px;border-radius:50%}
+  .risklist{display:flex;flex-direction:column;gap:7px}
+  .riskitem{border:1px solid var(--line);border-left-width:3px;border-radius:6px;padding:9px 11px;cursor:pointer;transition:.15s;background:var(--panel2)}
+  .riskitem:hover{border-color:var(--line2);background:#eef3fb}
+  .riskitem .rt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .riskitem .rid{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .riskitem .rsc{font-family:var(--mono);font-size:11px;font-weight:600}
+  .riskitem .rname{font-size:12.5px;font-weight:600;margin:3px 0 2px}
+  .riskitem .rstride{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.06em}
+  .riskitem .rmit{font-size:11px;color:var(--ink-dim);margin-top:6px;display:none}
+  .riskitem.open .rmit{display:block}
+  .riskitem .rmit b{color:var(--ink);font-weight:600}
+  .meter{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:7px}
+  .meter > i{display:block;height:100%;border-radius:3px}
+  .note{font-size:11.5px;color:var(--ink-dim);line-height:1.55;margin-top:4px}
+  .scorebig{font-family:var(--mono);font-weight:600;font-size:13px;padding:2px 9px;border-radius:6px}
+
+  /* sequence view */
+  .seqwrap{display:none}
+  .seqwrap.on{display:block}
+  .seq-section{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--accent);margin:4px 2px 9px;padding-top:6px}
+  .seq-section:not(:first-child){margin-top:20px;border-top:1px solid var(--line);padding-top:18px}
+  .topowrap.off{display:none}
+  .seq-card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .seq-actors{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+  .seq-actors .a{padding:12px 10px;text-align:center;border-right:1px solid var(--line)}
+  .seq-actors .a:last-child{border-right:0}
+  .seq-actors .a .an{font-weight:700;font-size:12.5px}
+  .seq-actors .a .ar{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.05em;margin-top:2px}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .step .num{font-family:var(--mono);font-size:11px;color:var(--ink-faint);padding:13px 0 0;text-align:center;border-right:1px solid var(--line)}
+  .step .body{padding:11px 14px}
+  .step .dir{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.03em}
+  .step .desc{font-size:12.5px;margin:3px 0 0}
+  .step .desc code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--ink)}
+  .step .rbadges{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+  .rb{font-family:var(--mono);font-size:9.5px;padding:2px 8px;border-radius:5px;border:1px solid;cursor:pointer;display:flex;gap:5px;align-items:center}
+  .rb .d{width:6px;height:6px;border-radius:50%}
+  .step.chan-back{background:rgba(13,110,168,.05)}
+  .seq-foot{padding:11px 15px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--line)}
+  .seq-foot b{color:var(--ink-dim)}
+  .hint{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:10px;text-align:center}
+  .canvas-card,.panel,.seq-card{box-shadow:0 1px 2px rgba(22,42,74,.05), 0 10px 28px rgba(22,42,74,.07)}
+  .blast-banner{display:none;align-items:center;gap:10px;background:rgba(214,47,38,.08);border:1px solid rgba(214,47,38,.30);border-radius:8px;padding:8px 13px;margin-bottom:0;font-family:var(--mono);font-size:11px;color:#9e1b13}
+  .blast-banner.on{display:flex}
+  .blast-banner button{margin-left:auto;background:none;border:1px solid rgba(214,47,38,.40);color:#9e1b13;font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="eyebrow">3 Halves Labs · Architecture Threat Model</div>
+      <h1>SCORE <span class="sep">↔</span> URC Identity Federation</h1>
+      <div class="sub">OIDC Authorization Code + PKCE · brokered through <b>Keycloak</b> · upstream IdP <b>unitedrugby.com</b></div>
+    </div>
+    <div class="meta">
+      <div>REV<span>2026.06</span></div>
+      <div>NODES<span>13</span></div>
+      <div>EDGES<span>16</span></div>
+      <div>RISKS<span id="riskcount">12</span></div>
+      <div>CLASSIFICATION<span>INTERNAL</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab on" data-view="topo">◫ Topology</button>
+      <button class="tab" data-view="seq">⇄ OIDC Flow</button>
+    </div>
+    <div class="lensbar" id="lensbar"></div>
+  </div>
+
+  <div class="blast-banner" id="blastBanner">
+    <span id="blastText"></span>
+    <button onclick="clearBlast()">clear cascade ✕</button>
+  </div>
+
+  <!-- TOPOLOGY VIEW -->
+  <div class="topowrap" id="topowrap">
+    <div class="stage">
+      <div class="canvas-card">
+        <div class="canvas-head">
+          <div><span class="lens-title" id="lensTitle">TOPOLOGY</span> &nbsp;·&nbsp; <span class="lens-desc" id="lensDesc">components, protocols and trust boundaries</span></div>
+          <div id="canvasHint">click a node · click an edge</div>
+        </div>
+        <svg id="diagram" viewBox="0 0 1180 740" role="img" aria-label="architecture diagram"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <aside class="panel" id="panel">
+        <div class="panel-empty" id="panelEmpty">
+          <b>SELECT AN ELEMENT</b><br><br>
+          Click any <b>node</b> for its risk register, data classification, dependency profile and SLA budget.<br><br>
+          Click any <b>edge</b> to inspect the protocol, channel, and the threats riding that hop.<br><br>
+          Switch <b>lenses</b> above to recolor the same topology by risk, blast radius, data class, sovereignty or latency.<br><br>
+          In <b>Blast Radius</b> lens, clicking a node simulates its failure and cascades downstream.
+        </div>
+        <div id="panelContent" style="display:none"></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- SEQUENCE VIEW -->
+  <div class="seqwrap" id="seqwrap">
+    <div class="seq-section">A · Login federation — OIDC Authorization Code + PKCE (brokered)</div>
+    <div class="seq-card">
+      <div class="seq-actors">
+        <div class="a"><div class="an">Fan UA</div><div class="ar">browser / device · untrusted</div></div>
+        <div class="a"><div class="an">SCORE Portal</div><div class="ar">Odoo 18 · OIDC RP</div></div>
+        <div class="a"><div class="an">Keycloak</div><div class="ar">identity broker</div></div>
+        <div class="a"><div class="an">URC IdP</div><div class="ar">upstream OP · WP/SportsPress</div></div>
+      </div>
+      <div id="seqSteps"></div>
+      <div class="seq-foot">
+        <span><b>front-channel</b> = browser 302 redirects (token exposure surface)</span>
+        <span><b>back-channel</b> = server-to-server (shaded rows)</span>
+        <span><b>S256</b> = PKCE SHA-256 challenge</span>
+      </div>
+    </div>
+
+    <div class="seq-section">B · Third-party SDK embed — connection bootstrap (token-handler pattern)</div>
+    <div class="seq-card">
+      <div class="seq-actors">
+        <div class="a"><div class="an">URC Page</div><div class="ar">unitedrugby.com · embed host</div></div>
+        <div class="a"><div class="an">SCORE Web SDK</div><div class="ar">JS · runs in URC origin</div></div>
+        <div class="a"><div class="an">Embed API</div><div class="ar">CORS gateway · BFF</div></div>
+        <div class="a"><div class="an">Keycloak</div><div class="ar">token exchange</div></div>
+      </div>
+      <div id="seqStepsSdk"></div>
+      <div class="seq-foot">
+        <span><b>SRI</b> = Subresource Integrity hash on the script tag</span>
+        <span><b>BFF</b> = backend-for-frontend; raw tokens never reach the browser</span>
+        <span><b>RFC 8693</b> = OAuth token exchange (downscoping)</span>
+      </div>
+    </div>
+    <div class="hint">risk badges are clickable — they jump back to Topology and open the node + risk</div>
+  </div>
+
+</div>
+
+<script>
+/* ============================ DATA MODEL ============================ */
+
+const NODES = {
+  sdk:   {x:50,  y:150, w:140,h:66, title:"SCORE Web SDK", sub:"JS embed \u00b7 URC origin", tag:"CLIENT-SIDE",
+          zone:"public", layer:"client",
+          risk:70, dataClass:"pii", sov:"global", slaOut:"in-browser",
+          dependsOn:["embedapi","sdkcdn"],
+          desc:"First-party SCORE code that executes inside the third-party page's DOM (unitedrugby.com origin). It renders loyalty widgets and is the bridge between URC's web property and SCORE's API. Because it runs in someone else's origin, it is simultaneously a supply-chain target and a token-exposure surface.",
+          facts:[["Runs in","fan browser \u00b7 URC origin"],["Pattern","token-handler / BFF"],["Holds","opaque session ref (NOT raw tokens)"],["Integrity","SRI-pinned bundle"]],
+          risks:["R13","R15","R16"]},
+
+  fan:   {x:50,  y:320, w:140,h:60, title:"Fan User Agent", sub:"browser / mobile", tag:"PUBLIC",
+          zone:"public", layer:"client",
+          risk:60, dataClass:"pii", sov:"global", slaOut:"40ms RTT",
+          dependsOn:["traefik"],
+          desc:"Untrusted endpoint. Holds the front-channel: every authorization redirect and the SCORE session cookie pass through here. Phishing and token interception live on this device.",
+          facts:[["Trust","untrusted / public"],["Holds","auth redirects, session cookie"],["Geo","IE \u00b7 WAL \u00b7 ITA \u00b7 RSA fans"]],
+          risks:["R01","R03","R11"]},
+
+  traefik:{x:262, y:185, w:130,h:56, title:"Traefik Edge", sub:"reverse proxy \u00b7 ForwardAuth", tag:"DMZ",
+          zone:"edge", layer:"edge",
+          risk:30, dataClass:"secrets", sov:"eu", slaOut:"3ms",
+          dependsOn:["score"],
+          desc:"TLS termination and ForwardAuth gate at the Hetzner perimeter. Enforces HSTS and routes the OIDC callback paths. A misrouted callback here leaks codes.",
+          facts:[["TLS","1.3, HSTS preload"],["Auth","ForwardAuth \u2192 Keycloak"],["Host","Hetzner / Germany"]],
+          risks:["R03"]},
+
+  sdkcdn:{x:262, y:345, w:130,h:54, title:"SDK Delivery", sub:"edge CDN \u00b7 SRI", tag:"DMZ",
+          zone:"edge", layer:"edge",
+          risk:38, dataClass:"public", sov:"eu", slaOut:"20ms cache",
+          dependsOn:[],
+          desc:"Serves the versioned, immutable SCORE SDK bundle. Every release is content-hashed so the third-party page can pin it with Subresource Integrity. A poisoned bundle here executes in URC's DOM for every fan \u2014 the highest-leverage supply-chain target in the system.",
+          facts:[["Serves","sdk/vN.js (immutable)"],["Integrity","SHA-384 SRI"],["Cache","versioned, long TTL"]],
+          risks:["R13"]},
+
+  embedapi:{x:262, y:495, w:130,h:58, title:"SCORE Embed API", sub:"CORS gateway \u00b7 BFF", tag:"DMZ",
+          zone:"edge", layer:"edge",
+          risk:52, dataClass:"pii", sov:"eu", slaOut:"8ms",
+          dependsOn:["keycloak","score"],
+          desc:"The only SCORE endpoint the SDK is allowed to call cross-origin. Acts as a backend-for-frontend / token-handler: it validates the SCORE session, performs RFC 8693 token exchange server-side, and hands the SDK an opaque reference so raw tokens never touch third-party JavaScript.",
+          facts:[["CORS","strict Origin allowlist"],["Auth","token-handler (RFC 8693)"],["Exposes","scoped loyalty endpoints"]],
+          risks:["R14","R15"]},
+
+  score: {x:455, y:170, w:152,h:62, title:"SCORE Portal", sub:"Odoo 18 \u00b7 OIDC RP", tag:"APP",
+          zone:"app", layer:"app",
+          risk:35, dataClass:"pii", sov:"eu", slaOut:"5ms",
+          dependsOn:["keycloak","pg","redis","consent"],
+          desc:"The Relying Party. Initiates the authorization request, exchanges the SCORE code for tokens on the back-channel, and binds the fan identity to a loyalty profile. Also backs the Embed API's loyalty reads/writes.",
+          facts:[["Role","OAuth client / RP"],["Stack","Odoo 18, Python"],["Client auth","confidential + PKCE"]],
+          risks:["R04","R08"]},
+
+  keycloak:{x:455, y:345, w:152,h:64, title:"Keycloak", sub:"identity broker", tag:"APP",
+          zone:"app", layer:"app",
+          risk:42, dataClass:"secrets", sov:"eu", slaOut:"\u2014",
+          dependsOn:["urcidp","urcjwks","pg","redis"],
+          desc:"Brokers SCORE's realm to the upstream URC OP. Validates upstream id_tokens (iss/aud/exp/nonce/sig), federates the user, then mints first-party SCORE tokens. Also performs token exchange for the Embed API. The single most central trust component.",
+          facts:[["Role","OIDC broker"],["Validates","JWS via URC JWKS"],["Mints","SCORE realm tokens"]],
+          risks:["R04","R05","R09","R10","R12"]},
+
+  consent:{x:455, y:540, w:152,h:60, title:"score_consent", sub:"immutable audit module", tag:"APP",
+          zone:"app", layer:"app",
+          risk:55, dataClass:"regulated", sov:"eu", slaOut:"4ms",
+          dependsOn:["pg"],
+          desc:"Append-only consent ledger written at federation linking and at SDK event capture. The compliance gate: if a consent record fails to commit but login or tracking proceeds, you have a PIPEDA / Law 25 lawful-basis gap with no remediation trail.",
+          facts:[["Model","append-only, hash-chained"],["Trigger","identity link \u00b7 SDK events"],["Regime","PIPEDA \u00b7 Law 25 \u00b7 GDPR"]],
+          risks:["R07"]},
+
+  redis: {x:672, y:260, w:130,h:56, title:"Redis", sub:"session / token cache", tag:"DATA",
+          zone:"data", layer:"data",
+          risk:50, dataClass:"secrets", sov:"eu", slaOut:"1ms",
+          dependsOn:[],
+          desc:"Caches sessions and bearer/refresh tokens. Tokens at rest here are a high-value target; loss of Redis is graceful-degrade, but plaintext tokens here are an exfiltration jackpot.",
+          facts:[["Holds","sessions, tokens (TTL)"],["At rest","must be encrypted"],["Failure","degraded, not fatal"]],
+          risks:["R08"]},
+
+  pg:    {x:672, y:470, w:130,h:56, title:"PostgreSQL", sub:"identity + consent state", tag:"DATA",
+          zone:"data", layer:"data",
+          risk:48, dataClass:"pii", sov:"eu", slaOut:"2ms",
+          dependsOn:[],
+          desc:"System of record for Keycloak realm state, SCORE loyalty/identity rows and the consent ledger. A hard dependency for several app components \u2014 its failure is the widest internal blast radius.",
+          facts:[["Holds","realm, PII, consent"],["Replication","streaming + PITR"],["Failure","fatal to auth + consent"]],
+          risks:["R06","R07"]},
+
+  urcweb:{x:875, y:170, w:152,h:60, title:"URC Web Property", sub:"embed host", tag:"3RD-PARTY",
+          zone:"urc", layer:"external",
+          risk:64, dataClass:"confidential", sov:"unverified", slaOut:"\u2014",
+          dependsOn:[],
+          desc:"unitedrugby.com pages where SCORE loyalty widgets appear. URC controls the page, the CSP and the script tags \u2014 so URC's own compromise, a lax CSP, or a missing SRI attribute becomes SCORE's supply-chain problem the moment the SDK loads. Also where SCORE PII renders into a DOM SCORE does not own.",
+          facts:[["Controls","page CSP + script tags"],["Embeds","SCORE SDK bundle"],["Residency","UNVERIFIED"]],
+          risks:["R17","R13"]},
+
+  urcidp:{x:875, y:350, w:152,h:64, title:"URC IdP", sub:"upstream OP", tag:"3RD-PARTY",
+          zone:"urc", layer:"external",
+          risk:82, dataClass:"pii", sov:"unverified", slaOut:"180ms",
+          dependsOn:[],
+          desc:"unitedrugby.com on a WordPress / SportsPress stack acting as the OpenID Provider. It is the source of identity truth AND the least-controlled component: third-party patch cadence, exposed GraphQL introspection, plugin CVE surface, and a jurisdiction that has not been verified for data residency.",
+          facts:[["Stack","WordPress + SportsPress"],["Control","third-party / none"],["Residency","UNVERIFIED"],["Role","root of trust"]],
+          risks:["R01","R02","R06"]},
+
+  urcjwks:{x:875, y:555, w:152,h:56, title:"URC JWKS", sub:"signing key endpoint", tag:"3RD-PARTY",
+          zone:"urc", layer:"external",
+          risk:58, dataClass:"public", sov:"unverified", slaOut:"90ms",
+          dependsOn:[],
+          desc:"Publishes the public keys that validate URC id_tokens. Uncoordinated key rotation breaks signature validation: stale cache \u2192 valid logins rejected (availability), or trust of a retired kid (integrity).",
+          facts:[["Serves","JWK set (public)"],["Cache","TTL + kid lookup"],["Risk","silent rotation"]],
+          risks:["R05"]},
+};
+
+const EDGES = [
+  {id:"e1", from:"fan",   to:"traefik",  proto:"HTTPS / TLS1.3", chan:"front", async:false, risk:25, label:"TLS1.3", dataClass:"pii"},
+  {id:"e2", from:"traefik",to:"score",   proto:"ForwardAuth (internal HTTP)", chan:"back", async:false, risk:28, label:"fwd-auth", dataClass:"confidential"},
+  {id:"e3", from:"score", to:"keycloak", proto:"OIDC authz req + code exch", chan:"mixed", async:false, risk:32, label:"OIDC RP", dataClass:"secrets"},
+  {id:"e4", from:"keycloak",to:"urcidp", proto:"OIDC brokering \u00b7 code+PKCE", chan:"mixed", async:false, risk:76, label:"broker \u00b7 PKCE", dataClass:"secrets"},
+  {id:"e5", from:"keycloak",to:"urcjwks",proto:"GET /jwks (JWS validate)", chan:"back", async:true,  risk:50, label:"JWKS", dataClass:"public"},
+  {id:"e6", from:"keycloak",to:"pg",     proto:"libpq / TLS", chan:"back", async:false, risk:30, label:"realm state", dataClass:"pii"},
+  {id:"e7", from:"score", to:"pg",       proto:"ORM / libpq", chan:"back", async:false, risk:30, label:"loyalty", dataClass:"pii"},
+  {id:"e8", from:"score", to:"consent",  proto:"in-proc consent gate", chan:"back", async:false, risk:48, label:"consent gate", dataClass:"regulated"},
+  {id:"e9", from:"consent",to:"pg",      proto:"append-only INSERT", chan:"back", async:false, risk:45, label:"audit append", dataClass:"regulated"},
+  {id:"e10",from:"keycloak",to:"redis",  proto:"session / token cache", chan:"back", async:true,  risk:50, label:"sessions", dataClass:"secrets"},
+  {id:"e11",from:"score", to:"redis",    proto:"portal session", chan:"back", async:true,  risk:42, label:"session", dataClass:"secrets"},
+  {id:"e12",from:"urcweb",to:"sdk",      proto:"<script src> embed \u00b7 SRI + CSP", chan:"front", async:true, risk:72, label:"embed \u00b7 SRI/CSP", dataClass:"confidential"},
+  {id:"e13",from:"sdkcdn",to:"sdk",      proto:"signed bundle delivery", chan:"front", async:true, risk:60, label:"signed bundle", dataClass:"public"},
+  {id:"e14",from:"sdk",   to:"embedapi", proto:"cross-origin XHR/fetch \u00b7 CORS", chan:"front", async:false, risk:64, label:"CORS \u00b7 opaque ref", dataClass:"pii"},
+  {id:"e15",from:"embedapi",to:"keycloak",proto:"introspect / token-exchange (RFC 8693)", chan:"back", async:false, risk:45, label:"introspect / exch", dataClass:"secrets"},
+  {id:"e16",from:"embedapi",to:"score",  proto:"scoped loyalty read/write", chan:"back", async:false, risk:35, label:"loyalty API", dataClass:"pii"},
+];
+
+const ZONES = [
+  {x:30,  y:105, w:200, h:600, label:"Public / Untrusted", sub:"client devices \u00b7 third-party origin"},
+  {x:245, y:105, w:165, h:600, label:"SCORE Edge", sub:"Hetzner DMZ \u00b7 Traefik + APIs"},
+  {x:425, y:105, w:215, h:600, label:"SCORE Application", sub:"Hetzner \u00b7 Germany (EU)"},
+  {x:655, y:105, w:165, h:600, label:"SCORE Data", sub:"Hetzner \u00b7 encrypted at rest"},
+  {x:835, y:105, w:235, h:600, label:"URC \u2014 Third Party", sub:"jurisdiction UNVERIFIED"},
+];
+
+const RISKS = {
+  R01:{name:"Upstream IdP on WordPress/SportsPress", stride:"Spoofing · Tampering · EoP", L:3,I:5,score:82,
+       node:"urcidp", comp:"OWASP A06 · CIS",
+       mit:"Treat URC as an untrusted root of trust. Pin allowed claims, constrain brokered scopes, monitor URC CVE/patch cadence, and require URC to remediate exposed GraphQL introspection. Add anomaly detection on brokered logins."},
+  R02:{name:"Upstream IdP is a single point of failure", stride:"DoS / Availability", L:3,I:4,score:70,
+       node:"urcidp", comp:"SLA / BCP",
+       mit:"Extend SCORE session lifetime to ride out short URC outages, cache the discovery doc + JWKS, surface a clear degraded-login state, and define an RTO/RPO with URC contractually (MSA §2.3 leverage)."},
+  R03:{name:"redirect_uri / open-redirect → code leakage", stride:"Spoofing", L:2,I:5,score:64,
+       node:"traefik", comp:"RFC 6749 §10.6",
+       mit:"Exact-match redirect_uri allowlist in both the SCORE client and the Keycloak broker client. No wildcards. Validate state on every callback and bind it to the browser session."},
+  R04:{name:"PKCE downgrade / code interception", stride:"Tampering", L:2,I:5,score:66,
+       node:"keycloak", comp:"RFC 7636 · OAuth 2.1",
+       mit:"Enforce code_challenge_method=S256 on both legs; reject 'plain' and reject authorization responses lacking PKCE. Short-lived single-use codes."},
+  R05:{name:"JWKS rotation / signature-validation gap", stride:"Tampering · DoS", L:3,I:4,score:58,
+       node:"urcjwks", comp:"RFC 7517",
+       mit:"Cache JWKS with a sane TTL, key off the token 'kid', refetch-on-miss with backoff, and never trust a retired kid. Alert on rotation events; keep a rotation runbook with URC."},
+  R06:{name:"Cross-border PII in token claims", stride:"Information Disclosure", L:3,I:4,score:62,
+       node:"urcidp", comp:"PIPEDA · Law 25 · GDPR · POPIA",
+       mit:"Minimise brokered claims to what loyalty needs, keep all persistence in EU (Hetzner DE), set retention on cached claims, and document the URC residency posture — currently the largest sovereignty unknown."},
+  R07:{name:"Consent-write integrity gate", stride:"Repudiation", L:2,I:5,score:60,
+       node:"consent", comp:"PIPEDA · Law 25",
+       mit:"Make the consent append transactional with the identity link — login MUST NOT complete if the consent record fails to commit. Hash-chain entries for tamper-evidence."},
+  R08:{name:"Token-at-rest / session fixation", stride:"Info Disclosure · EoP", L:2,I:4,score:52,
+       node:"redis", comp:"OWASP ASVS 3.x",
+       mit:"Encrypt tokens at rest in Redis, rotate session id on authentication, short TTLs, and bind refresh tokens to client + device fingerprint."},
+  R09:{name:"Clock skew on exp/nbf validation", stride:"Tampering", L:2,I:3,score:40,
+       node:"keycloak", comp:"RFC 7519",
+       mit:"NTP-sync all hosts, allow a small (≤60s) leeway window, and reject tokens outside it. Monitor drift."},
+  R10:{name:"Broker client secret management", stride:"Spoofing · EoP", L:2,I:4,score:48,
+       node:"keycloak", comp:"OWASP A07",
+       mit:"Move the Keycloak↔URC client_secret out of env files into a secret store with rotation. Prefer private_key_jwt client auth over shared secret if URC supports it."},
+  R11:{name:"Token leakage on front-channel redirects", stride:"Info Disclosure", L:2,I:4,score:50,
+       node:"fan", comp:"OAuth 2.1 BCP",
+       mit:"Authorization-code flow only (never implicit), response_mode=query, Referrer-Policy=no-referrer on callback routes, and never place tokens in URLs the browser logs."},
+  R12:{name:"Nonce replay / missing nonce binding", stride:"Tampering", L:2,I:4,score:46,
+       node:"keycloak", comp:"OIDC Core §15.5.2",
+       mit:"Generate per-request nonce, persist it server-side bound to the session, and reject id_tokens whose nonce does not match. Single-use."},
+  R13:{name:"Supply-chain compromise of embedded SDK (Magecart)", stride:"Tampering", L:3,I:5,score:72,
+       node:"sdk", comp:"OWASP A08 \u00b7 CSP L3",
+       mit:"Pin the SDK with Subresource Integrity (SHA-384) on the URC page, serve immutable versioned bundles only, enforce a strict CSP (script-src by hash/nonce), ship an SBOM, pin transitive deps, forbid remote eval, and monitor bundle integrity in CI."},
+  R14:{name:"CORS misconfiguration on Embed API", stride:"Info Disclosure \u00b7 EoP", L:2,I:4,score:58,
+       node:"embedapi", comp:"Fetch \u00b7 OWASP A05",
+       mit:"Explicit Origin allowlist of URC properties only; never Access-Control-Allow-Origin:* together with credentials; lock allowed methods/headers; validate Origin on every preflight and actual request."},
+  R15:{name:"Access/refresh tokens exposed to third-party JS", stride:"Info Disclosure", L:3,I:5,score:66,
+       node:"sdk", comp:"OAuth 2.1 BCP \u00b7 RFC 8693",
+       mit:"Use the token-handler / BFF pattern: the SDK never holds raw tokens, only an opaque short-lived reference in an httpOnly+SameSite+Secure cookie. The Embed API performs server-side token exchange and keeps tokens off the browser entirely."},
+  R16:{name:"Clickjacking / framing & postMessage spoofing of widgets", stride:"Tampering \u00b7 UI redress", L:2,I:3,score:42,
+       node:"sdk", comp:"CSP frame-ancestors",
+       mit:"Set CSP frame-ancestors to URC origins only, X-Frame-Options where needed, frame-bust sensitive actions, and on any postMessage bridge validate event.origin strictly (never accept '*')."},
+  R17:{name:"PII rendered into third-party DOM / consent on partner site", stride:"Info Disclosure \u00b7 Compliance", L:3,I:4,score:56,
+       node:"urcweb", comp:"PIPEDA \u00b7 Law 25 \u00b7 GDPR",
+       mit:"Minimise PII surfaced into URC pages, gate any SDK event tracking on captured consent, sign a data-processing addendum with URC, redact PII from logs, and treat URC's CSP posture as a contractual control."},
+};
+
+const SEQ = [
+  {n:1, dir:"Fan UA → SCORE Portal", chan:"front", desc:"Unauthenticated request for the loyalty portal: <code>GET /portal</code>.", risks:[]},
+  {n:2, dir:"SCORE Portal → Fan UA", chan:"front", desc:"302 to Keycloak <code>/authorize</code> with <code>scope=openid</code>, <code>state</code>, <code>nonce</code>, PKCE <code>code_challenge</code> (S256).", risks:["R04","R11","R12"]},
+  {n:3, dir:"Fan UA → Keycloak", chan:"front", desc:"Browser follows redirect to the SCORE realm authorization endpoint.", risks:[]},
+  {n:4, dir:"Keycloak → Fan UA", chan:"front", desc:"Broker 302 to <code>URC IdP /authorize</code> — Keycloak's own upstream <code>state</code> + PKCE.", risks:["R03","R04"]},
+  {n:5, dir:"Fan UA → URC IdP", chan:"front", desc:"Fan authenticates &amp; consents at URC. <b>This is the WordPress attack surface.</b>", risks:["R01","R02"]},
+  {n:6, dir:"URC IdP → Fan UA", chan:"front", desc:"302 back to <code>/broker/urc/endpoint</code> with the upstream authorization code.", risks:["R03","R11"]},
+  {n:7, dir:"Keycloak → URC IdP", chan:"back", desc:"Back-channel <code>POST /token</code>: code + PKCE verifier + client auth.", risks:["R10"]},
+  {n:8, dir:"URC IdP → Keycloak", chan:"back", desc:"Returns upstream <code>id_token</code> + <code>access_token</code>.", risks:["R06"]},
+  {n:9, dir:"Keycloak → URC JWKS", chan:"back", desc:"Fetch JWK set; validate the JWS signature by <code>kid</code>.", risks:["R05"]},
+  {n:10,dir:"Keycloak (internal)", chan:"back", desc:"Validate <code>iss</code>, <code>aud</code>, <code>exp/nbf</code>, <code>nonce</code>, signature.", risks:["R09","R12"]},
+  {n:11,dir:"Keycloak → score_consent", chan:"back", desc:"Append consent + identity-link record (append-only ledger).", risks:["R07"]},
+  {n:12,dir:"Keycloak → Fan UA", chan:"front", desc:"Mint SCORE tokens; 302 back to portal with the SCORE authorization code.", risks:["R11"]},
+  {n:13,dir:"SCORE Portal → Keycloak", chan:"back", desc:"Back-channel <code>POST /token</code> with PKCE verifier → SCORE tokens.", risks:["R04"]},
+  {n:14,dir:"SCORE Portal → Redis", chan:"back", desc:"Establish session, cache tokens (encrypted, TTL), set cookie.", risks:["R08"]},
+  {n:15,dir:"Fan UA ⇄ SCORE Portal", chan:"front", desc:"Authenticated. Loyalty profile bound to federated URC identity.", risks:[]},
+];
+
+const SDK_SEQ = [
+  {n:1, dir:"URC Page → Fan browser", chan:"front", desc:"URC serves a page containing <code>&lt;script src=\"cdn.score.app/sdk/v3.js\" integrity=\"sha384-…\" crossorigin&gt;</code>.", risks:["R13","R17"]},
+  {n:2, dir:"SDK Delivery → SCORE Web SDK", chan:"front", desc:"Browser fetches the signed bundle; <b>SRI hash verified</b> before any code executes.", risks:["R13"]},
+  {n:3, dir:"SCORE Web SDK (init)", chan:"front", desc:"SDK boots inside URC's origin and renders into a sandboxed container. <code>frame-ancestors</code> + <code>postMessage</code> origin checks apply.", risks:["R16"]},
+  {n:4, dir:"SCORE Web SDK → Embed API", chan:"front", desc:"Cross-origin <code>POST /embed/session</code> with credentials. Server checks the <b>CORS Origin allowlist</b> on preflight.", risks:["R14","R15"]},
+  {n:5, dir:"Embed API → Keycloak", chan:"back", desc:"Validate the SCORE session, then <b>RFC 8693 token exchange</b> for a downscoped loyalty token — kept server-side.", risks:["R15"]},
+  {n:6, dir:"Embed API → SCORE Web SDK", chan:"front", desc:"Returns an <b>opaque, short-lived reference</b> (httpOnly + SameSite + Secure). No raw token enters the browser.", risks:["R15"]},
+  {n:7, dir:"SCORE Web SDK → Embed API", chan:"front", desc:"Widget calls (points, status, redeem) ride the opaque ref over CORS; Embed API reads/writes loyalty + consent via the backend.", risks:["R14","R17"]},
+];
+
+/* ============================ LENSES ============================ */
+const LENSES = {
+  topo:    {label:"Topology",        desc:"components, protocols and trust boundaries"},
+  risk:    {label:"Risk Heatmap",    desc:"nodes &amp; edges shaded by composite risk score"},
+  blast:   {label:"Blast Radius",    desc:"click a node to simulate failure and cascade downstream"},
+  data:    {label:"Data Class",      desc:"sensitivity of data residing in / flowing through each element"},
+  sov:     {label:"Sovereignty",     desc:"jurisdiction &amp; data-residency posture"},
+  sla:     {label:"Latency / SLA",   desc:"per-hop budget; the URC hop dominates"},
+};
+let activeLens = "topo";
+let activeView = "topo";
+let selected = null;
+
+/* color helpers */
+function riskColor(s){
+  if(s>=70) return "var(--red)";
+  if(s>=55) return "var(--orange)";
+  if(s>=40) return "var(--amber)";
+  return "var(--green)";
+}
+const DATA_COLORS = {public:"var(--gray)", confidential:"var(--blue)", pii:"var(--violet)", regulated:"var(--pink)", secrets:"var(--orange)"};
+const DATA_LABEL  = {public:"Public", confidential:"Confidential", pii:"PII", regulated:"Regulated / Consent", secrets:"Secrets / Tokens"};
+const SOV_COLORS  = {eu:"var(--green)", global:"var(--amber)", unverified:"var(--red)"};
+const SOV_LABEL   = {eu:"EU · Germany (controlled)", global:"Global / multi-regime", unverified:"Unverified residency"};
+
+function slaColor(node){
+  const v = parseFloat(node.slaOut);
+  if(isNaN(v)) return "var(--ink-faint)";
+  if(v>=120) return "var(--red)";
+  if(v>=60)  return "var(--orange)";
+  if(v>=20)  return "var(--amber)";
+  return "var(--green)";
+}
+
+/* node fill/stroke per lens */
+function nodeColor(key){
+  const n = NODES[key];
+  switch(activeLens){
+    case "risk":  return riskColor(n.risk);
+    case "data":  return DATA_COLORS[n.dataClass];
+    case "sov":   return SOV_COLORS[n.sov];
+    case "sla":   return slaColor(n);
+    case "blast": return "var(--line2)";
+    default:      return "var(--line2)";
+  }
+}
+function edgeColor(e){
+  switch(activeLens){
+    case "risk":  return riskColor(e.risk);
+    case "data":  return DATA_COLORS[e.dataClass];
+    default:      return "var(--line2)";
+  }
+}
+
+/* ============================ RENDER TOPOLOGY ============================ */
+const svg = document.getElementById("diagram");
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
+function cx(k){return NODES[k].x + NODES[k].w/2;}
+function cy(k){return NODES[k].y + NODES[k].h/2;}
+
+function edgePath(e){
+  const a=NODES[e.from], b=NODES[e.to];
+  // embed relationship spans the whole topology: arc it over the top so the
+  // "third-party page injects code that runs on the client" crossing is explicit.
+  if(e.id==="e12"){
+    const ax=a.x+a.w/2, bx=b.x+b.w/2;
+    return `M ${ax} ${a.y} C ${ax} 70, ${bx} 70, ${bx} ${b.y}`;
+  }
+  let x1=cx(e.from), y1=cy(e.from), x2=cx(e.to), y2=cy(e.to);
+  // anchor on box edges (horizontal-biased)
+  if(x2>x1){x1=a.x+a.w; x2=b.x;} else if(x2<x1){x1=a.x; x2=b.x+b.w;}
+  const mx=(x1+x2)/2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+}
+
+function renderDiagram(){
+  svg.innerHTML="";
+  // defs: arrow + grid
+  const defs=el("defs",{});
+  const marker=el("marker",{id:"arr",markerWidth:"8",markerHeight:"8",refX:"6.5",refY:"3",orient:"auto",markerUnits:"userSpaceOnUse"});
+  const tri=el("path",{d:"M0,0 L7,3 L0,6 Z",fill:"var(--line2)"}); marker.appendChild(tri);
+  defs.appendChild(marker);
+  const pat=el("pattern",{id:"grid",width:"34",height:"34",patternUnits:"userSpaceOnUse"});
+  pat.appendChild(el("path",{d:"M34 0 L0 0 0 34",class:"grid-bg"})); defs.appendChild(pat);
+  svg.appendChild(defs);
+  svg.appendChild(el("rect",{x:0,y:0,width:1180,height:740,fill:"url(#grid)"}));
+
+  // zones
+  ZONES.forEach(z=>{
+    const g=el("g",{class:"zone"});
+    g.appendChild(el("rect",{x:z.x,y:z.y,width:z.w,height:z.h,rx:12}));
+    const t=el("text",{x:z.x+12,y:z.y+22,class:"zlabel"}); t.textContent=z.label.toUpperCase(); g.appendChild(t);
+    const s=el("text",{x:z.x+12,y:z.y+35,class:"zsub"}); s.textContent=z.sub; g.appendChild(s);
+    svg.appendChild(g);
+  });
+
+  // edges
+  const blastSet = (activeLens==="blast" && selected) ? computeBlast(selected) : null;
+  EDGES.forEach(e=>{
+    const d=edgePath(e);
+    const p=el("path",{d,class:"edge"+(e.async?" async":""),id:"edge-"+e.id,
+      stroke:edgeColor(e), "marker-end":"url(#arr)", "data-edge":e.id});
+    // blast dim
+    if(blastSet){
+      const lit = blastSet.has(e.from) && blastSet.has(e.to);
+      if(!lit) p.classList.add("dim"); else p.classList.add("flash");
+    }
+    svg.appendChild(p);
+    // hit area
+    const hit=el("path",{d,class:"edge-hit","data-edge":e.id});
+    hit.addEventListener("click",()=>selectEdge(e.id));
+    svg.appendChild(hit);
+    // label at midpoint
+    const a=NODES[e.from], b=NODES[e.to];
+    let lx=(cx(e.from)+cx(e.to))/2, ly=(cy(e.from)+cy(e.to))/2 - 5;
+    if(e.id==="e12"){ lx=(cx(e.from)+cx(e.to))/2; ly=66; }
+    const lab=el("text",{x:lx,y:ly,"text-anchor":"middle",class:"elabel"}); lab.textContent=e.label;
+    if(blastSet && !(blastSet.has(e.from)&&blastSet.has(e.to))) lab.setAttribute("opacity","0.15");
+    svg.appendChild(lab);
+  });
+
+  // nodes
+  for(const key in NODES){
+    const n=NODES[key];
+    const g=el("g",{class:"node","data-node":key});
+    if(selected===key && activeView==="topo") g.classList.add("sel");
+    if(blastSet){
+      if(key===selected) g.classList.add("origin");
+      else if(blastSet.has(key)) g.classList.add("blast");
+      else g.classList.add("dim");
+    }
+    const stroke=nodeColor(key);
+    const body=el("rect",{x:n.x,y:n.y,width:n.w,height:n.h,class:"nbody",rx:9,stroke});
+    g.appendChild(body);
+    // accent left bar for lens color
+    g.appendChild(el("rect",{x:n.x,y:n.y,width:4,height:n.h,fill:stroke,rx:2}));
+    const t=el("text",{x:n.x+14,y:n.y+24,class:"ntitle"}); t.textContent=n.title; g.appendChild(t);
+    const s=el("text",{x:n.x+14,y:n.y+39,class:"nsub"}); s.textContent=n.sub; g.appendChild(s);
+    // tag
+    const tg=el("text",{x:n.x+14,y:n.y+n.h-9,class:"ntag"}); tg.textContent=n.tag; g.appendChild(tg);
+    // lens value badge (right)
+    let badgeTxt="", badgeFill=stroke;
+    if(activeLens==="risk"){badgeTxt=n.risk;}
+    else if(activeLens==="sla"){badgeTxt=n.slaOut;}
+    else if(activeLens==="data"){badgeTxt=DATA_LABEL[n.dataClass].split(" ")[0];}
+    else if(activeLens==="sov"){badgeTxt=n.sov==="eu"?"EU":n.sov==="unverified"?"???":"GLB";}
+    else if(activeLens==="blast"){badgeTxt=blastSet?(key===selected?"FAIL":(blastSet.has(key)?"DOWN":"")):"";}
+    if(badgeTxt!==""){
+      const bw = (""+badgeTxt).length*6.4 + 12;
+      g.appendChild(el("rect",{x:n.x+n.w-bw-8,y:n.y+8,width:bw,height:16,rx:4,fill:"rgba(255,255,255,.92)",stroke:badgeFill,"stroke-width":1}));
+      const bt=el("text",{x:n.x+n.w-bw-8+bw/2,y:n.y+19.5,"text-anchor":"middle",class:"badge",fill:badgeFill});
+      bt.textContent=badgeTxt; g.appendChild(bt);
+    }
+    g.addEventListener("click",()=>{
+      if(activeLens==="blast"){ selected=key; renderDiagram(); showBlastBanner(key); selectNode(key,true);}
+      else selectNode(key);
+    });
+    svg.appendChild(g);
+  }
+  renderLegend();
+}
+
+/* ============================ BLAST RADIUS ============================ */
+function computeBlast(originKey){
+  // who transitively depends on origin? (origin fails → those fail)
+  const dependents = new Set();
+  let changed=true;
+  // build reverse: dependedOnBy
+  const down = new Set([originKey]);
+  while(changed){
+    changed=false;
+    for(const k in NODES){
+      if(down.has(k)) continue;
+      if(NODES[k].dependsOn.some(d=>down.has(d))){ down.add(k); changed=true; }
+    }
+  }
+  return down; // includes origin
+}
+function showBlastBanner(key){
+  const set=computeBlast(key);
+  const arr=[...set].filter(k=>k!==key).map(k=>NODES[k].title);
+  const b=document.getElementById("blastBanner");
+  const txt=document.getElementById("blastText");
+  if(arr.length){
+    txt.innerHTML=`◉ FAILURE of <b style="color:#10233f">${NODES[key].title}</b> cascades to <b style="color:#10233f">${arr.length}</b> downstream component(s): ${arr.join(" · ")}`;
+  }else{
+    txt.innerHTML=`◉ <b style="color:#10233f">${NODES[key].title}</b> has no downstream dependents — leaf node, isolated failure.`;
+  }
+  b.classList.add("on");
+}
+function clearBlast(){
+  selected=null;
+  document.getElementById("blastBanner").classList.remove("on");
+  renderDiagram(); clearPanel();
+}
+
+/* ============================ LEGEND ============================ */
+function renderLegend(){
+  const L=document.getElementById("legend");
+  let html="";
+  const item=(c,txt,line)=>`<div class="li"><span class="${line?'swl':'sw'}" style="${line?'border-color:':'background:'}${c}"></span>${txt}</div>`;
+  if(activeLens==="risk"){
+    html=item("var(--green)","0–39 low")+item("var(--amber)","40–54 elevated")+item("var(--orange)","55–69 high")+item("var(--red)","70+ critical");
+  }else if(activeLens==="data"){
+    html=Object.keys(DATA_COLORS).map(k=>item(DATA_COLORS[k],DATA_LABEL[k])).join("");
+  }else if(activeLens==="sov"){
+    html=Object.keys(SOV_COLORS).map(k=>item(SOV_COLORS[k],SOV_LABEL[k])).join("");
+  }else if(activeLens==="sla"){
+    html=item("var(--green)","<20ms")+item("var(--amber)","20–59ms")+item("var(--orange)","60–119ms")+item("var(--red)","≥120ms · external");
+  }else if(activeLens==="blast"){
+    html=item("#10233f","failed origin")+item("var(--red)","cascaded down")+item("var(--line2)","unaffected")+`<div class="li" style="color:var(--ink-faint)">dashed edge = async / cacheable hop</div>`;
+  }else{
+    html=item("var(--line2)","dependency edge")+`<div class="li"><span class="swl" style="border-color:var(--line2);border-top-style:dashed"></span>async / cacheable</div>`+item("var(--line2)","trust-boundary zone (dashed box)",false);
+  }
+  L.innerHTML=html;
+}
+
+/* ============================ PANEL ============================ */
+function clearPanel(){
+  document.getElementById("panelContent").style.display="none";
+  document.getElementById("panelEmpty").style.display="block";
+}
+function scoreBadge(s){
+  return `<span class="scorebig" style="color:${riskColor(s)};background:rgba(20,40,70,.05);border:1px solid ${riskColor(s)}">${s}</span>`;
+}
+function riskCardHtml(rid){
+  const r=RISKS[rid];
+  const c=riskColor(r.score);
+  return `<div class="riskitem" style="border-left-color:${c}" data-risk="${rid}">
+    <div class="rt"><span class="rid">${rid}</span><span class="rsc" style="color:${c}">${r.score}</span></div>
+    <div class="rname">${r.name}</div>
+    <div class="rstride">STRIDE: ${r.stride}  ·  L${r.L}×I${r.I}  ·  ${r.comp}</div>
+    <div class="meter"><i style="width:${r.score}%;background:${c}"></i></div>
+    <div class="rmit"><b>Mitigation.</b> ${r.mit}</div>
+  </div>`;
+}
+function selectNode(key, keepBlastBanner){
+  selected=key;
+  if(activeView==="topo" && activeLens!=="blast") renderDiagram();
+  if(!keepBlastBanner) document.getElementById("blastBanner").classList.remove("on");
+  const n=NODES[key];
+  document.getElementById("panelEmpty").style.display="none";
+  const pc=document.getElementById("panelContent");
+  pc.style.display="block";
+  const blast=computeBlast(key); const downstream=[...blast].filter(k=>k!==key);
+  const factsHtml=n.facts.map(f=>`<div class="row"><span class="k">${f[0]}</span><span class="v">${f[1]}</span></div>`).join("");
+  const riskHtml=n.risks.map(riskCardHtml).join("");
+  pc.innerHTML=`
+    <div class="ph">
+      <div class="ptype">${n.tag} · ${n.layer} layer</div>
+      <h3>${n.title}</h3>
+      <div class="pid">${n.sub}</div>
+    </div>
+    <div class="pbody">
+      <p class="note">${n.desc}</p>
+      <div class="sec-h">Profile</div>
+      <div class="row"><span class="k">Composite risk</span><span class="v">${scoreBadge(n.risk)}</span></div>
+      <div class="row"><span class="k">Data class</span><span class="v"><span style="color:${DATA_COLORS[n.dataClass]}">●</span> ${DATA_LABEL[n.dataClass]}</span></div>
+      <div class="row"><span class="k">Sovereignty</span><span class="v"><span style="color:${SOV_COLORS[n.sov]}">●</span> ${SOV_LABEL[n.sov]}</span></div>
+      <div class="row"><span class="k">Hop latency</span><span class="v" style="color:${slaColor(n)}">${n.slaOut}</span></div>
+      ${factsHtml}
+      <div class="sec-h">Blast radius — fails ${downstream.length} downstream</div>
+      <div>${downstream.length?downstream.map(k=>`<span class="chip"><span class="d" style="background:var(--red)"></span>${NODES[k].title}</span>`).join(""):'<span class="note">Leaf node — isolated failure.</span>'}</div>
+      <div class="sec-h">Risk register (${n.risks.length}) · tap to expand</div>
+      <div class="risklist">${riskHtml}</div>
+    </div>`;
+  bindRiskItems();
+}
+function selectEdge(eid){
+  const e=EDGES.find(x=>x.id===eid);
+  selected=null; renderDiagram();
+  document.getElementById("panelEmpty").style.display="none";
+  const pc=document.getElementById("panelContent"); pc.style.display="block";
+  const chanLabel={front:"front-channel (browser)",back:"back-channel (server↔server)",mixed:"mixed (front + back)"}[e.chan];
+  // risks that touch either endpoint
+  const rel=[...new Set([...NODES[e.from].risks, ...NODES[e.to].risks])];
+  pc.innerHTML=`
+    <div class="ph">
+      <div class="ptype">DEPENDENCY EDGE · ${e.id}</div>
+      <h3>${NODES[e.from].title} → ${NODES[e.to].title}</h3>
+      <div class="pid">${e.proto}</div>
+    </div>
+    <div class="pbody">
+      <div class="row"><span class="k">Channel</span><span class="v">${chanLabel}</span></div>
+      <div class="row"><span class="k">Coupling</span><span class="v">${e.async?"async / cacheable":"synchronous / hard"}</span></div>
+      <div class="row"><span class="k">Data class</span><span class="v"><span style="color:${DATA_COLORS[e.dataClass]}">●</span> ${DATA_LABEL[e.dataClass]}</span></div>
+      <div class="row"><span class="k">Edge risk</span><span class="v">${scoreBadge(e.risk)}</span></div>
+      <div class="sec-h">Threats on this hop</div>
+      <div class="risklist">${rel.map(riskCardHtml).join("")}</div>
+    </div>`;
+  bindRiskItems();
+}
+function bindRiskItems(){
+  document.querySelectorAll(".riskitem").forEach(it=>{
+    it.addEventListener("click",()=>it.classList.toggle("open"));
+  });
+}
+
+/* ============================ SEQUENCE VIEW ============================ */
+function renderSeq(){
+  renderSteps("seqSteps", SEQ);
+  renderSteps("seqStepsSdk", SDK_SEQ);
+}
+function renderSteps(targetId, data){
+  const wrap=document.getElementById(targetId);
+  wrap.innerHTML=data.map(s=>{
+    const badges=s.risks.map(rid=>{
+      const r=RISKS[rid]; const c=riskColor(r.score);
+      return `<span class="rb" style="border-color:${c};color:${c}" data-jump="${r.node}" data-risk="${rid}"><span class="d" style="background:${c}"></span>${rid} · ${r.name}</span>`;
+    }).join("");
+    return `<div class="step ${s.chan==='back'?'chan-back':''}">
+      <div class="num">${String(s.n).padStart(2,'0')}</div>
+      <div class="body">
+        <div class="dir">${s.dir} <span style="color:var(--ink-faint)">· ${s.chan}-channel</span></div>
+        <div class="desc">${s.desc}</div>
+        ${badges?`<div class="rbadges">${badges}</div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll(".rb").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const node=b.getAttribute("data-jump");
+      const rid=b.getAttribute("data-risk");
+      switchView("topo");
+      activeLens="risk"; syncLensUI();
+      selectNode(node);
+      setTimeout(()=>{
+        const item=document.querySelector(`.riskitem[data-risk="${rid}"]`);
+        if(item){item.classList.add("open"); item.scrollIntoView({behavior:"smooth",block:"center"});}
+      },60);
+    });
+  });
+}
+
+/* ============================ CONTROLS ============================ */
+function buildLensBar(){
+  const bar=document.getElementById("lensbar");
+  bar.innerHTML=Object.keys(LENSES).map(k=>
+    `<button class="lens ${k==='topo'?'on':''}" data-lens="${k}"><span class="dot"></span>${LENSES[k].label}</button>`).join("");
+  bar.querySelectorAll(".lens").forEach(b=>{
+    b.addEventListener("click",()=>{
+      activeLens=b.getAttribute("data-lens");
+      if(activeLens!=="blast"){document.getElementById("blastBanner").classList.remove("on");}
+      syncLensUI();
+      renderDiagram();
+    });
+  });
+}
+function syncLensUI(){
+  document.querySelectorAll(".lens").forEach(b=>b.classList.toggle("on",b.getAttribute("data-lens")===activeLens));
+  document.getElementById("lensTitle").textContent=LENSES[activeLens].label.toUpperCase();
+  document.getElementById("lensDesc").innerHTML=LENSES[activeLens].desc;
+  document.getElementById("canvasHint").textContent = activeLens==="blast" ? "click a node to simulate failure" : "click a node · click an edge";
+}
+function switchView(v){
+  activeView=v;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.getAttribute("data-view")===v));
+  document.getElementById("topowrap").classList.toggle("off",v!=="topo");
+  document.getElementById("seqwrap").classList.toggle("on",v==="seq");
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>switchView(t.getAttribute("data-view"))));
+
+/* ============================ INIT ============================ */
+document.getElementById("riskcount").textContent=Object.keys(RISKS).length;
+buildLensBar();
+syncLensUI();
+renderDiagram();
+renderSeq();
+</script>
+</body>
+</html>
