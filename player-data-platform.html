@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Data Platform · Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --bronze:#b97f3a; --silver:#8a93a6; --gold:#c79a2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(720px 480px at 100% 0%, rgba(14,138,130,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:700px}
+  .aud{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .aud .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:none;border:0;padding:8px 16px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+
+  /* platform context band */
+  .ctx{display:flex;align-items:stretch;gap:0;margin:14px 0 6px;flex-wrap:wrap}
+  .ctx .seg2{flex:1;min-width:200px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--panel)}
+  .ctx .arrowx{display:flex;align-items:center;color:var(--ink-faint);font-size:18px;padding:0 6px}
+  .ctx .ck{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .ctx .cv{font-size:12.5px;color:var(--ink-dim);margin-top:3px;line-height:1.4}
+  .ctx .seg2.me{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.10)}
+  .ctx .seg2.me .ck{color:var(--accent)} .ctx .seg2.me .cv{color:var(--ink);font-weight:600}
+  .gov{margin:8px 0 2px;border:1px dashed var(--line2);border-radius:10px;padding:9px 13px;background:var(--panel2);font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:flex;align-items:center;gap:9px}
+  .gov b{color:var(--ink)}
+  .gov .gd{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .modebanner{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin:-6px 2px 14px;display:flex;align-items:center;gap:8px}
+  .modebanner .b{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+  /* hero layered diagram */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:8px 10px 12px}
+  .layer{margin:8px 4px 0}
+  .lh{display:flex;align-items:baseline;gap:9px;padding:7px 6px 8px}
+  .lh .ln{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .lh .ls{font-size:11.5px;color:var(--ink-dim)}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:150px;border:1px solid var(--line2);border-left:4px solid var(--line2);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.12)}
+  .tile .tn{font-weight:700;font-size:12.5px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px;line-height:1.35}
+  .flowdown{text-align:center;color:var(--line2);font-size:15px;margin:1px 0 -2px}
+  .found{margin:14px 4px 2px;border:1px dashed var(--line2);border-radius:12px;padding:10px 12px;background:var(--panel2)}
+  .found .fh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 2px 8px}
+  .found .tile{background:var(--panel)}
+
+  /* detail panel */
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:16px;font-weight:700}
+  .dh .arch{font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-top:5px}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 10px;font-size:13px;line-height:1.55}
+  .db p.exec{color:var(--ink)} .db p.dev{color:var(--ink-dim)}
+  .why{font-size:12.5px;color:var(--ink);background:rgba(13,110,168,.06);border:1px solid rgba(13,110,168,.18);border-radius:9px;padding:10px 12px;line-height:1.45}
+  .why .wl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+  .facts{margin-top:8px}
+  .fact{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px}
+  .fact:last-child{border-bottom:0}
+  .fact .fk{color:var(--ink-faint)} .fact .fv{color:var(--ink);text-align:right}
+
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin:6px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* medallion */
+  .med{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+  .medc{padding:14px;border-top:5px solid}
+  .medc .mt{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .medc h4{margin:3px 0 6px;font-size:15px}
+  .medc p{margin:0;font-size:12px;color:var(--ink-dim);line-height:1.45}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .ln2{font-weight:700;display:flex;align-items:center;gap:7px} td .ln2 .d{width:9px;height:9px;border-radius:50%}
+  td code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* capabilities */
+  .cgroup{margin-bottom:20px}
+  .ccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px}
+  .cap{padding:13px 14px}
+  .cap h4{margin:0 0 2px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .cap .archtag{font-family:var(--mono);font-size:8.5px;color:var(--accent);white-space:nowrap;border:1px solid rgba(13,110,168,.25);background:rgba(13,110,168,.06);border-radius:5px;padding:1px 6px}
+  .cap .one{font-size:11px;color:var(--ink-faint);margin:0 0 8px;font-family:var(--mono)}
+  .cap .body{font-size:12px;line-height:1.5}
+  .cap .body.exec{color:var(--ink-dim)} .cap .body.dev{color:var(--ink)}
+
+  /* contracts */
+  .inv .iv{display:grid;grid-template-columns:18px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-dim);line-height:1.45}
+  .inv .iv:last-child{border-bottom:0}
+  .inv .iv .ic{color:var(--green);font-weight:700;font-family:var(--mono)}
+  .inv .iv b{color:var(--ink)}
+  td .fm{font-weight:600;font-family:var(--mono);font-size:11.5px}
+  .pill{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .pill.g{color:var(--green);background:rgba(26,143,69,.10)} .pill.a{color:var(--amber);background:rgba(169,118,10,.10)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .foot{margin-top:28px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">3 Halves Labs · Score Anything</div>
+      <h1>Player Data Platform</h1>
+      <p class="lead">The event-driven backbone between the edge and the models: capture, a durable streaming bus, stream and batch processing, a bronze / silver / gold lakehouse, a feature store, and activation. Built on familiar archetypes — switch the audience to change the depth.</p>
+    </div>
+    <div class="aud">
+      <span class="al">Audience</span>
+      <div class="seg" id="audSeg">
+        <button data-mode="exec" class="on"><span class="i">◐</span> Executive</button>
+        <button data-mode="dev"><span class="i">⌨</span> Developer</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="ctx">
+    <div class="seg2"><div class="ck">Edge · producers</div><div class="cv">Tracking SDK (web · iOS · Android), ERP / loyalty CDC, partner &amp; sponsor feeds</div></div>
+    <div class="arrowx">→</div>
+    <div class="seg2 me"><div class="ck">Player Data Platform</div><div class="cv">This — the spine that turns raw signals into governed, queryable, model-ready data</div></div>
+    <div class="arrowx">→</div>
+    <div class="seg2"><div class="ck">Consumers</div><div class="cv">AI estate (personalization, fraud, wellbeing), BI, real-time loyalty APIs, partner activation</div></div>
+  </div>
+  <div class="gov"><span class="gd"></span><b>Governance underneath everything:</b>&nbsp;the privacy &amp; AI control plane — consent, residency, lineage and access policy — enforced from ingest to serving.</div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="arch">▦ Reference Architecture</button>
+    <button class="tab" data-tab="medallion">▤ Medallion Layers</button>
+    <button class="tab" data-tab="caps">◰ Capabilities</button>
+    <button class="tab" data-tab="contract">⛓ Contracts &amp; SLOs</button>
+  </div>
+
+  <div class="modebanner" id="modeBanner"></div>
+  <div id="view"></div>
+
+  <div class="foot">a reference architecture, illustrative figures · familiar archetypes shown for comparison · governed end to end<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+let MODE="exec";
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ===================== layers ===================== */
+const LAYERS=[
+ {k:"source",n:"Sources · producers",s:"where data originates",color:"var(--ink-dim)",comps:[
+   {k:"sdk",n:"SDK / edge events",note:"web · iOS · Android (score-tracker)",arch:"≈ first-party event SDK",
+    exec:"Behavioural signals from your own apps — the tracking SDK is the platform's biggest producer.",
+    dev:"The score-tracker envelope stream (202-accepted batches). First-party, consent-gated, PII-scrubbed at source.",ties:"This is the SDK architecture's downstream — the platform begins where the tracker ends."},
+   {k:"cdc",n:"Transactional CDC",note:"ERP / loyalty DB changes",arch:"≈ Debezium / Fivetran CDC",
+    exec:"Live changes from the systems of record — accounts, transactions, loyalty state.",
+    dev:"Change-data-capture off the ERP and loyalty databases; row-level changes streamed as events, not nightly dumps."},
+   {k:"partner",n:"Partner & 3rd-party feeds",note:"sponsors · sports data · CRM",arch:"≈ API + file connectors",
+    exec:"External data: sponsor inventory, live sports data, CRM and marketing tools.",
+    dev:"Pull/push connectors over APIs and webhooks; normalised into the same event contract at ingest."},
+   {k:"files",n:"Batch files / exports",note:"object storage · SFTP",arch:"≈ S3 / SFTP landing",
+    exec:"Vendor extracts and bulk files that arrive on a schedule.",
+    dev:"Object-storage drops and SFTP, picked up by scheduled ingestion into bronze."},
+ ]},
+ {k:"ingest",n:"Ingestion",s:"land it, scrub it, contract it",color:"var(--accent)",comps:[
+   {k:"trackapi",n:"Tracking ingest API",note:"the SDK's 202 endpoint",arch:"≈ event collector",
+    exec:"The front door for SDK events — authenticates, validates, and hands off fast.",
+    dev:"CORS → site-key/JWT auth (Redis-cached) → AJV validate → derive siteId → publish to the bus → 202. Sync path stays thin.",ties:"Continues directly from the SDK's network boundary."},
+   {k:"connectors",n:"Managed connectors",note:"CDC · API · file",arch:"≈ Fivetran / Airbyte",
+    exec:"Reusable plumbing to pull every other source in without bespoke code per integration.",
+    dev:"Declarative connectors for CDC/API/file sources; backfill + incremental modes; land to bronze + emit to the bus."},
+   {k:"scrub",n:"PII scrub @ ingest",note:"governed boundary",arch:"≈ DLP / tokenization",
+    exec:"Personal data is scrubbed the moment it lands — privacy is enforced here, not bolted on later.",
+    dev:"Field-level drop / redact / tokenize / hash at the boundary, driven by the privacy control plane. Raw PII never reaches storage in the clear.",ties:"Same control plane as the Privacy & Tracking artifact — applied platform-wide."},
+ ]},
+ {k:"stream",n:"Streaming backbone",s:"durable, replayable event bus",color:"var(--violet)",comps:[
+   {k:"bus",n:"Event bus",note:"durable · partitioned · replayable",arch:"≈ Kafka / Kinesis / RabbitMQ",
+    exec:"The central nervous system: every event flows through one durable, replayable stream.",
+    dev:"Partitioned, retained topics. Producers and consumers decouple here; replay enables reprocessing and backfills without re-ingesting."},
+   {k:"registry",n:"Schema registry",note:"contracts at the boundary",arch:"≈ Confluent Schema Registry",
+    exec:"A single source of truth for what each event must look like, so producers can't silently break consumers.",
+    dev:"Versioned schemas with compatibility rules; producers validate against the registry before publishing. Breaking changes are rejected, not discovered downstream."},
+   {k:"dlq",n:"Dead-letter & replay",note:"quarantine, never block",arch:"≈ DLQ + replay topic",
+    exec:"Bad events are set aside for inspection instead of jamming the pipeline.",
+    dev:"Schema/processing failures route to a DLQ with the original payload; fixed and replayed. The main stream never stalls on a poison message."},
+ ]},
+ {k:"process",n:"Processing",s:"real-time and scheduled, same logic",color:"var(--blue)",comps:[
+   {k:"streamproc",n:"Stream processing",note:"enrich · sessionize · aggregate",arch:"≈ Flink / Spark Streaming",
+    exec:"Real-time computation: live engagement, sessions, and rolling metrics as events arrive.",
+    dev:"Stateful stream jobs (windowing, joins, sessionization). Feeds the online feature store and real-time consumers with seconds-fresh data."},
+   {k:"batchproc",n:"Batch transforms",note:"models, marts, backfills",arch:"≈ dbt / Spark / Airflow",
+    exec:"Scheduled jobs that build the curated tables analysts and dashboards rely on.",
+    dev:"Versioned, tested transforms (dbt-style) orchestrated on a schedule; backfills and reprocessing run the same code as production."},
+   {k:"cdc_apply",n:"CDC apply / upserts",note:"merge into silver",arch:"≈ MERGE / upsert",
+    exec:"Keeps the cleaned data in step with the systems of record.",
+    dev:"Idempotent MERGE/upsert of change events into silver tables, keyed for dedupe so replays don't double-count."},
+ ]},
+ {k:"lake",n:"Lakehouse · medallion",s:"raw → conformed → curated",color:"var(--teal)",comps:[
+   {k:"bronze",n:"Bronze · raw",note:"immutable landing · full history",arch:"≈ raw Delta / Iceberg",
+    exec:"Every event kept exactly as received — the system of truth you can always replay from.",
+    dev:"Append-only, schema-on-read landing with full history and time-travel. Nothing is mutated; reprocessing rebuilds everything downstream.",med:"bronze"},
+   {k:"silver",n:"Silver · conformed",note:"cleaned · deduped · typed · joined",arch:"≈ conformed Delta / Iceberg",
+    exec:"Trustworthy, cleaned-up data: deduplicated, typed, and joined into consistent entities.",
+    dev:"Dedupe on event.id, typing, conformance and entity resolution (player/session/group). The first layer most consumers should read.",med:"silver"},
+   {k:"gold",n:"Gold · curated",note:"marts · metrics · aggregates",arch:"≈ marts / star schema",
+    exec:"Business-ready tables and metrics — engagement, churn, sponsor value — defined once.",
+    dev:"Curated marts and aggregates modelled for consumption; the metrics here are the ones BI and the semantic layer expose.",med:"gold"},
+ ]},
+ {k:"serve",n:"Serving",s:"make it fast and consistent to use",color:"var(--green)",comps:[
+   {k:"featurestore",n:"Feature store",note:"online + offline parity",arch:"≈ Feast / Tecton",
+    exec:"One place models read their inputs from — the same features in training and in production.",
+    dev:"Offline store (training) + online store (low-latency serving) with parity, point-in-time correctness and feature versioning. Feeds the AI estate.",ties:"This is what the AI estate's models consume — the join between platform and AI."},
+   {k:"warehouse",n:"Warehouse / query layer",note:"BI + ad-hoc SQL",arch:"≈ Snowflake / BigQuery",
+    exec:"The fast query layer analysts and dashboards run against.",
+    dev:"Columnar query engine over gold (and silver) for BI and exploration; governed access, workload isolation."},
+   {k:"semantic",n:"Semantic / metrics layer",note:"one definition per metric",arch:"≈ dbt semantic layer",
+    exec:"Guarantees everyone means the same thing by 'engagement' or 'active player'.",
+    dev:"Centralised metric definitions consumed by BI, APIs and notebooks, so numbers reconcile across tools."},
+ ]},
+ {k:"consume",n:"Activation & consumers",s:"put the data to work",color:"var(--orange)",comps:[
+   {k:"modelserving",n:"Model serving",note:"→ the AI estate",arch:"≈ model gateway / KServe",
+    exec:"Where models score players in real time, drawing on the feature store.",
+    dev:"Online inference for personalization, fraud and player-wellbeing models; reads the online feature store; predictions flow back as events.",ties:"Direct consumer of the AI Estate & Governance map."},
+   {k:"bi",n:"BI & dashboards",note:"exec + ops analytics",arch:"≈ Looker / Power BI",
+    exec:"The reports and dashboards leadership and operations use.",
+    dev:"Governed dashboards over the semantic layer and gold marts; freshness and lineage surfaced to consumers."},
+   {k:"reverse",n:"Reverse-ETL",note:"push curated data back out",arch:"≈ Hightouch / Census",
+    exec:"Sends curated insights back into the tools teams actually work in — CRM, marketing, ERP.",
+    dev:"Syncs gold tables/segments into operational systems on a schedule, closing the loop from analytics to action."},
+   {k:"rtapi",n:"Real-time loyalty APIs",note:"score-loyalty-sdk",arch:"≈ low-latency read API",
+    exec:"The APIs the apps call to show points, challenges, rewards and leaderboards instantly.",
+    dev:"Low-latency read APIs over serving stores, consumed by the loyalty client SDK. Online features power live personalization.",ties:"Read by @3halves-labs/score-loyalty-sdk."},
+ ]},
+];
+const FOUNDATIONS={k:"found",n:"Foundations · cross-cutting (span every layer)",color:"var(--accent)",comps:[
+   {k:"governance",n:"Governance & privacy",note:"consent · residency · access",arch:"≈ consent + policy engine",
+    exec:"The rules that decide who and what may touch each piece of data — applied everywhere, not at the end.",
+    dev:"Consent and residency policy, purpose binding and access control enforced from ingest to serving; the privacy control plane, platform-wide.",ties:"The Privacy & Tracking control plane, extended across the whole platform."},
+   {k:"lineage",n:"Catalog & lineage",note:"source → model",arch:"≈ OpenLineage / catalog",
+    exec:"A map of where every field came from and where it goes — provable, end to end.",
+    dev:"Automated lineage and a searchable catalog; you can trace any model feature back to the exact source events and transforms."},
+   {k:"quality",n:"Data quality & contracts",note:"tests · freshness · completeness",arch:"≈ Great Expectations",
+    exec:"Automated checks that the data is fresh, complete and correct before anyone trusts it.",
+    dev:"Data contracts at the schema boundary plus assertion tests (volume, freshness, distribution, referential) gating promotion bronze→silver→gold."},
+   {k:"obs",n:"Observability & SLOs",note:"freshness · latency · cost",arch:"≈ data observability + SLOs",
+    exec:"Live monitoring of how fresh, fast and costly the platform is, with alerts when it slips.",
+    dev:"Pipeline SLOs (freshness, latency, completeness), incident alerting and cost/FinOps budgets per domain."},
+   {k:"security",n:"Security & IAM",note:"encryption · least-privilege · tenancy",arch:"≈ IAM / KMS / RBAC",
+    exec:"Encryption, tenant isolation and least-privilege access throughout.",
+    dev:"Region-locked KMS keys, RBAC/ABAC on every store, per-tenant isolation, and secrets never logged."},
+]};
+
+/* flat lookup */
+const COMP={}; LAYERS.forEach(L=>L.comps.forEach(c=>{c._layer=L.n;c._color=L.color;COMP[c.k]=c;}));
+FOUNDATIONS.comps.forEach(c=>{c._layer=FOUNDATIONS.n;c._color=FOUNDATIONS.color;COMP[c.k]=c;});
+
+/* ===================== KPIs ===================== */
+function renderKPIs(){
+  const t=[
+    ["7","platform layers","var(--ink)"],
+    ["bronze · silver · gold","medallion lakehouse","var(--teal)"],
+    ["stream + batch","unified processing","var(--violet)"],
+    ["exactly-once*","effective (idempotent + dedupe)","var(--green)"],
+    ["source → model","end-to-end lineage","var(--accent)"],
+    ["EU","data residency","var(--blue)"],
+  ];
+  document.getElementById("kpis").innerHTML=t.map(x=>`<div class="card kpi"><div class="kv" style="color:${x[2]}">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");
+}
+
+/* ===================== detail panel ===================== */
+function medColor(m){return m==="bronze"?"var(--bronze)":m==="silver"?"var(--silver)":"var(--gold)";}
+function openDetail(key){
+  const c=COMP[key]; if(!c) return;
+  document.querySelectorAll("[data-tile]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tile")===key));
+  const pc=document.getElementById("detail"); if(!pc) return;
+  let body="";
+  if(MODE==="exec"){
+    body=`<p class="exec">${c.exec}</p>`+(c.ties?`<div class="why"><span class="wl">How it connects</span>${c.ties}</div>`:"");
+  } else {
+    body=`<p class="dev">${c.dev}</p>`+
+      `<div class="facts">`+
+      `<div class="fact"><span class="fk">layer</span><span class="fv">${c._layer}</span></div>`+
+      (c.arch?`<div class="fact"><span class="fk">archetype</span><span class="fv">${c.arch}</span></div>`:"")+
+      `</div>`+
+      (c.ties?`<div class="why" style="margin-top:10px"><span class="wl">How it connects</span>${c.ties}</div>`:"");
+  }
+  pc.innerHTML=`<div class="dh"><div class="dt">${c._layer}</div><h3>${c.n}</h3>${c.arch?`<div class="arch">${c.arch}</div>`:""}</div><div class="db">${body}</div>`;
+}
+
+/* ===================== render: architecture ===================== */
+function renderArch(){
+  let stack=`<div class="card stack">`;
+  LAYERS.forEach((L,i)=>{
+    stack+=`<div class="layer"><div class="lh"><span class="ln" style="color:${L.color}">${L.n}</span><span class="ls">${L.s}</span></div><div class="tiles">`;
+    stack+=L.comps.map(c=>{
+      const col=c.med?medColor(c.med):L.color;
+      return `<div class="tile" data-tile="${c.k}" style="border-left-color:${col}">
+        <div class="tn">${c.n}</div><div class="tnote">${c.note}</div></div>`;
+    }).join("");
+    stack+=`</div></div>`;
+    if(i<LAYERS.length-1) stack+=`<div class="flowdown">↓</div>`;
+  });
+  // foundations
+  stack+=`<div class="found"><div class="fh">${FOUNDATIONS.n}</div><div class="tiles">`+
+    FOUNDATIONS.comps.map(c=>`<div class="tile" data-tile="${c.k}" style="border-left-color:${FOUNDATIONS.color}"><div class="tn">${c.n}</div><div class="tnote">${c.note}</div></div>`).join("")+
+    `</div></div>`;
+  stack+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="arch-wrap"><div>${stack}</div>
+    <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>Click any block to see what it does. Depth follows the audience toggle: ${MODE==='exec'?'plain-language narrative now':'developer detail + the archetype it maps to'}.<br><br>The dashed band at the bottom is cross-cutting — it spans every layer.<br><br>Look for "how it connects": the edge SDK, the AI estate and the privacy control plane all plug into this spine.</div></div></div></div>`;
+  document.querySelectorAll("[data-tile]").forEach(el=>el.addEventListener("click",()=>openDetail(el.getAttribute("data-tile"))));
+}
+
+/* ===================== render: medallion ===================== */
+const MED=[
+  ["bronze","Bronze · raw","Immutable landing","schema-on-read (as received)","seconds (stream) / on-arrival","full history","format checks only","reprocessing, audit, replay"],
+  ["silver","Silver · conformed","Cleaned & deduped","enforced + typed","< 15 min","rolling (policy-bound)","dedupe on event.id, types, referential","most analytics, CDC apply, features"],
+  ["gold","Gold · curated","Business marts & metrics","modelled (star / wide)","1–6 h (batch) / minutes (key marts)","retained per metric","dbt tests, freshness SLO","BI, semantic layer, reverse-ETL"],
+];
+const FS=[
+  ["Offline store","training & backfills","point-in-time correct joins","feature versioning","batch / on demand"],
+  ["Online store","real-time inference","low-latency reads (p99 < 25ms)","parity with offline","always-on"],
+];
+function renderMedallion(){
+  const cards=MED.map(m=>`<div class="card medc" style="border-top-color:${medColor(m[0])}"><div class="mt">${m[0]}</div><h4>${m[1]}</h4><p>${MODE==='exec'?m[2]+'.':m[3]+' · '+m[7]}</p></div>`).join("");
+  const tbl=`<table><thead><tr><th>Layer</th><th>Role</th><th>Schema</th><th>Freshness</th><th>Retention</th><th>Quality gate</th><th>Consumers</th></tr></thead><tbody>`+
+    MED.map(m=>`<tr><td><span class="ln2"><span class="d" style="background:${medColor(m[0])}"></span>${m[1]}</span></td><td>${m[2]}</td><td><code>${m[3]}</code></td><td>${m[4]}</td><td>${m[5]}</td><td>${m[6]}</td><td>${m[7]}</td></tr>`).join("")+
+    `</tbody></table>`;
+  const fst=`<table><thead><tr><th>Feature store</th><th>Serves</th><th>Property</th><th>Parity / version</th><th>Availability</th></tr></thead><tbody>`+
+    FS.map(f=>`<tr><td class="fm">${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td><td>${f[3]}</td><td>${f[4]}</td></tr>`).join("")+`</tbody></table>`;
+  const intro=MODE==='exec'
+    ? `Raw data is refined in three stages, each more trustworthy than the last — so analysts and models read clean, agreed data while the platform always keeps the original to rebuild from.`
+    : `Medallion separates concerns: bronze is the immutable source of truth, silver is the conformed/deduped layer most consumers read, gold is modelled for consumption. Promotion between layers is gated by data-quality tests. Everything downstream can be rebuilt from bronze.`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Medallion lakehouse</div>
+    <p style="font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:840px">${intro}</p>
+    <div class="med">${cards}</div>${tbl}
+    <div class="section-h" style="margin-top:24px">Feature store · the join to the AI estate</div>${fst}`;
+}
+
+/* ===================== render: capabilities ===================== */
+const CAPGROUPS=[
+  ["Ingest & streaming",["sdk","cdc","partner","files","trackapi","connectors","scrub","bus","registry","dlq"]],
+  ["Processing & storage",["streamproc","batchproc","cdc_apply","bronze","silver","gold"]],
+  ["Serving & activation",["featurestore","warehouse","semantic","modelserving","bi","reverse","rtapi"]],
+  ["Foundations · cross-cutting",["governance","lineage","quality","obs","security"]],
+];
+function renderCaps(){
+  document.getElementById("view").innerHTML=CAPGROUPS.map(([g,keys])=>`<div class="cgroup">
+    <div class="section-h">${g}</div>
+    <div class="ccards">${keys.map(k=>{const c=COMP[k];return `<div class="card cap">
+      <h4>${c.n}<span class="archtag">${c.arch}</span></h4>
+      <div class="one">${c.note}</div>
+      <div class="body ${MODE==='exec'?'exec':'dev'}">${MODE==='exec'?c.exec:c.dev}</div></div>`;}).join("")}</div></div>`).join("");
+}
+
+/* ===================== render: contracts & SLOs ===================== */
+const SLO=[
+  ["Streaming bus","freshness p95 < 5s · availability 99.9%","g"],
+  ["Bronze landing","land < 1 min · daily completeness reconciliation","g"],
+  ["Silver","freshness < 15 min · dedupe on event.id · schema-enforced","g"],
+  ["Gold / marts","freshness 1–6h · dbt tests must pass to publish","a"],
+  ["Feature store (online)","read p99 < 25ms · online/offline parity","g"],
+  ["Reverse-ETL","operational sync < 1h","a"],
+];
+const DR=[
+  ["Bad / malformed event","Routed to DLQ with payload; fixed and replayed. The stream never blocks."],
+  ["Upstream source outage","Bus retention buffers; on recovery, backfill from bronze — no gap."],
+  ["Bad transform shipped","Versioned tables + time-travel; roll back and reprocess from bronze."],
+  ["Duplicate delivery","Dedupe on event.id + idempotent upserts ⇒ exactly-once effect downstream."],
+  ["Region failure","Replicated storage + DR runbook; residency preserved within the EU."],
+  ["PII exposure risk","Scrub at ingest + lineage proves which fields exist where and who can read them."],
+  ["Cost spike","FinOps budgets + alerts per domain; autoscaling caps; cold data tiered."],
+];
+function renderContract(){
+  const slo=`<table><thead><tr><th style="width:230px">Stage</th><th>Target</th></tr></thead><tbody>`+
+    SLO.map(s=>`<tr><td class="fm">${s[0]}</td><td><span class="pill ${s[2]}">${s[1]}</span></td></tr>`).join("")+`</tbody></table>`;
+  const dr=`<table><thead><tr><th style="width:230px">Failure</th><th>Behaviour</th></tr></thead><tbody>`+
+    DR.map(d=>`<tr><td class="fm">${d[0]}</td><td>${d[1]}</td></tr>`).join("")+`</tbody></table>`;
+  let head;
+  if(MODE==="exec"){
+    head=`<div class="card" style="padding:15px 16px;margin-bottom:16px"><p style="margin:0;font-size:13px;color:var(--ink)">Three promises make the platform trustworthy: <b>contracts</b> (data has an agreed shape, enforced at the door), <b>service levels</b> (it is measurably fresh, fast and complete), and <b>resilience</b> (every failure degrades safely or self-heals). The original data is always kept, so anything downstream can be rebuilt.</p></div>`;
+  } else {
+    head=`<div class="card" style="padding:6px 16px 12px;margin-bottom:16px"><div class="inv">
+      <div class="iv"><span class="ic">→</span><div><b>Schema contracts at the bus.</b> Producers validate against a versioned registry; incompatible changes are rejected, not discovered downstream.</div></div>
+      <div class="iv"><span class="ic">→</span><div><b>Exactly-once effect.</b> The stream is at-least-once; dedupe on <code>event.id</code> + idempotent MERGE/upsert make downstream effectively exactly-once.</div></div>
+      <div class="iv"><span class="ic">→</span><div><b>Rebuildable.</b> Bronze is immutable with time-travel; silver/gold are deterministic transforms — reprocess to recover from any logic bug.</div></div>
+      <div class="iv"><span class="ic">→</span><div><b>Governed end to end.</b> Consent, residency and access policy from the privacy control plane apply at ingest, in storage, and at serving; lineage proves coverage.</div></div>
+    </div></div>`;
+  }
+  document.getElementById("view").innerHTML=head+
+    `<div class="section-h">Service-level objectives</div>${slo}
+     <div class="section-h" style="margin-top:24px">Failure modes &amp; recovery</div>${dr}`;
+}
+
+/* ===================== shell ===================== */
+function setMode(m){
+  MODE=m;
+  document.querySelectorAll("#audSeg button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+  document.getElementById("modeBanner").innerHTML=`<span class="b"></span>${m==='exec'?'Executive view — plain-language narrative and how the pieces connect. Toggle to Developer for archetypes, contracts and SLOs.':'Developer view — the archetype each block maps to, contracts, delivery semantics and SLOs. Toggle to Executive for the narrative.'}`;
+  renderTab(CUR);
+}
+let CUR="arch";
+function renderTab(name){
+  CUR=name;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="arch") renderArch();
+  else if(name==="medallion") renderMedallion();
+  else if(name==="caps") renderCaps();
+  else renderContract();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+document.querySelectorAll("#audSeg button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+
+renderKPIs(); setMode("exec");
+</script>
+</body>
+</html>
