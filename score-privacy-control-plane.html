@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCORE · Privacy &amp; Tracking Control Plane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(13,110,168,.07), transparent 60%),
+      radial-gradient(720px 480px at 100% 0%, rgba(14,138,130,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:860px}
+  .lead b{color:var(--ink)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:18px 0 6px}
+  .kpi{padding:12px 14px}
+  .kpi .kv{font-family:var(--mono);font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .kpi .kl{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+
+  /* tracer */
+  .ctlbar{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;padding:14px 16px;margin-bottom:14px}
+  .cg{display:flex;flex-direction:column;gap:5px}
+  .cg .cl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  select{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;background:var(--panel);color:var(--ink)}
+  .toggles{display:flex;gap:6px;flex-wrap:wrap}
+  .tg{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line2);border-radius:20px;padding:6px 11px;cursor:pointer;
+    color:var(--ink-dim);background:var(--panel);display:flex;align-items:center;gap:6px;user-select:none}
+  .tg .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint)}
+  .tg.on{border-color:var(--green);color:var(--ink);background:rgba(26,143,69,.08)}
+  .tg.on .dot{background:var(--green)}
+  .tg.warn.on{border-color:var(--orange);background:rgba(191,79,23,.09)}
+  .tg.warn.on .dot{background:var(--orange)}
+  .runbtn{font-family:var(--sans);font-weight:600;font-size:13px;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:10px 18px;border-radius:9px;cursor:pointer}
+  .runbtn:hover{background:#0b5e90}
+  .runbtn:disabled{opacity:.5;cursor:not-allowed}
+  .ghostbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);background:var(--panel);color:var(--ink-dim);padding:9px 12px;border-radius:9px;cursor:pointer}
+
+  .tracer{display:grid;grid-template-columns:1fr 386px;gap:16px;align-items:start}
+  @media(max-width:980px){.tracer{grid-template-columns:1fr}}
+  .pipe-card{padding:8px 6px 10px}
+  .pipe-head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px 10px;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .stage{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:11px 12px;border-radius:10px;position:relative;transition:.2s}
+  .stage::before{content:"";position:absolute;left:26px;top:-2px;bottom:-2px;width:2px;background:var(--line);z-index:0}
+  .stage:first-child::before{top:50%}
+  .stage:last-child::before{bottom:50%}
+  .stage .num{width:30px;height:30px;border-radius:50%;border:2px solid var(--line2);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink-faint);z-index:1;transition:.2s}
+  .stage .sname{font-weight:700;font-size:13.5px}
+  .stage .sdesc{font-size:11.5px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+  .stage .snote{font-family:var(--mono);font-size:11px;margin-top:6px;display:none}
+  .stage.show .snote{display:block}
+  .stage.active{background:rgba(13,110,168,.06)}
+  .stage.active .num{border-color:var(--accent);color:var(--accent)}
+  .stage.applied .num{border-color:var(--green);background:var(--green);color:#fff}
+  .stage.applied .snote{color:var(--green)}
+  .stage.dropped .num{border-color:var(--red);background:var(--red);color:#fff}
+  .stage.dropped .snote{color:var(--red);font-weight:600}
+  .stage.skip{opacity:.4}
+  .stage.skip .snote{display:block;color:var(--ink-faint)}
+
+  /* payload panel */
+  .pp{position:sticky;top:14px;padding:0;overflow:hidden}
+  .pp-head{padding:13px 15px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+    display:flex;justify-content:space-between;align-items:center}
+  .pp-stage{color:var(--ink);font-weight:600}
+  .pp-body{padding:13px 15px}
+  .kvp{font-family:var(--mono);font-size:11.5px;display:flex;gap:8px;padding:4px 0;border-bottom:1px dotted var(--line);align-items:baseline}
+  .kvp:last-child{border-bottom:0}
+  .kvp .pk{color:var(--ink-faint);flex:0 0 116px;word-break:break-word}
+  .kvp .pv{color:var(--ink);word-break:break-all}
+  .kvp.policy .pk{color:var(--accent)}
+  .kvp.policy .pv{color:var(--accent)}
+  .kvp.pseudo .pv{color:var(--violet)}
+  .kvp.changed .pv{color:var(--orange)}
+  .removed{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}
+  .removed .rt{font-family:var(--mono);font-size:9.5px;color:var(--red);text-decoration:line-through;border:1px solid rgba(214,47,38,.3);
+    background:rgba(214,47,38,.06);border-radius:5px;padding:2px 6px}
+  .disp{margin:13px 15px;border-radius:10px;padding:12px 13px;font-size:12.5px;line-height:1.45}
+  .disp.ok{background:rgba(26,143,69,.08);border:1px solid rgba(26,143,69,.3)}
+  .disp.drop{background:rgba(214,47,38,.08);border:1px solid rgba(214,47,38,.3)}
+  .disp .dh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+  .disp.ok .dh{color:var(--green)} .disp.drop .dh{color:var(--red)}
+  .disp .dr{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-dim);padding:2px 0}
+  .disp .dr b{color:var(--ink)}
+  .policyline{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);padding:9px 15px;border-top:1px solid var(--line)}
+  .policyline b{color:var(--ink-dim)}
+  .pp-legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;color:var(--ink-dim);padding:10px 15px;border-top:1px solid var(--line)}
+  .pp-legend .li{display:flex;align-items:center;gap:5px}
+  .pp-legend .d{width:9px;height:9px;border-radius:50%}
+
+  /* generic reference */
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+    margin:6px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .cat-group{margin-bottom:20px}
+  .cat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:11px}
+  .ctrl{padding:13px 14px}
+  .ctrl h4{margin:0 0 3px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .ctrl .pep{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);white-space:nowrap}
+  .ctrl p{margin:0 0 8px;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .regs{display:flex;flex-wrap:wrap;gap:4px}
+  .reg{font-family:var(--mono);font-size:8.5px;font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .pn{font-weight:700;font-size:12.5px}
+  .pill{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .pill.off{color:var(--green);background:rgba(26,143,69,.10)}
+  .pill.on{color:var(--amber);background:rgba(169,118,10,.10)}
+  .pill.nec{color:var(--blue);background:rgba(31,99,200,.10)}
+
+  .rights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px}
+  .right{padding:13px 14px}
+  .right h4{margin:0 0 2px;font-size:13px}
+  .right .sla{font-family:var(--mono);font-size:9.5px;color:var(--accent);margin-bottom:7px}
+  .right p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .cascade{display:flex;flex-direction:column;gap:0;margin-top:4px}
+  .cascade .cs{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:start}
+  .cascade .cs:last-child{border-bottom:0}
+  .cascade .csn{width:24px;height:24px;border-radius:7px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-dim)}
+  .cascade .cst{font-weight:600;font-size:12.5px}
+  .cascade .csd{font-size:11.5px;color:var(--ink-dim);margin-top:1px}
+  .cascade .cs.shred .csn{background:var(--red);border-color:var(--red);color:#fff}
+  .cascade .cs.keep .csn{background:var(--amber);border-color:var(--amber);color:#fff}
+  .sov{display:flex;flex-direction:column;gap:9px}
+  .sov .si{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--ink-dim);line-height:1.45}
+  .sov .si .sx{color:var(--green);font-weight:700;font-family:var(--mono);margin-top:1px}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:860px){.twocol{grid-template-columns:1fr}}
+  .reglegend{display:flex;flex-wrap:wrap;gap:8px;margin:2px 2px 16px}
+  .foot{margin-top:28px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · SCORE Platform</div>
+    <h1>Privacy &amp; Tracking Control Plane</h1>
+    <p class="lead">How SCORE tracks behaviour <b>privacy-first</b>: non-essential collection is off by default, every event is bound to a purpose and a lawful basis the moment it is captured, and identifiers are stripped or separated before data ever lands. Trace a single event through nine controls below, then drill into the full control catalogue, the consent and purpose model, and data-subject rights.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="tracer">⤳ Event Tracer</button>
+    <button class="tab" data-tab="catalog">▤ Control Catalogue</button>
+    <button class="tab" data-tab="consent">◷ Consent &amp; Purposes</button>
+    <button class="tab" data-tab="rights">⚖ Rights, Retention &amp; Residency</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot">illustrative model · privacy-by-design and privacy-first defaults · regimes shown: PIPEDA · Quebec Law 25 · GDPR · PHIPA · POPIA · CCPA/CPRA<br>built by 3 Halves Labs · programmed by a cat</div>
+</div>
+
+<script>
+/* ============================ regimes ============================ */
+const REG={
+  PIPEDA:{c:"#1f63c8"}, L25:{c:"#7437c9"}, GDPR:{c:"#0e8a82"},
+  PHIPA:{c:"#bf4f17"}, POPIA:{c:"#a9760a"}, CCPA:{c:"#1a8f45"},
+};
+function regChip(k){const c=REG[k].c;return `<span class="reg" style="color:${c};border-color:${c}">${k}</span>`;}
+
+/* ============================ purposes ============================ */
+const PURP={
+  security:{label:"Strictly necessary (security)", basis:"Legal obligation / contract", retention:"90 days",
+    allowed:["event","ip","device","geo","ts","player_id"], anon:false, pseudo:"secured"},
+  analytics:{label:"Analytics", basis:"Consent (opt-in)", retention:"14 months, then aggregated",
+    allowed:["event","reward_id","page","dwell_ms","ts","device","ip"], anon:true, pseudo:true},
+  personalization:{label:"Personalization", basis:"Consent (opt-in)", retention:"Until consent withdrawn",
+    allowed:["event","reward_id","page","dwell_ms","ts","device","player_id"], anon:false, pseudo:true},
+  marketing:{label:"Marketing", basis:"Express consent (opt-in)", retention:"Until withdrawn / 24mo idle",
+    allowed:["event","email_id","ts","player_id"], anon:false, pseudo:true},
+  product_biometric:{label:"Product · biometric coaching", basis:"Explicit consent (biometric)", retention:"Derived metrics 12mo; raw never stored",
+    allowed:["event","pose_vector","ts","player_id"], anon:false, pseudo:true},
+};
+
+/* ============================ events ============================ */
+const EVENTS={
+  login:{ name:"Login / session", note:"strictly-necessary", get:()=>({player_id:"plr_8842", ip:"203.0.113.47", device:"iOS 17 / Safari", geo:"Toronto, CA", ts:"2026-06-01T14:22:09Z", event:"login"}) },
+  reward:{ name:"Reward viewed", note:"analytics + personalization", get:()=>({player_id:"plr_8842", ip:"203.0.113.47", device:"iOS 17 / Safari", ts:"2026-06-01T14:22:09Z", event:"reward_view", reward_id:"rwd_512", page:"/rewards", dwell_ms:4200}) },
+  video:{ name:"Coaching frame (ScoreMotion)", note:"biometric · on-device", get:()=>({player_id:"plr_8842", raw_frame:"<video frame buffer>", pose_vector:"[34 keypoints]", ts:"2026-06-01T14:22:09Z", event:"pose_sample"}) },
+  email:{ name:"Marketing email open", note:"marketing", get:()=>({player_id:"plr_8842", email_id:"cmp_spring", ip:"203.0.113.47", ua:"AppleMail/iOS", ts:"2026-06-01T14:22:09Z", event:"email_open"}) },
+};
+
+/* ============================ stages ============================ */
+const STAGES=[
+  {k:"capture",   n:"Capture",            d:"First-party only, server-side tagging. No third-party beacons. Honours GPC / Do-Not-Track at the source."},
+  {k:"consent",   n:"Consent gate",       d:"Consent-first: non-essential purposes are off by default. The event proceeds only for a purpose with a valid legal basis."},
+  {k:"purpose",   n:"Purpose binding",    d:"Attaches a sticky policy. Purpose, lawful basis, retention and residency travel with the data for its whole life."},
+  {k:"minimize",  n:"Data minimization",  d:"Drops every field not required for the bound purpose. Collect the minimum, keep nothing extra."},
+  {k:"pseudonym", n:"Pseudonymization",   d:"Direct identifiers are replaced with a salted pseudonym. The re-identification key lives in a separate vault."},
+  {k:"anonymize", n:"Anonymization",      d:"For analytics, identifiers are removed entirely: IP truncated, timestamps coarsened, k-anonymity enforced."},
+  {k:"residency", n:"Residency & egress", d:"Routes to an EU store and blocks egress to non-adequate jurisdictions (CLOUD Act guard)."},
+  {k:"retention", n:"Retention clock",    d:"Assigns a purpose-based TTL and schedules automatic deletion or crypto-shredding."},
+  {k:"audit",     n:"Audit & receipt",    d:"Appends an immutable, hash-chained record to score_consent and issues a consent receipt."},
+];
+
+/* ============================ tracer state ============================ */
+const T={event:"reward", consent:{analytics:true, personalization:true, marketing:false, biometric:true}, gpc:false, minor:false, region:"EU", busy:false};
+const REGIME={EU:"GDPR", Quebec:"Law 25 + PIPEDA", Ontario:"PIPEDA", California:"CCPA / CPRA", Other:"PIPEDA (baseline)"};
+
+function effConsent(){
+  const e={...T.consent};
+  if(T.gpc){ e.analytics=false; e.personalization=false; e.marketing=false; }
+  if(T.minor){ e.marketing=false; e.personalization=false; e.biometric=false; }
+  return e;
+}
+function boundPurpose(e){
+  if(T.event==="login") return "security";
+  if(T.event==="reward") return e.personalization?"personalization":(e.analytics?"analytics":null);
+  if(T.event==="video") return e.biometric?"product_biometric":null;
+  if(T.event==="email") return e.marketing?"marketing":null;
+}
+function dropReason(){
+  if(T.event==="reward") return "no analytics or personalization consent — behavioural event is not collected at all";
+  if(T.event==="video") return T.minor?"biometric capture needs verified parental consent for a minor — denied":"biometric consent not granted — capture refused";
+  if(T.event==="email") return T.gpc?"Global Privacy Control signals opt-out — marketing event dropped":"marketing consent not granted — event dropped";
+  return "no lawful basis";
+}
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+
+function buildSteps(){
+  const e=effConsent();
+  const purpose=boundPurpose(e);
+  let pl=EVENTS[T.event].get();
+  const steps=[];
+  const snap=(status,note,removed)=>steps.push({status,note,removed:removed||[],payload:clone(pl)});
+
+  // capture
+  let capNote="Collected first-party. ";
+  if(T.gpc) capNote+="GPC present. ";
+  if(T.event==="video" && "raw_frame" in pl){ delete pl.raw_frame; capNote+="Raw frame discarded on-device; only the pose vector is emitted."; snap("applied",capNote,["raw_frame"]); }
+  else snap("applied", capNote||"Collected first-party.", []);
+
+  // consent
+  if(!purpose){
+    steps.push({status:"dropped", note:"Dropped at the consent gate: "+dropReason()+".", removed:[], payload:clone(pl)});
+    for(let i=2;i<STAGES.length;i++) steps.push({status:"skip", note:"not reached", removed:[], payload:clone(pl)});
+    return {steps, purpose:null, e};
+  }
+  const P=PURP[purpose];
+  snap("applied", "Consent / basis satisfied for purpose: "+P.label+".", []);
+
+  // purpose binding
+  pl._purpose=purpose; pl._lawfulBasis=P.basis; pl._retention=P.retention; pl._residency="EU (Hetzner DE)";
+  snap("applied", "Sticky policy attached. Basis: "+P.basis+".", []);
+
+  // minimize
+  const removed=[];
+  Object.keys(pl).forEach(k=>{ if(k.startsWith("_")) return; if(!P.allowed.includes(k)){ removed.push(k); delete pl[k]; }});
+  snap("applied", removed.length?("Dropped "+removed.length+" field(s) not needed for "+purpose+"."):"Already minimal for this purpose.", removed);
+
+  // pseudonymize
+  if("player_id" in pl){
+    if(P.pseudo==="secured"){ snap("applied","Identifier retained under security basis, encrypted at rest.",[]); }
+    else { delete pl.player_id; pl.subject="px_4f9ad2e1"; snap("applied","player_id replaced with salted pseudonym; key held in a separate vault.",[]); }
+  } else snap("applied","No direct identifier present.",[]);
+
+  // anonymize
+  if(P.anon){
+    if(pl.subject){ delete pl.subject; }
+    if(pl.ip){ pl.ip="203.0.113.0/24"; }
+    if(pl.ts){ pl.ts="2026-06-01T14:00Z"; }
+    pl._anon="k-anonymity (k\u226525)";
+    snap("applied","Fully de-identified for aggregate analytics: pseudonym dropped, IP truncated, timestamp coarsened.",[]);
+  } else {
+    snap("applied","Pseudonymous, not anonymised — this purpose needs a stable subject reference.",[]);
+  }
+
+  // residency
+  pl._store="eu-central · Hetzner DE";
+  snap("applied","Routed to EU store. Egress to non-adequate jurisdictions blocked.",[]);
+
+  // retention
+  pl._deleteAt="auto: "+P.retention;
+  snap("applied","TTL set ("+P.retention+"); automatic deletion / crypto-shred scheduled.",[]);
+
+  // audit
+  pl._receipt="rcpt_"+Math.random().toString(16).slice(2,8);
+  pl._audit="score_consent#hashchain";
+  snap("applied","Immutable processing record appended; consent receipt issued.",[]);
+
+  return {steps, purpose, e};
+}
+
+/* ============================ tracer render ============================ */
+function tracerMarkup(){
+  const evOpts=Object.entries(EVENTS).map(([k,v])=>`<option value="${k}" ${k===T.event?"selected":""}>${v.name}</option>`).join("");
+  const regOpts=Object.keys(REGIME).map(r=>`<option value="${r}" ${r===T.region?"selected":""}>${r}</option>`).join("");
+  const tg=(key,label,warn)=>`<div class="tg ${T.consent[key]?"on":""} ${warn?"warn":""}" data-consent="${key}"><span class="dot"></span>${label}</div>`;
+  const flag=(key,label)=>`<div class="tg warn ${T[key]?"on":""}" data-flag="${key}"><span class="dot"></span>${label}</div>`;
+  const stages=STAGES.map((s,i)=>`<div class="stage" id="stg-${i}">
+      <div class="num">${i+1}</div>
+      <div><div class="sname">${s.n}</div><div class="sdesc">${s.d}</div><div class="snote" id="note-${i}"></div></div>
+    </div>`).join("");
+  return `
+  <div class="card ctlbar">
+    <div class="cg"><span class="cl">Event</span><select id="selEvent">${evOpts}</select></div>
+    <div class="cg"><span class="cl">Consent (non-essential default off)</span>
+      <div class="toggles">${tg("analytics","Analytics")}${tg("personalization","Personalization")}${tg("marketing","Marketing",true)}${tg("biometric","Biometric")}</div></div>
+    <div class="cg"><span class="cl">Signals</span><div class="toggles">${flag("gpc","GPC / DNT")}${flag("minor","Minor")}</div></div>
+    <div class="cg"><span class="cl">Region</span><select id="selRegion">${regOpts}</select></div>
+    <div class="cg"><span class="cl">&nbsp;</span><div style="display:flex;gap:8px"><button class="runbtn" id="runBtn">⟶ Trace event</button><button class="ghostbtn" id="resetBtn">reset</button></div></div>
+  </div>
+
+  <div class="tracer">
+    <div class="card pipe-card">
+      <div class="pipe-head"><span>PRIVACY PIPELINE · 9 controls, capture → audit</span><span id="pipeHint">press “Trace event”</span></div>
+      ${stages}
+    </div>
+    <div class="card pp">
+      <div class="pp-head"><span>EVENT PAYLOAD</span><span class="pp-stage" id="ppStage">— idle —</span></div>
+      <div class="pp-body" id="ppBody"><div style="font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)">Set consent and a region, then trace an event to watch its payload get minimized, pseudonymized and bound to a policy in real time.</div></div>
+      <div class="disp" id="disp" style="display:none"></div>
+      <div class="policyline" id="policyLine"></div>
+      <div class="pp-legend">
+        <span class="li"><span class="d" style="background:var(--accent)"></span>policy tag</span>
+        <span class="li"><span class="d" style="background:var(--violet)"></span>pseudonym</span>
+        <span class="li"><span class="d" style="background:var(--orange)"></span>transformed</span>
+        <span class="li"><span class="d" style="background:var(--red)"></span>dropped</span>
+      </div>
+    </div>
+  </div>`;
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function renderPayload(payload, removed){
+  let rows=Object.entries(payload).map(([k,v])=>{
+    let cls="";
+    if(k.startsWith("_")) cls="policy";
+    else if(k==="subject") cls="pseudo";
+    else if((k==="ip"&&String(v).includes("/"))||(k==="ts"&&!String(v).includes(":09"))) cls="changed";
+    return `<div class="kvp ${cls}"><span class="pk">${esc(k)}</span><span class="pv">${esc(v)}</span></div>`;
+  }).join("");
+  if(removed && removed.length) rows+=`<div class="removed">${removed.map(r=>`<span class="rt">${esc(r)}</span>`).join("")}</div>`;
+  return rows;
+}
+function wireTracer(){
+  document.getElementById("selEvent").addEventListener("change",e=>{T.event=e.target.value;});
+  document.getElementById("selRegion").addEventListener("change",e=>{T.region=e.target.value;});
+  document.querySelectorAll("[data-consent]").forEach(el=>el.addEventListener("click",()=>{if(T.busy)return;const k=el.dataset.consent;T.consent[k]=!T.consent[k];el.classList.toggle("on",T.consent[k]);}));
+  document.querySelectorAll("[data-flag]").forEach(el=>el.addEventListener("click",()=>{if(T.busy)return;const k=el.dataset.flag;T[k]=!T[k];el.classList.toggle("on",T[k]);}));
+  document.getElementById("runBtn").addEventListener("click",runTrace);
+  document.getElementById("resetBtn").addEventListener("click",()=>renderTab("tracer"));
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function runTrace(){
+  if(T.busy)return; T.busy=true;
+  document.getElementById("runBtn").disabled=true;
+  const {steps,purpose,e}=buildSteps();
+  STAGES.forEach((s,i)=>{const el=document.getElementById("stg-"+i); el.className="stage"; document.getElementById("note-"+i).textContent="";});
+  document.getElementById("disp").style.display="none";
+  document.getElementById("pipeHint").textContent="running…";
+  document.getElementById("policyLine").innerHTML=`<b>Governing regime:</b> ${REGIME[T.region]} &nbsp;·&nbsp; <b>Bound purpose:</b> ${purpose?PURP[purpose].label:"none (event dropped)"}`;
+
+  for(let i=0;i<steps.length;i++){
+    const st=steps[i], el=document.getElementById("stg-"+i), note=document.getElementById("note-"+i);
+    el.classList.add("active");
+    document.getElementById("ppStage").textContent=(i+1)+" · "+STAGES[i].n;
+    document.getElementById("ppBody").innerHTML=renderPayload(st.payload, st.removed);
+    await sleep(540);
+    el.classList.remove("active");
+    el.classList.add(st.status==="skip"?"skip":st.status, "show");
+    note.textContent=st.note;
+    if(st.status==="dropped"){
+      // fill remaining as skip quickly
+      for(let j=i+1;j<steps.length;j++){const e2=document.getElementById("stg-"+j);e2.classList.add("skip","show");document.getElementById("note-"+j).textContent="not reached";}
+      showDisposition(null);
+      break;
+    }
+    await sleep(120);
+  }
+  if(purpose) showDisposition(purpose);
+  document.getElementById("pipeHint").textContent="done · adjust and trace again";
+  T.busy=false; document.getElementById("runBtn").disabled=false;
+}
+function showDisposition(purpose){
+  const d=document.getElementById("disp"); d.style.display="block";
+  if(!purpose){
+    d.className="disp drop";
+    d.innerHTML=`<div class="dh">Disposition · dropped</div><div style="font-size:12.5px;color:var(--ink-dim)">${dropReason()}. No record beyond the consent decision itself is created.</div>`;
+    return;
+  }
+  const P=PURP[purpose];
+  d.className="disp ok";
+  d.innerHTML=`<div class="dh">Disposition · stored</div>
+    <div class="dr"><span>store</span><b>eu-central · Hetzner DE</b></div>
+    <div class="dr"><span>purpose</span><b>${P.label}</b></div>
+    <div class="dr"><span>lawful basis</span><b>${P.basis}</b></div>
+    <div class="dr"><span>retention</span><b>${P.retention}</b></div>
+    <div class="dr"><span>identifiability</span><b>${P.anon?"anonymous (aggregate)":(P.pseudo==="secured"?"identified, encrypted":"pseudonymous")}</b></div>
+    <div class="dr"><span>receipt</span><b>issued · score_consent</b></div>`;
+}
+
+/* ============================ control catalogue ============================ */
+const CAT=[
+  ["Consent & lawful basis",[
+    ["Consent-first defaults","Every non-essential purpose is off until the player opts in. Nothing is assumed.",["PIPEDA","L25","GDPR"],"Consent gate"],
+    ["Granular purpose consent","Consent is captured per purpose, not as one all-or-nothing bundle.",["L25","GDPR"],"Consent UI"],
+    ["Express consent for sensitive data","Biometric and any sensitive category require a separate, explicit opt-in.",["L25","PHIPA","GDPR"],"Consent gate"],
+    ["Withdrawal as easy as granting","One tap to withdraw; the change propagates through the stack immediately.",["L25","GDPR"],"Consent UI"],
+    ["GPC / Do-Not-Track honoured","Browser opt-out signals are treated as a binding opt-out at capture.",["CCPA","GDPR"],"Capture"],
+    ["Verified parental consent for minors","Heightened protection: no marketing, restricted personalization, parental gate for biometric.",["PIPEDA","L25","GDPR"],"Consent gate"],
+  ]],
+  ["Collection & minimization",[
+    ["First-party, server-side tagging","No third-party client beacons. Tags fire server-side under first-party control.",["PIPEDA","L25","GDPR"],"Capture"],
+    ["Data minimization per purpose","Only fields required for the bound purpose survive; the rest are dropped at ingest.",["PIPEDA","L25","GDPR"],"Minimizer"],
+    ["Purpose limitation (sticky policy)","Purpose, basis, retention and residency are bound to the record and enforced downstream.",["L25","GDPR"],"Purpose binding"],
+    ["IP truncation & timestamp coarsening","Analytics never sees a full IP or precise time.",["GDPR"],"Anonymizer"],
+    ["No dark patterns in consent UX","Reject is as prominent as accept; no pre-ticked boxes.",["L25","GDPR"],"Consent UI"],
+  ]],
+  ["Identity & pseudonymity",[
+    ["Pseudonymization at rest","Direct identifiers replaced with salted pseudonyms before storage.",["L25","GDPR"],"Pseudonymizer"],
+    ["Identity-key separation","Re-identification keys live in a separate vault with independent access control.",["GDPR"],"Key vault"],
+    ["k-anonymity for analytics","Aggregate datasets enforce a minimum cohort size before a row is queryable.",["GDPR"],"Anonymizer"],
+    ["Re-identification access logging","Any attempt to re-link pseudonymous data is logged and reviewed.",["PIPEDA","GDPR"],"PDP"],
+  ]],
+  ["Storage, residency & sovereignty",[
+    ["EU data residency","Identifiable data resides in the EU (Hetzner, Germany).",["L25","GDPR"],"Residency router"],
+    ["CLOUD Act egress guard","Egress to non-adequate jurisdictions is blocked; no US processor holds identifiable data.",["L25"],"Egress"],
+    ["Sub-processor governance + DPAs","Every sub-processor is inventoried and under a data-processing agreement.",["L25","GDPR"],"PDP"],
+    ["Encryption in transit & at rest","TLS 1.3 in transit; encrypted volumes and field-level encryption at rest.",["PIPEDA","L25","GDPR","PHIPA"],"Storage"],
+    ["Region-locked keys","Encryption keys are region-locked and never exported.",["L25","GDPR"],"Key vault"],
+  ]],
+  ["Retention & deletion",[
+    ["Purpose-based TTL","Each purpose carries its own retention clock; data does not linger by default.",["PIPEDA","L25","GDPR"],"Retention clock"],
+    ["Automated expiry & crypto-shred","Expiry runs automatically; shredding the key renders pseudonymous data unrecoverable.",["GDPR","L25"],"Retention clock"],
+    ["Backup tombstoning","Erasure requests tombstone backups so restores cannot resurrect deleted data.",["GDPR"],"Storage"],
+  ]],
+  ["Subject rights",[
+    ["Access & portability (30-day SLA)","Self-serve export of all data in a machine-readable format.",["L25","GDPR","CCPA"],"Rights service"],
+    ["Right-to-erasure cascade","Deletion propagates across every store, cache and backup.",["L25","GDPR","CCPA"],"Rights service"],
+    ["Object to automated decisions","Players can demand human review of any consequential automated decision.",["L25","GDPR"],"PDP"],
+    ["Rectification & de-indexing","Correct or de-index data on request.",["L25"],"Rights service"],
+  ]],
+  ["Transparency & audit",[
+    ["Immutable consent ledger","score_consent is append-only and hash-chained: tamper-evident proof of every decision.",["L25","GDPR"],"Audit"],
+    ["Records of processing (ROPA)","A living register of what is processed, why, and on what basis.",["GDPR"],"PDP"],
+    ["Player privacy dashboard","One place to see and control what is collected and why.",["L25","GDPR"],"Transparency"],
+    ["Algorithmic transparency","Every personalization surfaces a plain-language 'why am I seeing this'.",["L25","GDPR"],"Transparency"],
+  ]],
+];
+function catalogMarkup(){
+  const groups=CAT.map(([g,items])=>`<div class="cat-group">
+    <div class="section-h">${g} <span style="font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:0;text-transform:none">${items.length} controls</span></div>
+    <div class="cat-cards">${items.map(c=>`<div class="card ctrl">
+      <h4>${c[0]}<span class="pep">${c[3]}</span></h4><p>${c[1]}</p>
+      <div class="regs">${c[2].map(regChip).join("")}</div></div>`).join("")}</div></div>`).join("");
+  return `<div class="reglegend">${Object.keys(REG).map(regChip).join("")}</div>`+groups;
+}
+
+/* ============================ consent matrix ============================ */
+const CONSENT_ROWS=[
+  ["Strictly necessary","Legal obligation / contract","nec","Always on","Not required","Security, session","90 days","n/a"],
+  ["Functional","Legitimate interest","on","On (notice)","Notice","Preferences, language","Session – 13mo","Yes"],
+  ["Analytics","Consent","off","Off (opt-in)","Opt-in","Behavioural (anonymised)","14mo then aggregate","Yes"],
+  ["Personalization","Consent","off","Off (opt-in)","Opt-in","Behavioural (pseudonymous)","Until withdrawn","Yes"],
+  ["Marketing","Express consent","off","Off (opt-in)","Express opt-in","Contact, engagement","Until withdrawn / 24mo idle","Yes"],
+  ["Biometric coaching","Explicit consent","off","Off (opt-in)","Express + parental if minor","Pose metrics (no raw frames)","12mo derived","Yes"],
+  ["Aggregated research","Legitimate interest","nec","On (anonymised)","Not required (anon)","Fully anonymised","Indefinite (no PII)","n/a"],
+];
+function consentMarkup(){
+  const rows=CONSENT_ROWS.map(r=>`<tr>
+    <td><span class="pn">${r[0]}</span></td><td>${r[1]}</td>
+    <td><span class="pill ${r[2]}">${r[3]}</span></td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("");
+  return `<div class="section-h">Purpose &amp; consent model <span style="font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:0;text-transform:none">consent-first · non-essential defaults off</span></div>
+    <table><thead><tr><th>Purpose</th><th>Lawful basis</th><th>Default</th><th>Consent type</th><th>Data categories</th><th>Retention</th><th>Withdraw</th></tr></thead><tbody>${rows}</tbody></table>
+    <p style="font-size:12px;color:var(--ink-dim);margin:12px 2px 0;max-width:820px">Default state is the whole argument: only purposes a player cannot operate without are on. Everything that creates commercial value for SCORE, analytics, personalization and marketing, starts <b>off</b> and must be earned through an explicit, withdrawable opt-in.</p>`;
+}
+
+/* ============================ rights / residency ============================ */
+const RIGHTS=[
+  ["Access","30 days","All data exported through the privacy dashboard in a readable form.",["L25","GDPR","CCPA"]],
+  ["Portability","30 days","Machine-readable export the player can take elsewhere.",["L25","GDPR"]],
+  ["Rectification","30 days","Self-serve correction plus a request channel for the rest.",["L25","GDPR"]],
+  ["Erasure","30 days","Cascading delete across every store, plus crypto-shred of the identity key.",["L25","GDPR","CCPA"]],
+  ["Restriction","On request","Processing paused while data is locked, not deleted.",["GDPR"]],
+  ["Objection","On request","Processing stops for the objected purpose.",["L25","GDPR"]],
+  ["Withdraw consent","Immediate","As easy as granting; propagates through the pipeline at once.",["L25","GDPR"]],
+  ["Automated-decision review","On request","A human reviews any consequential automated decision.",["L25","GDPR"]],
+];
+const CASCADE=[
+  ["1","Profile database","Hard delete of the identity record.","del"],
+  ["2","Event store","Behavioural rows linked to the subject are deleted.","del"],
+  ["3","Pseudonym vault","Crypto-shred the key — pseudonymous data becomes permanently unlinkable.","shred"],
+  ["4","Caches (Redis)","Sessions and cached tokens purged.","del"],
+  ["5","Backups","Tombstoned and expired on the next rotation; restores cannot resurrect the data.","del"],
+  ["6","Analytics","Already anonymised at ingest — outside the scope of erasure.","del"],
+  ["7","Consent ledger","Retained under legal basis, minimised — kept only as tamper-evident proof the erasure happened.","keep"],
+];
+const SOV=[
+  "Identifiable data resides in the EU (Hetzner, Germany) under GDPR-grade controls.",
+  "Quebec Law 25 cross-border transfer assessment is on file for any movement of personal data.",
+  "CLOUD Act exposure is minimised: no US sub-processor holds identifiable data.",
+  "LLM calls send only redacted, pseudonymised context, with data-residency controls and no training on player data.",
+  "Every sub-processor (Hetzner host, Claude API) operates under a data-processing agreement; encryption keys are region-locked.",
+];
+function rightsMarkup(){
+  const cards=RIGHTS.map(r=>`<div class="card right"><h4>${r[0]}</h4><div class="sla">SLA: ${r[1]}</div><p>${r[2]}</p><div class="regs" style="margin-top:8px">${r[3].map(regChip).join("")}</div></div>`).join("");
+  const cas=CASCADE.map(c=>`<div class="cs ${c[3]==='shred'?'shred':(c[3]==='keep'?'keep':'')}"><div class="csn">${c[0]}</div><div><div class="cst">${c[1]}</div><div class="csd">${c[2]}</div></div></div>`).join("");
+  const sov=SOV.map(s=>`<div class="si"><span class="sx">✓</span><span>${s}</span></div>`).join("");
+  return `<div class="section-h">Data-subject rights</div>
+    <div class="rights-grid">${cards}</div>
+    <div class="twocol" style="margin-top:22px">
+      <div><div class="section-h">Right-to-erasure cascade</div><div class="card" style="padding:6px 15px 8px"><div class="cascade">${cas}</div></div></div>
+      <div><div class="section-h">Residency &amp; sovereignty</div><div class="card" style="padding:15px"><div class="sov">${sov}</div></div></div>
+    </div>`;
+}
+
+/* ============================ KPIs + tabs ============================ */
+function renderKPIs(){
+  let nctrl=0; CAT.forEach(([g,items])=>nctrl+=items.length);
+  const tiles=[
+    [CONSENT_ROWS.length,"Defined purposes","var(--ink)"],
+    ["4","Opt-in by default","var(--green)"],
+    ["100%","First-party tracking","var(--green)"],
+    ["EU","Identifiable-data residency","var(--accent)"],
+    ["30 days","Subject-rights SLA","var(--ink)"],
+    [nctrl,"Privacy controls","var(--violet)"],
+    [Object.keys(REG).length,"Regimes mapped","var(--teal)"],
+  ];
+  document.getElementById("kpis").innerHTML=tiles.map(t=>`<div class="card kpi"><div class="kv" style="color:${t[2]}">${t[0]}</div><div class="kl">${t[1]}</div></div>`).join("");
+}
+function renderTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  const v=document.getElementById("view");
+  if(name==="tracer"){ v.innerHTML=tracerMarkup(); wireTracer(); }
+  else if(name==="catalog"){ v.innerHTML=catalogMarkup(); }
+  else if(name==="consent"){ v.innerHTML=consentMarkup(); }
+  else { v.innerHTML=rightsMarkup(); }
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+
+/* init */
+renderKPIs();
+renderTab("tracer");
+</script>
+</body>
+</html>
