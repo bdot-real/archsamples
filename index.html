@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Anything · Architecture &amp; Concept Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1000px 560px at 8% -8%, rgba(13,110,168,.08), transparent 60%),
+      radial-gradient(800px 520px at 100% 0%, rgba(116,55,201,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:34px 22px 64px}
+
+  header{margin-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:6px 0 8px;font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:14.5px;max-width:780px}
+
+  /* connective band */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:22px 0 8px}
+  .flow .seg{flex:1;min-width:130px;border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:var(--panel)}
+  .flow .seg .role{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .flow .seg .what{font-size:12.5px;font-weight:600;margin-top:2px}
+  .flow .ar{display:flex;align-items:center;color:var(--ink-faint);font-size:17px;padding:0 6px}
+  .gov{margin:8px 0 0;border:1px dashed var(--line2);border-radius:10px;padding:9px 13px;background:var(--panel2);font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:flex;align-items:center;gap:9px}
+  .gov b{color:var(--ink)} .gov .gd{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:34px 2px 14px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06);padding:16px 17px;transition:.15s;position:relative;overflow:hidden}
+  a.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  a.card:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 6px 14px rgba(22,42,74,.08),0 18px 40px rgba(22,42,74,.10)}
+  .ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .role-badge{font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .open{font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap}
+  a.card h3{margin:10px 0 2px;font-size:16.5px;font-weight:700;letter-spacing:-.01em}
+  a.card .sub{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-bottom:9px}
+  a.card p{margin:0;font-size:12.5px;color:var(--ink-dim);line-height:1.5}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .tag{font-family:var(--mono);font-size:9px;color:var(--ink-dim);border:1px solid var(--line);background:var(--panel2);border-radius:20px;padding:3px 9px}
+  .fname{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:10px}
+
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · Score Anything</div>
+    <h1>Architecture &amp; Concept Library</h1>
+    <p class="lead">Interactive diagrams and concept models for the Score Anything loyalty platform. Most have an Executive / Developer toggle: executives follow the narrative and the "why," developers drill into contracts, configuration and failure modes. Open any one below.</p>
+  </header>
+
+  <div class="flow">
+    <div class="seg"><div class="role">Edge</div><div class="what">Tracking SDK</div></div>
+    <div class="ar">→</div>
+    <div class="seg"><div class="role">Spine</div><div class="what">Data Platform</div></div>
+    <div class="ar">→</div>
+    <div class="seg"><div class="role">Consumer</div><div class="what">AI Estate</div></div>
+    <div class="ar">+</div>
+    <div class="seg"><div class="role">Integration</div><div class="what">Identity Federation</div></div>
+  </div>
+  <div class="gov"><span class="gd"></span><b>Governance underneath everything:</b>&nbsp;consent, residency, lineage and access policy span the whole platform.</div>
+
+  <div class="section-h">The platform, end to end</div>
+  <div class="grid">
+
+    <a class="card" href="score-sdk-architecture.html" style="--accent:var(--accent)">
+      <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Edge</span><span class="open">Open ↗</span></div>
+      <h3>Tracking SDK Architecture</h3>
+      <div class="sub">@3halves-labs/score-tracker · web · iOS · Android</div>
+      <p>The full journey of a browser signal becoming loyalty points: capture → consent-gated enqueue → batching → the wire envelope → middleware queue → ERP rules → points. Includes the lifecycle, a system map, a subsystem catalogue and the contract &amp; failure-mode reference.</p>
+      <div class="tags"><span class="tag">Executive + Developer</span><span class="tag">Interactive flow</span><span class="tag">Contracts &amp; resilience</span></div>
+      <div class="fname">score-sdk-architecture.html</div>
+    </a>
+
+    <a class="card" href="player-data-platform.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--teal);background:rgba(14,138,130,.10)">Spine</span><span class="open">Open ↗</span></div>
+      <h3>Player Data Platform</h3>
+      <div class="sub">event-driven data backbone</div>
+      <p>The reference architecture between the edge and the models: a durable streaming bus, stream and batch processing, a bronze/silver/gold lakehouse, a feature store and activation — with cross-cutting governance, lineage, quality and SLOs. Every block names the industry archetype it maps to.</p>
+      <div class="tags"><span class="tag">Executive + Developer</span><span class="tag">Medallion lakehouse</span><span class="tag">Archetype-mapped</span></div>
+      <div class="fname">player-data-platform.html</div>
+    </a>
+
+    <a class="card" href="score-ai-governance-map.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">Consumer</span><span class="open">Open ↗</span></div>
+      <h3>AI Estate &amp; Governance Map</h3>
+      <div class="sub">models · data · risk tiers · governance gates</div>
+      <p>Every AI model the platform runs, shown with its data inputs, risk tier and the governance gates between "built" and "approved to ship." Includes a value-vs-risk portfolio, a data-lineage view and a controls &amp; compliance matrix.</p>
+      <div class="tags"><span class="tag">Interactive</span><span class="tag">Risk × value portfolio</span><span class="tag">Lineage + controls matrix</span></div>
+      <div class="fname">score-ai-governance-map.html</div>
+    </a>
+
+    <a class="card" href="Architecture%20Console.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--orange);background:rgba(191,79,23,.10)">Integration</span><span class="open">Open ↗</span></div>
+      <h3>Architecture Console — Identity Federation</h3>
+      <div class="sub">SCORE ↔ URC · OIDC + PKCE</div>
+      <p>The federation topology seen through analytical lenses — risk heatmap, blast-radius cascade, data classification, sovereignty and latency — plus the brokered OIDC flow and the embedded third-party SDK. Click any node or edge to open its risk register.</p>
+      <div class="tags"><span class="tag">Multi-lens topology</span><span class="tag">Blast radius</span><span class="tag">Threat model</span></div>
+      <div class="fname">Architecture Console.html</div>
+    </a>
+
+  </div>
+
+  <div class="section-h">Reference &amp; tools</div>
+  <div class="grid">
+
+    <a class="card" href="frontend-caching-playground.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--blue);background:rgba(31,99,200,.10)">Reference</span><span class="open">Open ↗</span></div>
+      <h3>Front-End Data Caching — Playground</h3>
+      <div class="sub">cache-first · network-first · stale-while-revalidate · …</div>
+      <p>Pick a caching strategy, fire a read, and watch data move between the component, the client cache and the origin — with freshness, latency and offline outcomes. Includes a comparison matrix and a mapping to Cache-Control, TanStack Query, SWR, Apollo and Workbox.</p>
+      <div class="tags"><span class="tag">Interactive simulator</span><span class="tag">Strategy comparison</span><span class="tag">API mapping</span></div>
+      <div class="fname">frontend-caching-playground.html</div>
+    </a>
+
+  </div>
+
+  <div class="foot">
+    3 Halves Labs · Score Anything &nbsp;·&nbsp; built with the same toolkit and design language across all diagrams<br>
+    for more information contact <a href="mailto:blake@3halves-labs.com">blake@3halves-labs.com</a>
+  </div>
+
+</div>
+</body>
+</html>
