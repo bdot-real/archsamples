@@ -14,7 +14,7 @@
     --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
     --accent:#0d6ea8;
     --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
-    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82; --gold:#c79a2e;
     --mono:'IBM Plex Mono',ui-monospace,monospace;
     --sans:'IBM Plex Sans',system-ui,sans-serif;
   }
@@ -131,6 +131,43 @@
       <p>The federation topology seen through analytical lenses — risk heatmap, blast-radius cascade, data classification, sovereignty and latency — plus the brokered OIDC flow and the embedded third-party SDK. Click any node or edge to open its risk register.</p>
       <div class="tags"><span class="tag">Multi-lens topology</span><span class="tag">Blast radius</span><span class="tag">Threat model</span></div>
       <div class="fname">Architecture Console.html</div>
+    </a>
+
+  </div>
+
+  <div class="section-h">The loyalty loop</div>
+  <div class="grid">
+
+    <a class="card" href="loyalty-engine.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--gold);background:rgba(201,154,46,.12)">Value loop</span><span class="open">Open ↗</span></div>
+      <h3>Loyalty Engine — rules → rewards</h3>
+      <div class="sub">how an event becomes points</div>
+      <p>Fire an event and watch the engine match it against rules (type, url, selector, threshold, payload), check limits (once / cooldown / per-match), award karma, advance challenges and goals, and move the player up a tier. The business core, picking up exactly where the Tracking SDK hands off.</p>
+      <div class="tags"><span class="tag">Interactive simulator</span><span class="tag">Rules · challenges · tiers</span><span class="tag">Rule internals toggle</span></div>
+      <div class="fname">loyalty-engine.html</div>
+    </a>
+
+    <a class="card" href="loyalty-ledger.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--green);background:rgba(26,143,69,.10)">Integrity</span><span class="open">Open ↗</span></div>
+      <h3>Loyalty Ledger &amp; Reconciliation</h3>
+      <div class="sub">points as a liability on the books</div>
+      <p>The integrity layer beneath the engine: an append-only, double-entry, idempotent and reversible ledger that finance can reconcile and audit. Post entries, watch the books stay balanced, try a duplicate and see exactly-once reject it, then break and rebuild the reconciliation.</p>
+      <div class="tags"><span class="tag">Executive + Developer</span><span class="tag">Double-entry + hash chain</span><span class="tag">Reconciliation demo</span></div>
+      <div class="fname">loyalty-ledger.html</div>
+    </a>
+
+  </div>
+
+  <div class="section-h">AI governance &amp; security</div>
+  <div class="grid">
+
+    <a class="card" href="score-ai-guardrails.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--red);background:rgba(214,47,38,.10)">Guardrails</span><span class="open">Open ↗</span></div>
+      <h3>Score AI Guardrails Architecture</h3>
+      <div class="sub">MCP · least-privilege access · no public leakage</div>
+      <p>Defense-in-depth for Score AI as an MCP server, seen through three lenses (Security, Privacy, Executive). A request-trace simulator walks a request through all eight guardrail layers, an access evaluator and an egress simulator block over-reach and leakage (internal forecasts, embargoed data), plus a threat model (OWASP LLM / MCP / ATLAS) and a conformance matrix to ISO 42001 / 27001 / 27701, SOC 2, GDPR and the EU AI Act.</p>
+      <div class="tags"><span class="tag">Tri-lens (Sec / Privacy / Exec)</span><span class="tag">Request-trace + simulators</span><span class="tag">ISO · SOC 2 · GDPR mapped</span></div>
+      <div class="fname">score-ai-guardrails.html</div>
     </a>
 
   </div>
