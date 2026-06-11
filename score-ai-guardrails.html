@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score AI Guardrails · Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --lens:var(--accent);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(214,47,38,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1300px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:720px}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .aud{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .aud .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:8px 13px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .modebanner{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin:10px 2px 14px;display:flex;align-items:center;gap:8px}
+  .modebanner .b{width:8px;height:8px;border-radius:50%;background:var(--lens)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:14px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 13px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--lens);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:880px;line-height:1.55}
+
+  /* control plane */
+  .cp-wrap{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
+  @media(max-width:980px){.cp-wrap{grid-template-columns:1fr}}
+  .stack{padding:8px 10px 12px}
+  .lyr{display:grid;grid-template-columns:30px 1fr;gap:11px;padding:11px 9px;border-radius:10px;cursor:pointer;transition:.12s;position:relative}
+  .lyr:hover{background:var(--panel2)}
+  .lyr.sel{background:rgba(13,110,168,.07)}
+  .lyr::before{content:"";position:absolute;left:23px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .lyr:first-child::before{top:50%}.lyr:last-child::before{bottom:50%}
+  .lyr .ic{width:17px;height:17px;border-radius:5px;margin:3px auto 0;z-index:1;position:relative;border:2px solid}
+  .lyr .ln{font-weight:700;font-size:13px}
+  .lyr .ls{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:2px;line-height:1.35}
+  .lyr .lt{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .lyr .tl{font-family:var(--mono);font-size:8px;color:var(--ink-dim);border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--panel)}
+  .barrier{display:flex;align-items:center;gap:10px;margin:6px 8px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--red)}
+  .barrier .bl{flex:1;height:0;border-top:2px dashed rgba(214,47,38,.35)}
+
+  .dp{position:sticky;top:14px;min-height:460px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:16px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 12px;font-size:13px;color:var(--ink);line-height:1.55}
+  .lensrow{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .lensbit{font-size:12px;line-height:1.5;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel2)}
+  .lensbit .ll{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:3px}
+  .lensbit.on{border-color:var(--lens);background:rgba(13,110,168,.06)}
+  .lensbit.on .ll{color:var(--lens)} .lensbit:not(.on) .ll{color:var(--ink-faint)} .lensbit:not(.on){opacity:.62}
+  .sech{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:14px 0 7px}
+  .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+  .ch2{font-family:var(--mono);font-size:9.5px;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--panel2)}
+  .ch2.fw{color:var(--violet);border-color:rgba(116,55,201,.3);background:rgba(116,55,201,.06)}
+  .ch2.tool{color:var(--accent);border-color:rgba(13,110,168,.3);background:rgba(13,110,168,.06)}
+
+  /* simulators */
+  .sim{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.sim{grid-template-columns:1fr}}
+  .simctl{padding:15px 16px}
+  .qg{margin-bottom:14px}
+  .ql{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
+  .opts{display:flex;gap:6px;flex-wrap:wrap}
+  .opt{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 11px;cursor:pointer;background:var(--panel);transition:.12s}
+  .opt:hover{border-color:var(--lens)}
+  .opt.on{border-color:var(--lens);background:rgba(13,110,168,.08);color:var(--ink);font-weight:600;box-shadow:0 0 0 2px rgba(13,110,168,.12)}
+  .result{padding:0;overflow:hidden}
+  .rhead{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
+  .verdict{font-family:var(--mono);font-size:15px;font-weight:700;padding:6px 14px;border-radius:8px}
+  .verdict.allow{color:var(--green);background:rgba(26,143,69,.12)}
+  .verdict.scoped{color:var(--amber);background:rgba(169,118,10,.12)}
+  .verdict.redact{color:var(--amber);background:rgba(169,118,10,.12)}
+  .verdict.deny,.verdict.block{color:var(--red);background:rgba(214,47,38,.12)}
+  .rbody{padding:14px 16px}
+  .rbody .rl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 5px}
+  .rbody p{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+  .rbody .ctl{font-family:var(--mono);font-size:11px;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;line-height:1.5}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);font-size:11.5px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.k{font-weight:600} td code{font-family:var(--mono);font-size:10.5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .tg{font-family:var(--mono);font-size:9px;border-radius:4px;padding:1px 5px;white-space:nowrap;display:inline-block;margin:1px 0}
+  .tg.tool{color:var(--accent);background:rgba(13,110,168,.08)}
+  .sev{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px}
+  .sev.hi{color:var(--red);background:rgba(214,47,38,.1)} .sev.med{color:var(--amber);background:rgba(169,118,10,.1)}
+  .cell-y{color:var(--green);font-family:var(--mono);font-size:10.5px}
+  .compliance td{font-size:10.5px} .compliance td.k{font-size:11.5px}
+
+  /* request trace */
+  .trace-top{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .scn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:9px;padding:8px 12px;cursor:pointer;background:var(--panel);transition:.12s;text-align:left}
+  .scn:hover{border-color:var(--lens)}
+  .scn.on{border-color:var(--lens);background:rgba(13,110,168,.08);font-weight:600;box-shadow:0 0 0 2px rgba(13,110,168,.12)}
+  .trace-grid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+  @media(max-width:980px){.trace-grid{grid-template-columns:1fr}}
+  .tsteps{padding:8px 10px 12px}
+  .tstep{display:grid;grid-template-columns:24px 1fr 22px;gap:11px;padding:9px 8px;border-radius:10px;position:relative;transition:.18s}
+  .tstep::before{content:"";position:absolute;left:19px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .tstep:first-child::before{top:50%}.tstep:last-child::before{bottom:50%}
+  .tstep .tic{width:13px;height:13px;border-radius:50%;margin:4px auto 0;z-index:1;position:relative;border:2px solid var(--line2);background:var(--panel)}
+  .tstep .tic.v-pass,.tstep .tic.v-transform,.tstep .tic.v-block{border-color:currentColor}
+  .tstep .tn{font-weight:600;font-size:12.5px}
+  .tstep .tw{font-size:11.5px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+  .tstep .tc{font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:4px}
+  .vrd{font-family:var(--mono);font-weight:700;font-size:13px;text-align:center;margin-top:3px}
+  .v-pass{color:var(--green)}.v-transform{color:var(--amber)}.v-block{color:var(--red)}.v-skip{color:var(--ink-faint)}
+  .tstep.pending{opacity:.4}.tstep.pending .tw,.tstep.pending .tc{display:none}
+  .tstep.skip{opacity:.42}.tstep.skip .tc{display:none}
+  .tstep.active{background:rgba(13,110,168,.06)}
+  .tctl{padding:14px 16px;position:sticky;top:14px}
+  .tbtns{display:flex;gap:7px;margin:6px 0 10px}
+  .tbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:8px 13px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .tbtn:hover{border-color:var(--lens)}
+  .tbtn.primary{background:var(--lens);color:#fff;border-color:var(--lens)}
+  .tcount{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .tverdict{margin-top:12px;padding:12px 13px;border-radius:10px;display:none}
+  .tverdict.show{display:block}
+  .tverdict.allowed{background:rgba(26,143,69,.08);border:1px solid rgba(26,143,69,.3)}
+  .tverdict.blocked{background:rgba(214,47,38,.07);border:1px solid rgba(214,47,38,.3)}
+  .tverdict .vh{font-family:var(--mono);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .tverdict.allowed .vh{color:var(--green)}.tverdict.blocked .vh{color:var(--red)}
+  .tverdict .vt{font-size:12px;color:var(--ink);margin-top:7px;line-height:1.5}
+  .tverdict .vt b{color:var(--ink)}
+  .tk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--lens);margin-top:11px}
+  /* data classification legend */
+  .dataclass{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:0 0 16px}
+  .dcch{border:1px solid var(--line);border-left:4px solid;border-radius:9px;padding:8px 11px;background:var(--panel)}
+  .dcch .dcn{font-weight:700;font-size:11.5px}
+  .dcch .dch{font-family:var(--mono);font-size:9px;color:var(--ink-dim);margin-top:3px;line-height:1.35}
+  .sev.low{color:var(--green);background:rgba(26,143,69,.1)}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">3 Halves Labs · Score Anything</div>
+      <h1>Score AI Guardrails Architecture</h1>
+      <p class="lead">Score AI is an <code>MCP</code> server. This is the defense-in-depth that keeps it scoped to only the data it needs and stops any public leakage — including its own internal prediction-market forecasts and externally embargoed information. Read it through three lenses.</p>
+    </div>
+    <div class="aud">
+      <span class="al">Lens</span>
+      <div class="seg" id="lensSeg">
+        <button data-lens="sec" class="on">⛨ Security</button>
+        <button data-lens="priv">🔒 Privacy</button>
+        <button data-lens="exec">◐ Executive</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="modebanner" id="modeBanner"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="plane">⛨ Control Plane</button>
+    <button class="tab" data-tab="trace">▶ Request Trace</button>
+    <button class="tab" data-tab="access">▦ MCP Access Control</button>
+    <button class="tab" data-tab="egress">⛔ Leakage &amp; Embargo</button>
+    <button class="tab" data-tab="threat">⚠ Threat Model</button>
+    <button class="tab" data-tab="compliance">✓ Conformance</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot">reference architecture · specific tools shown are representative of the chosen stack · deny-by-default, provenance-tracked, audited end to end<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+let LENS="sec";
+let traceTimer=null;
+const LENSCOLOR={sec:"var(--accent)",priv:"var(--teal)",exec:"var(--violet)"};
+const LENSNAME={sec:"Security Architect",priv:"Privacy Architect",exec:"Executive"};
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ===================== CONTROL PLANE ===================== */
+const LAYERS=[
+ {id:"ident",n:"Identity & tenancy",s:"zero-trust front door · one tenant per request",c:"var(--accent)",
+  sec:"Every call is authenticated with OIDC and an OAuth 2.1 access token bound to a single audience (no token pass-through — the MCP 2025-11-25 risk). Workloads carry SPIFFE/SVID identity over mTLS; each tenant is a separate Keycloak realm so cross-org contamination (the 2025 Asana-class incident) is structurally impossible.",
+  priv:"The session is bound to a data subject and a declared purpose at the door, so downstream policy can enforce purpose limitation. No request can ever span two tenants' personal data.",
+  exec:"Nothing talks to Score AI without proving who it is, and every request is locked to one customer's data. The most common AI-platform breach — one tenant seeing another's data — cannot happen here.",
+  tools:["Keycloak (OIDC)","OAuth 2.1 / resource indicators","SPIFFE/SPIRE","mTLS","Traefik"],
+  fw:["ISO 27001 A.5/A.8","SOC 2 CC6","GDPR Art 32","OWASP LLM token pass-through"]},
+ {id:"pdp",n:"Policy Decision Point",s:"deny-by-default · policy-as-code before every action",c:"var(--blue)",
+  sec:"A central PDP (Open Policy Agent / Rego) is consulted before every retrieval and every tool call and returns allow/deny with a logged reason. Policies distribute in real time via OPAL; default is deny. Cedar is the deterministic alternative where stronger validation is wanted.",
+  priv:"Purpose limitation and lawful basis are encoded as policy, not left to prompt wording: a purpose that has no lawful basis for a data class is denied at the PDP, before the model is even invoked.",
+  exec:"One auditable place defines who and what may do anything — changeable without a redeploy, and every decision is recorded for auditors.",
+  tools:["OPA / Rego","OPAL (hot reload)","Cedar (alt)","Permit.io"],
+  fw:["ISO 42001 A.6/A.9","SOC 2 CC6.3","GDPR Art 5/6/25"]},
+ {id:"input",n:"Input guardrails",s:"inspect prompt & untrusted context before the model",c:"var(--teal)",
+  sec:"Prompt-injection and jailbreak detection (Meta Prompt Guard 2, Lakera Guard, Azure Prompt Shields) run inline. Tool and retrieval outputs are treated as untrusted and quarantined in a separate context region so injected instructions in fetched content cannot hijack the agent.",
+  priv:"PII is detected and minimized at ingress with Microsoft Presidio, so the model only ever receives the personal data the task actually requires.",
+  exec:"Malicious or oversharing inputs are caught before the model sees them — the #1 LLM risk (prompt injection) is screened at the entrance.",
+  tools:["Microsoft Presidio","Meta Prompt Guard 2","Lakera Guard","Azure Prompt Shields","NeMo Guardrails (Colang)"],
+  fw:["OWASP LLM01","GDPR Art 5(1)(c)","ISO 42001 A.7"]},
+ {id:"rag",n:"Context assembly · RAG authz",s:"row/document-level access filtered before retrieval",c:"var(--green)",
+  sec:"Retrieval is authorized at the row/document level with relationship-based access control (OpenFGA / SpiceDB, Zanzibar-style) before the vector store is ever queried; pgvector/Pinecone searches are pre-filtered to the caller's grants. The model cannot retrieve what the principal can't see.",
+  priv:"Only data whose purpose and consent permit it enters the context, and residency tags keep EU data in-region. Least privilege is enforced at the data layer, not hoped for in the prompt.",
+  exec:"The model can only ever read data this user or agent is entitled to. 'It only has access to what it needs' is enforced at the source, per record.",
+  tools:["OpenFGA / SpiceDB (ReBAC)","pgvector","Pinecone","Vault (scoped creds)"],
+  fw:["GDPR Art 5/25","ISO 27701","SOC 2 Confidentiality","OWASP LLM08"]},
+ {id:"tool",n:"MCP tool gating",s:"least-privilege tools · ephemeral credentials",c:"var(--violet)",
+  sec:"Tools are signed and declared with ETDI (OAuth-enhanced tool definitions + policy-based access control) behind an MCP gateway; only allow-listed tools load, parameters are schema-validated, and each call draws a short-TTL dynamic secret from HashiCorp Vault — no standing credentials. Execution is sandboxed (gVisor/Firecracker). Tool-poisoning and rug-pull changes are rejected on manifest signature.",
+  priv:"Every tool is bound to a purpose and a minimal scope; no tool can reach a data domain outside its explicit grant.",
+  exec:"Score AI can only use the specific tools it was granted, with credentials that expire in minutes. If a tool or the model is ever compromised, the blast radius is tiny and time-boxed.",
+  tools:["MCP gateway/proxy","ETDI","OAuth 2.1 scopes","HashiCorp Vault (dynamic secrets)","gVisor / Firecracker","OPA"],
+  fw:["OWASP LLM06 (excessive agency)","ISO 27001 A.8","SOC 2 CC6","MITRE ATLAS"]},
+ {id:"output",n:"Output guardrails · DLP",s:"classify, redact, schema-validate, ground",c:"var(--amber)",
+  sec:"Responses pass content-safety classification (Llama Guard 4), secret/PII scanners (LLM Guard, Presidio), and JSON-schema validation (Guardrails AI / Pydantic). A grounding check confirms claims trace to retrieved, authorized context — the model can't fabricate a disclosure.",
+  priv:"PII is redacted on the way out; re-identification only happens inside trusted zones via the LLM Guard vault. System-prompt and configuration leakage are blocked.",
+  exec:"Nothing sensitive leaves in an answer, outputs stay on-topic and well-formed, and the model can't invent confidential details.",
+  tools:["Llama Guard 4","LLM Guard (Protect AI)","Microsoft Presidio","Guardrails AI / Pydantic","NeMo topic rails"],
+  fw:["OWASP LLM02/LLM07","GDPR Art 5","SOC 2 Confidentiality"]},
+ {id:"egress",n:"Egress & embargo barrier",s:"information barrier · taint-tracked · time-gated",c:"var(--red)",barrier:"information barrier — internal & embargoed data cannot cross to public sinks",
+  sec:"Embargoed and internal-prediction content is labelled TAINTED at ingestion; the taint propagates to any output derived from it. A provenance-based egress gate (not just surface matching) blocks tainted data from public sinks, enforces an ethical wall between the prediction-generation domain and public surfaces, checks restricted/watch lists, applies the temporal embargo window, and runs egress anomaly detection with per-session rate limiting to catch sharded exfiltration.",
+  priv:"Non-public personal or market data is stopped by provenance even when it looks harmless, so embargoed facts and special-category data never reach a public statement.",
+  exec:"By construction, Score AI cannot leak its own market forecasts to participants (which would let them front-run the market) or release embargoed news early. This is the control that protects market integrity and reputation.",
+  tools:["Taint / IFC layer","OPA egress policy","Restricted/watch-list service","Egress allow-list + anomaly detection","WORM audit"],
+  fw:["GDPR Art 5/9","ISO 42001 A.6","MNPI-style info barriers","EU AI Act risk mgmt"]},
+ {id:"audit",n:"Audit · observability · response",s:"immutable logs · kill-switch · continuous red-team",c:"var(--ink-dim)",
+  sec:"Every PDP decision, tool call and guardrail verdict is traced (OPA decision logs + Langfuse/OpenTelemetry) into a WORM store and SIEM. A kill-switch can suspend Score AI instantly; Garak red-teaming and regression evals run continuously so the controls can't silently regress.",
+  priv:"Immutable, time-limited logs support data-subject requests and accountability without becoming a new trove of personal data.",
+  exec:"There is a provable, replayable record for every decision — certification-ready evidence — and an instant off-switch if anything looks wrong.",
+  tools:["Langfuse","OpenTelemetry","SIEM","WORM storage","Garak (red-team)","kill-switch"],
+  fw:["ISO 42001 (logging)","ISO 27001 A.8.15","SOC 2 CC7","GDPR Art 30","EU AI Act logging"]},
+];
+
+/* ===================== KPIs ===================== */
+const KPI={
+ sec:[["deny-by-default","OPA PDP before every action"],["OAuth 2.1 + ETDI","signed, scoped MCP tools"],["ephemeral creds","Vault dynamic secrets, short TTL"],["taint-tracked egress","provenance, not surface match"],["sandboxed tools","gVisor / Firecracker"],["WORM audit + SIEM","every decision replayable"]],
+ priv:[["data minimization","Presidio at ingress & egress"],["row-level RAG authz","OpenFGA / SpiceDB ReBAC"],["purpose-bound","lawful basis as policy"],["residency-aware","EU data stays in-region"],["DSR-ready","immutable, time-limited logs"],["special-category guarded","embargo + Art 9 controls"]],
+ exec:[["only-what-it-needs","least privilege, enforced"],["no public leakage","by construction, not trust"],["market integrity","forecasts can't leak to players"],["audit-ready","ISO 42001 · SOC 2 evidence"],["instant kill-switch","contain in seconds"],["certification path","27001 · 27701 · 42001"]],
+};
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPI[LENS].map(x=>`<div class="card kpi"><div class="kv" style="color:var(--lens)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* ===================== detail ===================== */
+function openLayer(id){
+  const L=LAYERS.find(x=>x.id===id); if(!L) return;
+  document.querySelectorAll("[data-lyr]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-lyr")===id));
+  const lenses=[["sec","Security architect"],["priv","Privacy architect"],["exec","Executive"]];
+  const body=`<div class="lensrow">`+lenses.map(([k,lab])=>`<div class="lensbit ${k===LENS?"on":""}"><span class="ll">${lab}</span>${L[k]}</div>`).join("")+`</div>`+
+    `<div class="sech">Representative tools</div><div class="chiprow">${L.tools.map(t=>`<span class="ch2 tool">${t}</span>`).join("")}</div>`+
+    `<div class="sech">Conformance touchpoints</div><div class="chiprow">${L.fw.map(t=>`<span class="ch2 fw">${t}</span>`).join("")}</div>`;
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="dt">guardrail layer</div><h3>${L.n}</h3></div><div class="db">${body}</div>`;
+}
+function renderPlane(){
+  let s=`<div class="card stack">`;
+  LAYERS.forEach(L=>{
+    if(L.barrier) s+=`<div class="barrier"><span class="bl"></span>${L.barrier}<span class="bl"></span></div>`;
+    s+=`<div class="lyr" data-lyr="${L.id}">
+      <div class="ic" style="border-color:${L.c};background:${L.c.replace('var(--','rgba(').replace(')',',0.14)')}"></div>
+      <div><div class="ln">${L.n}</div><div class="ls">${L.s}</div>
+      <div class="lt">${L.tools.slice(0,3).map(t=>`<span class="tl">${t}</span>`).join("")}${L.tools.length>3?`<span class="tl">+${L.tools.length-3}</span>`:""}</div></div></div>`;
+  });
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Defense-in-depth · request → response</div>
+    <p class="intro">Eight layers, each a checkpoint. A request is authenticated and scoped, authorized by policy, screened on the way in, served only the data it is entitled to, allowed only its granted tools, screened on the way out, and finally passed through an information barrier that blocks any internal or embargoed data from reaching a public destination — all of it logged. Click a layer.</p>
+    <div class="cp-wrap"><div>${s}</div>
+    <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A LAYER</b><br><br>Each layer is shown through all three lenses, with the active one (${LENSNAME[LENS]}) highlighted, plus the specific tools and the ISO / SOC 2 / GDPR touchpoints it satisfies.<br><br>The dashed red line is the information barrier — the leakage control.</div></div></div></div>`;
+  document.querySelectorAll("[data-lyr]").forEach(el=>el.addEventListener("click",()=>openLayer(el.getAttribute("data-lyr"))));
+}
+
+/* ===================== MCP ACCESS CONTROL ===================== */
+const PRINCIPALS=[
+ {id:"pred",n:"Predictions agent",p:"generates internal market forecasts"},
+ {id:"support",n:"Fan-support agent",p:"answers member questions"},
+ {id:"sponsor",n:"Sponsor-analytics agent",p:"aggregates sponsor metrics"},
+ {id:"public",n:"Public market surface",p:"player-facing prediction market"},
+];
+const RESOURCES=[
+ {id:"pii",n:"Player PII (consent DB)"},
+ {id:"intpred",n:"Internal model predictions"},
+ {id:"embargo",n:"Embargoed news / lineups"},
+ {id:"stats",n:"Public match stats"},
+ {id:"ledger",n:"Loyalty ledger (karma)"},
+ {id:"sponsoragg",n:"Sponsor impressions (aggregate)"},
+];
+const ACCESS={
+ pred:{pii:["deny","Predictions don't need identifiable data — data minimization denies it.","Purpose-limitation policy (OPA) · Presidio"],
+   intpred:["allow","Owns the forecast domain; read/write within its tenant grant.","ReBAC owner relation (OpenFGA) · Vault scoped creds"],
+   embargo:["scoped","May read embargoed signals to compute forecasts, but the data is tainted and can never egress.","Taint label at ingestion · egress barrier"],
+   stats:["allow","Public, non-sensitive — freely readable.","Public data class"],
+   ledger:["deny","No purpose to read member balances.","Deny-by-default PDP"],
+   sponsoragg:["scoped","Aggregate only, no per-user rows.","ReBAC aggregate scope"]},
+ support:{pii:["scoped","Only the contacting member's fields, only for the support purpose, with consent.","ReBAC self relation · purpose binding · consent gate"],
+   intpred:["deny","Support has no business seeing the model's private forecasts.","Information barrier (ethical wall)"],
+   embargo:["deny","Embargoed data is off-limits to member-facing agents.","Restricted-list + taint"],
+   stats:["allow","Public — fine to quote.","Public data class"],
+   ledger:["scoped","The member's own balance and history only.","ReBAC self relation"],
+   sponsoragg:["deny","Not needed for support.","Deny-by-default PDP"]},
+ sponsor:{pii:["deny","Sponsor analytics is aggregate — no identifiable data permitted.","k-anonymity / minimization policy"],
+   intpred:["deny","Outside its domain.","Information barrier"],
+   embargo:["deny","Outside its domain.","Restricted-list"],
+   stats:["allow","Public stats inform sponsor value.","Public data class"],
+   ledger:["deny","No purpose.","Deny-by-default PDP"],
+   sponsoragg:["allow","Its core, aggregate-only domain.","ReBAC aggregate grant"]},
+ public:{pii:["deny","A public surface must never touch identifiable data.","Tenant + public-zone policy"],
+   intpred:["deny","Critical: exposing raw forecasts lets participants front-run the market. Blocked.","Information barrier · egress gate"],
+   embargo:["deny","Public surface cannot receive embargoed data, ever.","Embargo gate + taint"],
+   stats:["allow","Public stats are meant to be shown.","Public data class"],
+   ledger:["deny","Only a member's own authenticated session may see their balance, not the public surface.","ReBAC self relation"],
+   sponsoragg:["scoped","Published aggregates only, after the embargo/aggregation gate.","Published-view policy"]},
+};
+function renderAccess(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Least-privilege access · who can touch what</div>
+    <p class="intro">Score AI is not one identity — it is several purpose-scoped agents, each granted the minimum it needs. Pick a principal and a data domain to see the decision and the control that enforces it. Notice the public surface and the internal-predictions domain are walled off from each other.</p>
+    <div class="sim">
+      <div class="card simctl">
+        <div class="qg"><div class="ql">Principal (who is asking)</div><div class="opts" id="accP"></div></div>
+        <div class="qg"><div class="ql">Data domain (what they want)</div><div class="opts" id="accR"></div></div>
+        <div class="ql" style="margin-top:4px">Decision is evaluated at the PDP (OPA) with ReBAC (OpenFGA) for row-level scope.</div>
+      </div>
+      <div class="card result" id="accResult"></div>
+    </div>
+    <div class="section-h" style="margin-top:26px">Full access matrix</div>
+    ${accMatrix()}`;
+  let selP="pred", selR="pii";
+  const drawOpts=()=>{
+    document.getElementById("accP").innerHTML=PRINCIPALS.map(p=>`<button class="opt ${p.id===selP?"on":""}" data-p="${p.id}">${p.n}</button>`).join("");
+    document.getElementById("accR").innerHTML=RESOURCES.map(r=>`<button class="opt ${r.id===selR?"on":""}" data-r="${r.id}">${r.n}</button>`).join("");
+    document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{selP=b.dataset.p;drawOpts();drawRes();});
+    document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{selR=b.dataset.r;drawOpts();drawRes();});
+  };
+  const drawRes=()=>{
+    const p=PRINCIPALS.find(x=>x.id===selP), r=RESOURCES.find(x=>x.id===selR), a=ACCESS[selP][selR];
+    const vmap={allow:"ALLOW",scoped:"SCOPED",deny:"DENY"};
+    document.getElementById("accResult").innerHTML=`<div class="rhead"><span class="verdict ${a[0]}">${vmap[a[0]]}</span><div style="font-size:12px;color:var(--ink-dim)"><b style="color:var(--ink)">${p.n}</b> → ${r.n}</div></div>
+      <div class="rbody"><div class="rl">why</div><p>${a[1]}</p><div class="rl">enforcing control</div><div class="ctl">${a[2]}</div></div>`;
+  };
+  drawOpts(); drawRes();
+}
+function accMatrix(){
+  const vmap={allow:'<span class="cell-y">allow</span>',scoped:'<span style="color:var(--amber);font-family:var(--mono);font-size:10.5px">scoped</span>',deny:'<span style="color:var(--red);font-family:var(--mono);font-size:10.5px">deny</span>'};
+  return `<table><thead><tr><th>Principal</th>${RESOURCES.map(r=>`<th>${r.n}</th>`).join("")}</tr></thead><tbody>`+
+   PRINCIPALS.map(p=>`<tr><td class="k">${p.n}<div style="font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);font-weight:400">${p.p}</div></td>${RESOURCES.map(r=>`<td>${vmap[ACCESS[p.id][r.id][0]]}</td>`).join("")}</tr>`).join("")+
+   `</tbody></table>`;
+}
+
+/* ===================== LEAKAGE & EMBARGO ===================== */
+const DCLASS=[
+ {id:"public",n:"Public stats"},
+ {id:"intpred",n:"Internal prediction"},
+ {id:"pii",n:"Member PII"},
+ {id:"embargo",n:"Embargoed info"},
+];
+const DEST=[
+ {id:"internal",n:"Internal dashboard"},
+ {id:"market",n:"Public prediction market"},
+ {id:"statement",n:"Public statement / post"},
+ {id:"partner",n:"Partner API"},
+];
+function egressDecide(dc,dest,embargoActive,consent){
+  const pub = dest!=="internal";
+  if(dc==="public") return ["allow","Public, non-sensitive data — released anywhere.","Data-class policy: public"];
+  if(dc==="intpred"){
+    if(dest==="internal") return ["allow","Stays inside the prediction domain.","Information barrier (internal zone)"];
+    if(dest==="market") return ["block","Releasing the system's own forecast to the market lets participants front-run it — market manipulation risk. Blocked by the ethical wall.","Information barrier + taint egress gate"];
+    return ["block","Internal forecasts are walled off from all public surfaces.","Information barrier"];
+  }
+  if(dc==="pii"){
+    if(dest==="internal") return ["allow","Permitted for the bound purpose inside the trusted zone.","Purpose binding · consent gate"];
+    if(!consent) return ["block","No consent / lawful basis for this subject — personal data cannot leave.","GDPR Art 6 gate · Presidio"];
+    return ["redact","Personal data is de-identified before it crosses to a public/partner sink.","Presidio redaction · LLM Guard"];
+  }
+  if(dc==="embargo"){
+    if(dest==="internal") return ["allow","May be used internally while tainted; cannot egress.","Taint label (internal use)"];
+    if(embargoActive) return ["block","Embargo window is active — release to any public sink is blocked until it lifts.","Temporal embargo gate + taint"];
+    return ["allow","Embargo has lifted — the information is now public.","Embargo gate (lifted)"];
+  }
+}
+function renderEgress(){
+  document.getElementById("view").innerHTML=`<div class="section-h">No public leakage · the egress simulator</div>
+    <p class="intro">The barrier decides, by data provenance rather than surface text, whether content may reach a destination. Two leakage classes matter most: the system's own <b>internal predictions</b> (which must never reach players, or they could front-run the market) and externally <b>embargoed information</b> (which must not surface before its time). Try the combinations.</p>
+    <div class="dataclass">
+      <div class="dcch" style="border-left-color:var(--green)"><div class="dcn">Public</div><div class="dch">freely shareable</div></div>
+      <div class="dcch" style="border-left-color:var(--blue)"><div class="dcn">Internal</div><div class="dch">internal use only · incl. model predictions</div></div>
+      <div class="dcch" style="border-left-color:var(--amber)"><div class="dcn">Confidential · PII</div><div class="dch">personal data · consent + purpose bound</div></div>
+      <div class="dcch" style="border-left-color:var(--red)"><div class="dcn">Restricted · embargoed</div><div class="dch">time-locked · blocked until release</div></div>
+      <div class="dcch" style="border-left-color:var(--violet)"><div class="dcn">Special-category</div><div class="dch">GDPR Art 9 · strictest handling</div></div>
+    </div>
+    <div class="sim">
+      <div class="card simctl">
+        <div class="qg"><div class="ql">Content data class</div><div class="opts" id="egDC"></div></div>
+        <div class="qg"><div class="ql">Destination (sink)</div><div class="opts" id="egDest"></div></div>
+        <div class="qg" id="egEmbWrap"><div class="ql">Embargo window</div><div class="opts" id="egEmb"></div></div>
+        <div class="qg" id="egConWrap"><div class="ql">Consent / lawful basis</div><div class="opts" id="egCon"></div></div>
+      </div>
+      <div class="card result" id="egResult"></div>
+    </div>
+    <div class="section-h" style="margin-top:26px">How the barrier works</div>
+    <div class="intro" style="max-width:none">
+      <table><thead><tr><th>Mechanism</th><th>What it does</th><th>Tool</th></tr></thead><tbody>
+      <tr><td class="k">Taint labelling</td><td>Embargoed and internal-prediction content is marked TAINTED at ingestion; any output derived from it inherits the label — so leakage is caught even when the text looks harmless (e.g. a 4-character shard).</td><td><span class="tg tool">IFC / taint layer</span></td></tr>
+      <tr><td class="k">Information barrier</td><td>An ethical wall separates the prediction-generation domain from every public surface; the two cannot exchange data.</td><td><span class="tg tool">OPA egress policy</span></td></tr>
+      <tr><td class="k">Temporal embargo gate</td><td>Time-boxed release: a restricted item is blocked from public sinks until its embargo lifts.</td><td><span class="tg tool">Restricted/watch-list svc</span></td></tr>
+      <tr><td class="k">Provenance egress check</td><td>Allow/redact/block by where data came from, not just what it says — blocks sharded and paraphrased exfiltration.</td><td><span class="tg tool">Egress gate + Presidio</span></td></tr>
+      <tr><td class="k">Egress anomaly detection</td><td>Per-session rate limiting and correlation across requests catches slow, sharded exfiltration attempts.</td><td><span class="tg tool">SIEM + egress monitor</span></td></tr>
+      <tr><td class="k">Immutable audit</td><td>Every egress decision is written WORM for surveillance and proof at audit.</td><td><span class="tg tool">WORM store</span></td></tr>
+      </tbody></table>
+    </div>`;
+  let dc="intpred",dest="market",emb="active",con="yes";
+  const draw=()=>{
+    document.getElementById("egDC").innerHTML=DCLASS.map(x=>`<button class="opt ${x.id===dc?"on":""}" data-dc="${x.id}">${x.n}</button>`).join("");
+    document.getElementById("egDest").innerHTML=DEST.map(x=>`<button class="opt ${x.id===dest?"on":""}" data-dest="${x.id}">${x.n}</button>`).join("");
+    document.getElementById("egEmb").innerHTML=[["active","active"],["lifted","lifted"]].map(([v,l])=>`<button class="opt ${v===emb?"on":""}" data-emb="${v}">${l}</button>`).join("");
+    document.getElementById("egCon").innerHTML=[["yes","present"],["no","absent"]].map(([v,l])=>`<button class="opt ${v===con?"on":""}" data-con="${v}">${l}</button>`).join("");
+    document.getElementById("egEmbWrap").style.display = dc==="embargo"?"block":"none";
+    document.getElementById("egConWrap").style.display = dc==="pii"?"block":"none";
+    document.querySelectorAll("[data-dc]").forEach(b=>b.onclick=()=>{dc=b.dataset.dc;draw();res();});
+    document.querySelectorAll("[data-dest]").forEach(b=>b.onclick=()=>{dest=b.dataset.dest;draw();res();});
+    document.querySelectorAll("[data-emb]").forEach(b=>b.onclick=()=>{emb=b.dataset.emb;draw();res();});
+    document.querySelectorAll("[data-con]").forEach(b=>b.onclick=()=>{con=b.dataset.con;draw();res();});
+  };
+  const res=()=>{
+    const d=egressDecide(dc,dest,emb==="active",con==="yes");
+    const vmap={allow:"ALLOW",redact:"REDACT",block:"BLOCK"};
+    const dcN=DCLASS.find(x=>x.id===dc).n, destN=DEST.find(x=>x.id===dest).n;
+    document.getElementById("egResult").innerHTML=`<div class="rhead"><span class="verdict ${d[0]}">${vmap[d[0]]}</span><div style="font-size:12px;color:var(--ink-dim)"><b style="color:var(--ink)">${dcN}</b> → ${destN}</div></div>
+      <div class="rbody"><div class="rl">why</div><p>${d[1]}</p><div class="rl">enforcing control</div><div class="ctl">${d[2]}</div></div>`;
+  };
+  draw(); res();
+}
+
+/* ===================== THREAT MODEL ===================== */
+const THREATS=[
+ ["Prompt injection (direct & indirect)","Hostile instructions in user input or fetched content hijack the agent.","Inline injection detection; untrusted content quarantined in a separate context region; tools treated as untrusted.","Prompt Guard 2 · Lakera · NeMo","OWASP LLM01 · ATLAS","hi"],
+ ["Sensitive information disclosure","Model reveals PII, secrets or confidential data in output.","Ingress + egress PII/secret scanning; row-level RAG authz so it never holds what it shouldn't.","Presidio · LLM Guard","OWASP LLM02 · GDPR Art 5","hi"],
+ ["Internal forecast leakage","Score AI's own predictions reach players, enabling front-running.","Information barrier + taint-tracked egress gate between prediction domain and public surfaces.","Taint/IFC · OPA","ISO 42001 · MNPI barriers","hi"],
+ ["Embargo break","Embargoed news/lineups surface before release.","Temporal embargo gate + restricted/watch lists + provenance egress check.","Restricted-list · egress gate","ISO 42001 · EU AI Act","hi"],
+ ["Excessive agency / over-privileged tools","Agent does more than intended via broad tool scopes.","Allow-listed, ETDI-signed tools; per-call scopes; ephemeral Vault creds; sandbox.","ETDI · Vault · gVisor","OWASP LLM06","hi"],
+ ["Tool poisoning / rug pull","A tool's definition changes maliciously after approval.","Signed tool manifests verified on load; MCP gateway rejects unsigned/changed tools.","MCP gateway · ETDI","ATLAS · MCP spec","hi"],
+ ["Token pass-through / confused deputy","A token meant for one service is replayed to another.","OAuth 2.1 audience-bound tokens + resource indicators; no pass-through.","OAuth 2.1 · Keycloak","OWASP LLM · MCP spec","med"],
+ ["Cross-tenant contamination","One customer's data bleeds into another's session.","Per-tenant realms + tenant-scoped policy + ReBAC; no shared context.","Keycloak · OpenFGA","SOC 2 CC6 · ISO 27001","hi"],
+ ["RAG / embedding over-fetch","Retrieval returns documents the caller shouldn't see.","Row/document-level authorization before vector query; pre-filtered search.","OpenFGA / SpiceDB","OWASP LLM08 · GDPR Art 25","med"],
+ ["Sharded / covert exfiltration","Small leaks spread across many responses evade output filters.","Provenance taint (catches harmless-looking shards) + egress anomaly detection + rate limiting.","Taint · SIEM","ATLAS · ISO 27001","med"],
+ ["Insecure output handling","Model output drives an unsafe downstream action.","Schema validation + grounding check; outputs can't trigger network tools when tainted.","Guardrails AI · OPA","OWASP LLM05","med"],
+ ["Model/supply-chain compromise","A poisoned model or dependency behaves maliciously.","Continuous red-teaming, signed artifacts, kill-switch, behavioural monitoring.","Garak · SIEM · kill-switch","ISO 42001 · NIST AI RMF","med"],
+];
+const RESIDUAL=["low","low","low","low","low","low","low","low","low","med","low","med"];
+function renderThreat(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Threat model · mapped to controls</div>
+   <p class="intro">Each threat from the OWASP Top 10 for LLM Applications, the MCP threat taxonomy and MITRE ATLAS, paired with the specific control and tooling that mitigates it in this architecture.</p>
+   <table><thead><tr><th>Threat</th><th>Vector</th><th>Mitigation in this architecture</th><th>Tools</th><th>Maps to</th><th>Inherent</th><th>Residual</th></tr></thead><tbody>${
+     THREATS.map((t,i)=>`<tr><td class="k">${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td>${t[3].split(" · ").map(x=>`<span class="tg tool">${x}</span>`).join(" ")}</td><td style="font-family:var(--mono);font-size:9.5px;color:var(--violet)">${t[4]}</td><td><span class="sev ${t[5]}">${t[5]==="hi"?"HIGH":"MED"}</span></td><td><span class="sev ${RESIDUAL[i]}">${RESIDUAL[i].toUpperCase()}</span></td></tr>`).join("")
+   }</tbody></table>
+   <p class="intro" style="margin-top:14px;color:var(--ink-faint)">Inherent = risk before controls; Residual = risk after the controls above. Sharded exfiltration and supply-chain compromise keep a medium residual — mitigated and monitored, not eliminated.</p>`;
+}
+
+/* ===================== CONFORMANCE ===================== */
+const FWS=["ISO 42001","ISO 27001","ISO 27701","SOC 2","GDPR","EU AI Act"];
+const CTRLROWS=[
+ ["Identity & access","A.9 / token mgmt","A.5, A.8.2-8.5","—","CC6.1-6.3","Art 32","Art 15 (logging)"],
+ ["Policy / authorization (PDP)","A.6, A.9","A.5.15, A.8.2","—","CC6.3","Art 5, 6, 25","Risk mgmt (Art 9)"],
+ ["Data minimization & purpose","A.7.2, A.7.4","A.5.34","7.2, 7.3 (PIMS)","Privacy","Art 5(1)(b)(c)","Data governance (Art 10)"],
+ ["RAG / record-level authz","A.7.4","A.8.3","8.x (PII access)","Confidentiality","Art 5, 25","Data governance"],
+ ["Tool least-privilege & secrets","A.6","A.8.2, A.8.24","—","CC6.1","Art 32","Accuracy/robustness"],
+ ["Output DLP & redaction","A.7.5","A.8.12 (DLP)","8.x","Confidentiality","Art 5, 25","Transparency"],
+ ["Leakage / embargo barrier","A.6, A.8","A.5.14, A.8.12","—","Confidentiality","Art 5, 9","Risk mgmt, oversight"],
+ ["Human oversight","A.9.2","—","—","—","Art 22 (rights)","Human oversight (Art 14)"],
+ ["Logging, audit & monitoring","A.6 (records)","A.8.15, A.8.16","—","CC7.2","Art 30","Logging (Art 12)"],
+ ["Impact assessment","8.4 (AISIA)","—","DPIA support","—","Art 35 (DPIA)","FRIA (Art 27)"],
+ ["Incident response & kill-switch","A.10","A.5.24-5.28","—","CC7.3-7.5","Art 33","Serious-incident report"],
+];
+function renderCompliance(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Conformance mapping</div>
+   <p class="intro">How each control area lines up to the standards a CISO, DPO and auditor will ask about. ISO/IEC 42001 (AI management system) is the umbrella; ISO 27001 secures the infrastructure, ISO 27701 extends it to privacy, SOC 2 provides the attestation, and GDPR + the EU AI Act are the legal obligations. Cells cite the relevant clause or criterion.</p>
+   <table class="compliance"><thead><tr><th>Control area</th>${FWS.map(f=>`<th>${f}</th>`).join("")}</tr></thead><tbody>${
+     CTRLROWS.map(r=>`<tr><td class="k">${r[0]}</td>${r.slice(1).map(c=>`<td>${c==="—"?'<span style="color:var(--ink-faint)">—</span>':c}</td>`).join("")}</tr>`).join("")
+   }</tbody></table>
+   <p class="intro" style="margin-top:14px;color:var(--ink-faint)">Clause references are indicative of where each control provides evidence; they are a design aid, not a certification statement.</p>`;
+}
+
+/* ===================== REQUEST TRACE ===================== */
+const TRACES=[
+ {id:"s1",title:"Member checks their own points",principal:"Fan-support agent · member self-service",gate:null,
+  steps:{
+   ident:{v:"pass",w:"Authenticated member session, single tenant",c:"OIDC · tenant realm"},
+   pdp:{v:"pass",w:"Purpose 'self-service' has lawful basis for the member's own data",c:"OPA purpose policy"},
+   input:{v:"pass",w:"No injection; minimal PII in the prompt",c:"Prompt Guard 2 · Presidio"},
+   rag:{v:"pass",w:"ReBAC self-relation returns only this member's ledger rows",c:"OpenFGA (self)"},
+   tool:{v:"pass",w:"Loyalty read tool with a short-TTL scoped credential",c:"ETDI · Vault"},
+   output:{v:"pass",w:"Balance formatted; no extra personal data",c:"LLM Guard · Presidio"},
+   egress:{v:"pass",w:"Destination is the member's own authenticated session",c:"Egress policy"},
+   audit:{v:"pass",w:"Decision logged",c:"OTel · WORM"}},
+  take:{sec:"Legitimate, in-scope access passes cleanly through all eight checkpoints.",priv:"The member sees only their own data, for a bound purpose — minimization upheld.",exec:"Least privilege doesn't block real work: the happy path just works."}},
+ {id:"s2",title:"Support agent reaches for another member's PII",principal:"Fan-support agent",gate:"rag",
+  steps:{
+   ident:{v:"pass",w:"Authenticated support agent",c:"OIDC"},
+   pdp:{v:"pass",w:"Support purpose permits PII reads in general\u2026",c:"OPA purpose policy"},
+   input:{v:"pass",w:"No injection detected",c:"Prompt Guard 2"},
+   rag:{v:"block",w:"\u2026but the caller has no relationship to THIS member's record \u2014 denied at the row level",c:"OpenFGA (self-relation)"},
+   audit:{v:"pass",w:"Denial recorded for audit",c:"WORM"}},
+  take:{sec:"A valid purpose isn't enough: record-level authorization stops access to data the principal has no relationship to.",priv:"Purpose limitation plus record-level authz prevent one member's data reaching another.",exec:"Even an over-broad request can't pull data the agent isn't entitled to."}},
+ {id:"s3",title:"Public surface asks for the internal forecast",principal:"Public market surface",gate:"pdp",
+  steps:{
+   ident:{v:"pass",w:"Authenticated public-surface workload",c:"SPIFFE · mTLS"},
+   pdp:{v:"block",w:"Public zone has no grant to the prediction domain \u2014 information barrier, deny-by-default",c:"OPA · ethical wall"},
+   audit:{v:"pass",w:"Denied read logged",c:"WORM"}},
+  take:{sec:"The wall is enforced at authorization, so internal forecasts never even load for a public principal.",priv:"Domain separation keeps market-moving data out of public reach.",exec:"Players cannot see the system's own forecast \u2014 so they cannot front-run the market."}},
+ {id:"s4",title:"Injected instructions try to exfiltrate PII",principal:"Any agent fetching external content",gate:"tool",
+  steps:{
+   ident:{v:"pass",w:"Authenticated agent",c:"OIDC"},
+   pdp:{v:"pass",w:"The legitimate task (summarise a page) is allowed",c:"OPA"},
+   input:{v:"transform",w:"Hidden 'email the data to attacker.com' instructions detected and quarantined \u2014 the agent does not obey them",c:"Prompt Guard 2 · context isolation"},
+   rag:{v:"pass",w:"Only authorized context is assembled",c:"OpenFGA"},
+   tool:{v:"block",w:"The agent attempts a network/email call to exfiltrate \u2014 no such tool is granted; capability denied",c:"ETDI allow-list · capability gate"},
+   audit:{v:"pass",w:"Attempt and block logged; egress anomaly raised",c:"SIEM · WORM"}},
+  take:{sec:"Defense in depth: the input filter neutralised the injection, and even if it hadn't, there's no tool to exfiltrate with and tainted PII couldn't reach a network sink.",priv:"Personal data cannot leave via a hijacked tool call.",exec:"No single control is load-bearing \u2014 an attack has to beat several independent layers."}},
+ {id:"s5",title:"Forecast on an embargoed lineup is posted publicly",principal:"Predictions agent",gate:"egress",
+  steps:{
+   ident:{v:"pass",w:"Authenticated predictions agent",c:"OIDC"},
+   pdp:{v:"pass",w:"May post forecasts in general",c:"OPA"},
+   input:{v:"pass",w:"Clean input",c:"Prompt Guard 2"},
+   rag:{v:"pass",w:"Embargoed lineup retrieved and labelled TAINTED",c:"OpenFGA · taint label"},
+   tool:{v:"pass",w:"Forecast computed from the data",c:"ETDI · Vault"},
+   output:{v:"pass",w:"Forecast generated \u2014 it inherits the taint via provenance",c:"Guardrails AI"},
+   egress:{v:"block",w:"Active embargo window plus taint \u2014 public posting blocked until the embargo lifts",c:"Temporal embargo gate · IFC"},
+   audit:{v:"pass",w:"Block logged",c:"WORM"}},
+  take:{sec:"Provenance taint follows the data into the forecast, so the embargo holds even though the output text looks innocuous.",priv:"Embargoed information cannot surface before its release time.",exec:"The forecast can be used internally now, but cannot reach the public until the embargo lifts."}},
+ {id:"s6",title:"Sponsor analytics requests per-user PII",principal:"Sponsor-analytics agent",gate:"pdp",
+  steps:{
+   ident:{v:"pass",w:"Authenticated sponsor-analytics agent",c:"OIDC"},
+   pdp:{v:"block",w:"Sponsor purpose has no lawful basis for identifiable data \u2014 minimization denies",c:"OPA minimization policy"},
+   audit:{v:"pass",w:"Denial logged",c:"WORM"}},
+  take:{sec:"Aggregate-only purposes can't pull identifiable rows; the denial is policy, not convention.",priv:"Data minimization is enforced at the PDP \u2014 purpose dictates granularity.",exec:"Teams only ever get the granularity their job needs."}},
+];
+function renderTrace(){
+  if(traceTimer){clearInterval(traceTimer);traceTimer=null;}
+  const order=LAYERS.map(l=>l.id); const LIDX={}; order.forEach((id,i)=>LIDX[id]=i);
+  let scId=TRACES[0].id, idx=0;
+  document.getElementById("view").innerHTML=`<div class="section-h">Watch a request flow through the guardrails</div>
+   <p class="intro">Pick a scenario and step (or play) it through the eight layers. Legitimate requests pass; attacks and over-reach are stopped at the first layer that catches them \u2014 and several are caught by more than one, by design. Every outcome, including a block, is logged.</p>
+   <div class="trace-top" id="scnRow"></div>
+   <div class="trace-grid"><div class="card tsteps" id="tsteps"></div><div class="card tctl" id="tctl"></div></div>`;
+  const scen=()=>TRACES.find(t=>t.id===scId);
+  function plan(){const s=scen(); if(s.gate==null) return {seq:order.map((_,i)=>i),skip:new Set()};
+    const g=LIDX[s.gate],skip=new Set(); for(let i=g+1;i<order.length-1;i++)skip.add(i);
+    const seq=[]; for(let i=0;i<=g;i++)seq.push(i); seq.push(order.length-1); return {seq,skip};}
+  function drawScn(){document.getElementById("scnRow").innerHTML=TRACES.map(t=>`<button class="scn ${t.id===scId?"on":""}" data-scn="${t.id}">${t.title}</button>`).join("");
+    document.querySelectorAll("[data-scn]").forEach(b=>b.onclick=()=>{stop();scId=b.dataset.scn;idx=0;draw();drawScn();});}
+  const vicon=v=>v==="pass"?"\u2713":v==="transform"?"\u25d0":v==="block"?"\u2715":"\u00b7";
+  function draw(){
+    const s=scen(),{seq,skip}=plan(); const revealed=new Set(seq.slice(0,idx)),active=idx>0?seq[idx-1]:-1;
+    document.getElementById("tsteps").innerHTML=order.map((id,i)=>{
+      const L=LAYERS[i]; let cls="pending",vc="v-skip",vr="\u00b7",w="",c="";
+      if(skip.has(i)){cls="skip";w="not reached";}
+      else if(revealed.has(i)){const st=s.steps[id];cls="done"+(i===active?" active":"");vc="v-"+st.v;vr=vicon(st.v);w=st.w;c=st.c;}
+      return `<div class="tstep ${cls}"><div class="tic ${vc}"></div>
+        <div><div class="tn">${L.n}</div>${w?`<div class="tw">${w}</div>`:""}${c?`<div class="tc">${c}</div>`:""}</div>
+        <div class="vrd ${vc}">${vr}</div></div>`;
+    }).join("");
+    const done=idx>=seq.length; let vbox="";
+    if(done){const blocked=s.gate!=null;
+      vbox=`<div class="tverdict show ${blocked?"blocked":"allowed"}"><div class="vh">${blocked?"\u2715 BLOCKED":"\u2713 ALLOWED"}</div>
+        <div class="vt">${blocked?`Stopped at <b>${LAYERS[LIDX[s.gate]].n}</b>. ${s.steps[s.gate].w}.`:"Cleared all eight checkpoints."}</div>
+        <div class="tk">${LENSNAME[LENS]} takeaway</div><div class="vt" style="margin-top:3px">${s.take[LENS]}</div></div>`;}
+    document.getElementById("tctl").innerHTML=`<div style="font-size:12px;color:var(--ink-dim);margin-bottom:2px"><b style="color:var(--ink)">${s.principal}</b></div>
+      <div class="tbtns"><button class="tbtn primary" id="tPlay">\u25b6 Play</button><button class="tbtn" id="tStep">\u23ed Step</button><button class="tbtn" id="tReset">\u21ba</button></div>
+      <div class="tcount">checkpoint ${Math.min(idx,seq.length)} / ${seq.length}</div>${vbox}`;
+    document.getElementById("tPlay").onclick=play; document.getElementById("tStep").onclick=step; document.getElementById("tReset").onclick=()=>{stop();idx=0;draw();};
+  }
+  function step(){const {seq}=plan(); if(idx<seq.length){idx++;draw();}}
+  function play(){stop(); let p=plan(); if(idx>=p.seq.length)idx=0; traceTimer=setInterval(()=>{const {seq}=plan(); if(idx<seq.length){idx++;draw();}else{stop();}},800);}
+  function stop(){if(traceTimer){clearInterval(traceTimer);traceTimer=null;}}
+  drawScn(); draw();
+}
+
+/* ===================== shell ===================== */
+function setLens(l){
+  LENS=l; document.documentElement.style.setProperty("--lens",LENSCOLOR[l]);
+  document.querySelectorAll("#lensSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lens===l));
+  const msg={sec:"Security Architect lens — threats, enforcement mechanisms, blast-radius and the specific tooling at each layer.",
+    priv:"Privacy Architect lens — data minimization, purpose limitation, lawful basis, residency and data-subject rights.",
+    exec:"Executive lens — risk posture, what could go wrong, and how the architecture prevents it; audit and certification readiness."};
+  document.getElementById("modeBanner").innerHTML=`<span class="b"></span>${msg[l]}`;
+  renderKPIs(); renderTab(CUR);
+}
+let CUR="plane";
+function renderTab(name){
+  CUR=name;
+  if(traceTimer){clearInterval(traceTimer);traceTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="plane") renderPlane();
+  else if(name==="trace") renderTrace();
+  else if(name==="access") renderAccess();
+  else if(name==="egress") renderEgress();
+  else if(name==="threat") renderThreat();
+  else renderCompliance();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+document.querySelectorAll("#lensSeg button").forEach(b=>b.addEventListener("click",()=>setLens(b.dataset.lens)));
+
+setLens("sec");
+</script>
+</body>
+</html>
