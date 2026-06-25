@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC 2 Compliance · Score Anything</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(26,143,69,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1260px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:8px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:760px}
+  .lead b{color:var(--ink)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:13.5px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:900px;line-height:1.55}
+
+  /* categories */
+  .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:11px;margin-bottom:8px}
+  .cat{padding:12px 14px;border-top:4px solid var(--line2);transition:.15s}
+  .cat.inscope{border-top-color:var(--green)}
+  .cat .ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .cat .cn{font-weight:700;font-size:13.5px}
+  .cat .req{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:5px}
+  .cat .req.r{color:var(--green);background:rgba(26,143,69,.1)} .cat .req.o{color:var(--amber);background:rgba(169,118,10,.1)}
+  .cat p{margin:7px 0 9px;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .cat .sc{font-family:var(--mono);font-size:9px;color:var(--ink-faint);line-height:1.4}
+  .scopebtn{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:7px;padding:5px 10px;cursor:pointer;background:var(--panel);color:var(--ink-dim);margin-top:9px}
+  .scopebtn.on{border-color:var(--green);color:var(--green);background:rgba(26,143,69,.06)}
+  .scopebtn.locked{cursor:default;border-color:var(--green);color:var(--green);background:rgba(26,143,69,.06)}
+  .scopebar{font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin:4px 0 18px}
+  .scopebar b{color:var(--ink)}
+
+  .cc-wrap{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.cc-wrap{grid-template-columns:1fr}}
+  .cclist{padding:7px}
+  .ccitem{display:grid;grid-template-columns:42px 1fr;gap:9px;padding:9px 8px;border-radius:9px;cursor:pointer;transition:.12s;align-items:center}
+  .ccitem:hover{background:var(--panel2)}
+  .ccitem.sel{background:rgba(13,110,168,.08)}
+  .ccid{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--accent);border-radius:6px;text-align:center;padding:5px 0}
+  .ccnm{font-weight:600;font-size:12.5px}
+  .cccoso{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:1px}
+  .dp{position:sticky;top:14px;min-height:380px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022);display:flex;align-items:center;gap:11px}
+  .dh .ccid{font-size:13px;padding:6px 9px}
+  .dh h3{margin:0;font-size:16px;font-weight:700} .dh .cs{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:2px}
+  .db{padding:14px 16px}
+  .db .desc{font-size:13px;color:var(--ink);line-height:1.55;margin:0 0 6px}
+  .sech{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:14px 0 7px}
+  .needlist{margin:0;padding:0;list-style:none}
+  .needlist li{font-size:12px;color:var(--ink-dim);line-height:1.45;padding:5px 0 5px 17px;position:relative;border-top:1px solid var(--line)}
+  .needlist li::before{content:"✓";position:absolute;left:1px;color:var(--green);font-weight:700;font-family:var(--mono);font-size:11px}
+  .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+  .ch2{font-family:var(--mono);font-size:9.5px;border:1px solid rgba(13,110,168,.3);border-radius:6px;padding:3px 8px;background:rgba(13,110,168,.06);color:var(--accent)}
+  .ch2.ev{color:var(--ink-dim);border-color:var(--line2);background:var(--panel2)}
+
+  /* domains */
+  .dcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .dom{padding:14px 15px}
+  .dom h4{margin:0 0 3px;font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .dom .ccref{font-family:var(--mono);font-size:8.5px;color:var(--accent);white-space:nowrap;border:1px solid rgba(13,110,168,.25);background:rgba(13,110,168,.06);border-radius:5px;padding:1px 6px}
+  .dom .nl{margin:8px 0 0;padding:0;list-style:none}
+  .dom .nl li{font-size:11.5px;color:var(--ink-dim);line-height:1.4;padding:4px 0 4px 15px;position:relative}
+  .dom .nl li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .dom .tl{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
+  .dom .tl span{font-family:var(--mono);font-size:8.5px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+
+  /* journey */
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:11px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:137px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(116,55,201,.06)}
+  .ph{justify-self:start;font-family:var(--mono);font-size:9px;font-weight:600;color:var(--violet);border:1px solid rgba(116,55,201,.3);background:rgba(116,55,201,.06);border-radius:6px;padding:3px 8px;margin-top:1px;text-align:center}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp .a{font-weight:700;font-size:13px}
+  .stp .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+  .stp .n{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:4px;line-height:1.4}
+  .lsum{padding:15px 16px;position:sticky;top:14px}
+  .lsum p{font-size:12px;color:var(--ink-dim);line-height:1.55;margin:0 0 10px}
+  .lsum .vs{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .lsum .vs h5{margin:0 0 3px;font-size:12px} .lsum .vs p{margin:0;font-size:11px}
+  .lbtns{display:flex;gap:7px;margin-top:4px}
+  .lbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .lbtn:hover{border-color:var(--violet)} .lbtn.primary{background:var(--violet);color:#fff;border-color:var(--violet)}
+
+  /* checklist */
+  .prog{display:flex;align-items:center;gap:14px;padding:13px 16px;margin-bottom:16px}
+  .prog .pv{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--green)}
+  .prog .pbar{flex:1;height:9px;border-radius:5px;background:var(--line);overflow:hidden}
+  .prog .pbar>i{display:block;height:100%;background:var(--green);border-radius:5px;transition:width .35s}
+  .prog .pl{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .ckgroup{margin-bottom:18px}
+  .ckitems{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px}
+  .ck{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--panel);transition:.12s;font-size:12px;line-height:1.35}
+  .ck:hover{border-color:var(--green)}
+  .ck .box{width:15px;height:15px;border-radius:4px;border:2px solid var(--line2);flex:0 0 auto;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700}
+  .ck.on{background:rgba(26,143,69,.05);border-color:var(--green)} .ck.on .box{background:var(--green);border-color:var(--green)} .ck.on .lbl{color:var(--ink)}
+  .ck .lbl{color:var(--ink-dim)}
+  .resetck{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:7px;padding:5px 11px;cursor:pointer;background:var(--panel);color:var(--ink-dim)}
+
+  .note{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;line-height:1.5;margin-top:14px}
+  .note b{color:var(--ink)}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · Score Anything</div>
+    <h1>What SOC 2 needs</h1>
+    <p class="lead">SOC 2 is an <b>AICPA attestation by a licensed CPA</b> against the Trust Services Criteria — not a certification. <b>Type II</b> (controls operating effectively over a period) is the report customers ask for. Here is what Score has to put in place, mapped to its actual stack.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="criteria">◇ Trust criteria</button>
+    <button class="tab" data-tab="domains">▤ Control domains</button>
+    <button class="tab" data-tab="journey">⇶ The journey</button>
+    <button class="tab" data-tab="checklist">☑ Readiness checklist</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot">a planning aid mapped to Score's stack · not legal or audit advice · the auditor's scope and opinion are definitive<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["5 trust criteria","Security required · 4 optional"],["CC1–CC9","Common Criteria (COSO-based)"],["Type I → Type II","design, then operating effectiveness"],["3–12 months","Type II observation window"],["licensed CPA","attestation, not certification"],["annual","continuous monitoring + renewal"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+const CATS=[
+ {id:"sec",n:"Security",req:true,desc:"Protection of systems and data against unauthorized access. The baseline — every SOC 2 includes it (the Common Criteria CC1–CC9).",score:"Keycloak/Auth0 SSO+MFA · RBAC · Vault · TLS/mTLS · logging"},
+ {id:"avail",n:"Availability",req:false,rec:true,desc:"The system is available for operation and use as committed — uptime, capacity, disaster recovery.",score:"Hetzner/AWS · backups · DR runbook · uptime monitoring"},
+ {id:"pi",n:"Processing Integrity",req:false,rec:true,desc:"Processing is complete, valid, accurate, timely and authorized — directly relevant to the loyalty ledger and prediction markets.",score:"Idempotent ledger · reconciliation · schema validation"},
+ {id:"conf",n:"Confidentiality",req:false,rec:true,desc:"Information designated confidential is protected — encryption, access control, NDAs, retention.",score:"Data classification · Vault · access controls · NDAs"},
+ {id:"priv",n:"Privacy",req:false,rec:false,desc:"Personal information is handled per commitments — overlaps your PIPEDA / Law 25 / GDPR work, which can also be reported separately.",score:"Privacy control plane · consent · residency · DSR"},
+];
+let scope=new Set(["sec","avail","pi","conf"]);
+
+const CC=[
+ {id:"CC1",n:"Control Environment",coso:"COSO 1 · Governance",desc:"Governance, organizational structure, leadership oversight, integrity and ethics, and accountability for internal control.",need:["Security officer / control owner assigned","Org chart + defined responsibilities","Code of conduct + background checks"],tools:["Policy suite","HR onboarding"],ev:["Org chart","Signed code of conduct","Background-check records"]},
+ {id:"CC2",n:"Communication & Information",coso:"COSO 2",desc:"Internal and external communication of policies, objectives and responsibilities, and the information needed to operate controls.",need:["Published security policies","Security awareness training","Customer-facing trust / security page"],tools:["Policy portal","Security training"],ev:["Policy acknowledgements","Training completion logs"]},
+ {id:"CC3",n:"Risk Assessment",coso:"COSO 3",desc:"Identify, analyze and manage risks to objectives — including fraud and the impact of change.",need:["Annual risk assessment + risk register","Threat modeling (reuse the AI guardrails threat model)","Change-impact analysis"],tools:["Risk register","Threat model"],ev:["Risk assessment report","Maintained risk register"]},
+ {id:"CC4",n:"Monitoring Activities",coso:"COSO 4",desc:"Ongoing and separate evaluations of controls, with timely remediation of deficiencies.",need:["Continuous control monitoring","Internal control testing","Management review cadence"],tools:["Vanta / Drata / Secureframe"],ev:["Control-test results","Remediation tickets"]},
+ {id:"CC5",n:"Control Activities",coso:"COSO 5",desc:"Select and develop the control activities (technical and procedural) that reduce risks to acceptable levels.",need:["Documented control framework","Technical + administrative controls","Separation of duties"],tools:["Control matrix"],ev:["Control descriptions","Separation-of-duties matrix"]},
+ {id:"CC6",n:"Logical & Physical Access",coso:"Security criteria",desc:"Identity and access management, least privilege, provisioning / deprovisioning, encryption, and physical security.",need:["Keycloak/Auth0 SSO + enforced MFA","RBAC least privilege + quarterly access reviews","Encryption at rest + in transit","Physical security inherited from the cloud provider"],tools:["Keycloak","Auth0","HashiCorp Vault","Traefik / TLS"],ev:["Access-review records","MFA configuration","Encryption config","Cloud provider SOC 2 (subservice)"]},
+ {id:"CC7",n:"System Operations",coso:"Security criteria",desc:"Detect, respond to and recover from anomalies and incidents — monitoring, vulnerability management and incident response.",need:["Centralized logging + alerting","Vulnerability scanning + patching","Incident response plan + on-call"],tools:["SIEM","Langfuse / OTel","Vulnerability scanner"],ev:["Log samples","Scan reports","Incident tickets + post-mortems"]},
+ {id:"CC8",n:"Change Management",coso:"Security criteria",desc:"Authorized, tested and documented changes to infrastructure and code, with separation of development and production.",need:["Gitea + mandatory PR review","CI/CD with gates and tests","Separated dev / staging / prod","IaC + change approvals"],tools:["Gitea","CI/CD","Docker / Traefik","Terraform / IaC"],ev:["PR + approval history","Pipeline logs","Change tickets"]},
+ {id:"CC9",n:"Risk Mitigation",coso:"Security criteria",desc:"Mitigate risks arising from vendors / third parties and from business disruption.",need:["Vendor inventory + risk reviews","DPAs + subprocessor SOC 2 review","BCP / DR + tested backups"],tools:["Vendor register","Backup tooling"],ev:["Vendor risk assessments","Signed DPAs","Backup restore tests"]},
+];
+
+const DOMAINS=[
+ {n:"Governance & risk",cc:"CC1–CC5",need:["Security policies + named owner","Annual risk assessment + register","Management review cadence"],tl:["Policy suite","Risk register","Vanta / Drata"]},
+ {n:"Identity & access",cc:"CC6",need:["SSO + enforced MFA","RBAC least privilege","Joiner / mover / leaver + quarterly reviews"],tl:["Keycloak","Auth0","OIDC / RBAC"]},
+ {n:"Change management & SDLC",cc:"CC8",need:["Mandatory PR review","CI/CD gates + tests","Separated environments"],tl:["Gitea","CI/CD","Docker / Traefik"]},
+ {n:"Logging, monitoring & IR",cc:"CC4 · CC7",need:["Centralized logging + alerting","Vulnerability management","Incident response plan + on-call"],tl:["Langfuse / OTel","SIEM","Vuln scanner"]},
+ {n:"Data protection & encryption",cc:"CC6",need:["Encryption at rest + in transit","Secrets management","Data classification + retention"],tl:["Vault","TLS / mTLS","Privacy control plane"]},
+ {n:"Vendor & third-party risk",cc:"CC9",need:["Vendor inventory","DPAs + subprocessor SOC 2 review","Periodic re-review"],tl:["Vendor register","Auth0 / Hetzner / AWS DPAs"]},
+ {n:"People security (HR)",cc:"CC1",need:["Background checks","Onboarding / offboarding","Awareness training + NDAs"],tl:["HR workflow","Security training"]},
+ {n:"Resilience (BCP / DR)",cc:"CC7 · CC9",need:["Backups + tested restores","DR runbook + RTO / RPO","Capacity / uptime monitoring"],tl:["Backups","Hetzner / AWS","Uptime monitor"]},
+];
+
+const JOURNEY=[
+ {p:"Define scope",t:"1–2 weeks",a:"Choose the trust categories and systems",w:"Pick the trust categories (Security + the optional ones), the systems in scope, and Type I vs Type II.",n:"Security is mandatory; add Confidentiality, Availability, Processing Integrity and Privacy as they fit."},
+ {p:"Readiness / gap",t:"2–4 weeks",a:"Assess controls against the criteria",w:"Compare current controls to the criteria; produce a gap list and a remediation plan.",n:"Usually run with a compliance platform or an advisor."},
+ {p:"Remediate gaps",t:"1–3 months",a:"Write policies, implement controls",w:"Author the policies, implement the technical controls, and assign control owners.",n:"The bulk of the work: policies + access + change management + monitoring."},
+ {p:"Select a CPA",t:"parallel",a:"Engage a licensed CPA firm",w:"Engage an AICPA-licensed CPA firm to perform the examination.",n:"SOC 2 is an attestation by a CPA — not a certification."},
+ {p:"Type I (optional)",t:"point in time",a:"Attest control design",w:"The auditor attests that controls are suitably designed at a single date.",n:"A fast first milestone to show customers progress."},
+ {p:"Observation window",t:"3–12 months",a:"Operate controls, collect evidence",w:"Run the controls and collect evidence continuously across the review period.",n:"Type II requires controls to work over time, not merely exist."},
+ {p:"Type II exam",t:"the customer report",w:"Auditor tests operating effectiveness across the period and issues the SOC 2 Type II report.",a:"Operating-effectiveness audit",n:"Shared with customers under NDA."},
+ {p:"Continuous",t:"ongoing · annual",a:"Monitor and renew",w:"Keep controls running, monitor continuously, and renew the report each year.",n:"SOC 2 is not one-and-done."},
+];
+
+const CHECK=[
+ ["Policies & governance",["Information Security Policy","Access Control Policy","Change Management Policy","Incident Response Plan","Risk Assessment + annual review","Vendor Management Policy","Business Continuity / DR Plan","Data Classification & Retention","Acceptable Use Policy","SDLC Policy","Code of Conduct","Security officer assigned"]],
+ ["Technical controls",["SSO + MFA enforced","RBAC least privilege","Quarterly access reviews","Encryption at rest + in transit","Secrets management (Vault)","Centralized logging + alerting","Vulnerability scanning + patching","Endpoint protection","Backups + tested restores","Separated dev / staging / prod","PR review + CI/CD gates","Intrusion / anomaly monitoring"]],
+ ["People & vendors",["Background checks","Onboarding / offboarding workflow","Confidentiality / NDAs","Security awareness training","Vendor inventory + DPAs","Subprocessor SOC 2 review"]],
+ ["Audit & evidence",["Evidence automation platform","Control owners assigned","Change & incident ticketing","Annual penetration test","Licensed CPA auditor selected","Observation-period evidence"]],
+];
+let checked=new Set();
+
+/* ---------- criteria ---------- */
+let selCC="CC1";
+function renderCriteria(){
+  document.getElementById("view").innerHTML=`<div class="section-h">The five Trust Services Criteria · your scope</div>
+   <p class="intro">Security is always included. The other four are optional — you scope in the ones that match commitments you make to customers. Toggle the optional ones to shape the scope (illustrative).</p>
+   <div class="cats" id="catRow"></div>
+   <div class="scopebar" id="scopeBar"></div>
+   <div class="section-h">The Common Criteria (CC1–CC9) · what Security requires</div>
+   <p class="intro">Under the Security category, these nine criteria (built on the COSO framework) are the backbone of every SOC 2. Click one to see what it requires and the Score controls that satisfy it.</p>
+   <div class="cc-wrap"><div class="card cclist" id="ccList"></div><div class="card dp"><div id="ccDetail"></div></div></div>`;
+  drawCats(); drawCCList(); openCC(selCC);
+}
+function drawCats(){
+  document.getElementById("catRow").innerHTML=CATS.map(c=>{
+    const inS=scope.has(c.id);
+    return `<div class="card cat ${inS?'inscope':''}">
+      <div class="ch"><span class="cn">${c.n}</span><span class="req ${c.req?'r':'o'}">${c.req?'required':'optional'}</span></div>
+      <p>${c.desc}</p><div class="sc">${c.score}</div>
+      ${c.req?`<div class="scopebtn locked">✓ in scope</div>`:`<button class="scopebtn ${inS?'on':''}" data-cat="${c.id}">${inS?'✓ in scope':'add to scope'}</button>`}
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{const id=b.dataset.cat;scope.has(id)?scope.delete(id):scope.add(id);drawCats();drawScope();});
+  drawScope();
+}
+function drawScope(){
+  const names=CATS.filter(c=>scope.has(c.id)).map(c=>c.n);
+  document.getElementById("scopeBar").innerHTML=`<b>In scope:</b> ${names.join(" · ")} &nbsp;—&nbsp; ${scope.size} of 5 criteria. ${scope.has('priv')?'':'Privacy can be added here or reported separately via your existing privacy programme.'}`;
+}
+function drawCCList(){
+  document.getElementById("ccList").innerHTML=CC.map(c=>`<div class="ccitem ${c.id===selCC?'sel':''}" data-cc="${c.id}"><div class="ccid">${c.id}</div><div><div class="ccnm">${c.n}</div><div class="cccoso">${c.coso}</div></div></div>`).join("");
+  document.querySelectorAll("[data-cc]").forEach(el=>el.onclick=()=>{selCC=el.dataset.cc;drawCCList();openCC(selCC);});
+}
+function openCC(id){
+  const c=CC.find(x=>x.id===id);
+  document.getElementById("ccDetail").innerHTML=`<div class="dh"><div class="ccid">${c.id}</div><div><h3>${c.n}</h3><div class="cs">${c.coso}</div></div></div>
+   <div class="db"><p class="desc">${c.desc}</p>
+   <div class="sech">What Score needs</div><ul class="needlist">${c.need.map(n=>`<li>${n}</li>`).join("")}</ul>
+   <div class="sech">Score stack</div><div class="chiprow">${c.tools.map(t=>`<span class="ch2">${t}</span>`).join("")}</div>
+   <div class="sech">Example evidence</div><div class="chiprow">${c.ev.map(t=>`<span class="ch2 ev">${t}</span>`).join("")}</div></div>`;
+}
+
+/* ---------- domains ---------- */
+function renderDomains(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Control domains · what you must build</div>
+   <p class="intro">The criteria become these practical control areas. Each lists what Score needs to stand up, the criteria it satisfies, and the stack that delivers it.</p>
+   <div class="dcards">${DOMAINS.map(d=>`<div class="card dom">
+     <h4>${d.n}<span class="ccref">${d.cc}</span></h4>
+     <ul class="nl">${d.need.map(n=>`<li>${n}</li>`).join("")}</ul>
+     <div class="tl">${d.tl.map(t=>`<span>${t}</span>`).join("")}</div></div>`).join("")}</div>
+   <div class="note"><b>Subservice organizations.</b> Physical and environmental controls for your infrastructure (Hetzner, AWS) are <b>inherited</b> — covered by their own SOC 2 reports and listed in yours as carved-out or inclusive subservice controls. You review and retain those reports rather than re-implementing them.</div>`;
+}
+
+/* ---------- journey ---------- */
+let jTimer=null;
+function renderJourney(){
+  if(jTimer){clearInterval(jTimer);jTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">The road to a Type II report</div>
+   <p class="intro">A typical first SOC 2 runs a few months of remediation, then a 3–12 month observation window before the Type II report. Walk it through.</p>
+   <div class="flow-grid"><div class="card steps" id="stepBox"></div><div class="card lsum" id="lsum"></div></div>`;
+  function draw(){
+    document.getElementById("stepBox").innerHTML=JOURNEY.map((s,i)=>`<div class="stp ${i===hl?'active':''}">
+      <div class="ph">${s.t}</div>
+      <div class="mid"><div class="a">${s.p}</div><div class="w">${s.w}</div><div class="n">${s.n}</div></div></div>`).join("");
+    document.getElementById("lsum").innerHTML=`<div class="vs"><h5>Type I</h5><p>Controls are <b>suitably designed</b> at a single point in time. Faster; a good first milestone.</p></div>
+      <div class="vs"><h5>Type II</h5><p>Controls <b>operated effectively</b> across a period (3–12 months). The report customers actually ask for.</p></div>
+      <p style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">An evidence-automation platform (Vanta, Drata, Secureframe) connects to your cloud, IdP, code host and HR to collect most evidence continuously.</p>
+      <div class="lbtns"><button class="lbtn primary" id="lPlay">▶ Walk</button><button class="lbtn" id="lStep">⏭ Step</button><button class="lbtn" id="lReset">↺</button></div>`;
+    document.getElementById("lPlay").onclick=play;document.getElementById("lStep").onclick=step;document.getElementById("lReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<JOURNEY.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=JOURNEY.length-1)hl=-1;jTimer=setInterval(()=>{if(hl<JOURNEY.length-1){hl++;draw();}else stop();},850);}
+  function stop(){if(jTimer){clearInterval(jTimer);jTimer=null;}}
+  draw();
+}
+
+/* ---------- checklist ---------- */
+function renderChecklist(){
+  const total=CHECK.reduce((a,g)=>a+g[1].length,0);
+  document.getElementById("view").innerHTML=`<div class="section-h">Readiness checklist</div>
+   <p class="intro">The concrete artefacts and controls an auditor will look for. Tick what's in place to gauge readiness. (Selections are for planning and reset on reload.)</p>
+   <div class="card prog"><span class="pv" id="ckPct">0%</span><div class="pbar"><i id="ckBar" style="width:0%"></i></div><span class="pl" id="ckCount">0 / ${total}</span><button class="resetck" id="ckReset">reset</button></div>
+   <div id="ckBody"></div>`;
+  function draw(){
+    document.getElementById("ckBody").innerHTML=CHECK.map((g,gi)=>`<div class="ckgroup"><div class="section-h">${g[0]}</div>
+      <div class="ckitems">${g[1].map((it,ii)=>{const key=gi+":"+ii;const on=checked.has(key);return `<div class="ck ${on?'on':''}" data-ck="${key}"><div class="box">${on?'✓':''}</div><div class="lbl">${it}</div></div>`;}).join("")}</div></div>`).join("");
+    const n=checked.size, pct=Math.round(n/total*100);
+    document.getElementById("ckPct").textContent=pct+"%"; document.getElementById("ckBar").style.width=pct+"%"; document.getElementById("ckCount").textContent=n+" / "+total;
+    document.querySelectorAll("[data-ck]").forEach(el=>el.onclick=()=>{const k=el.getAttribute("data-ck");checked.has(k)?checked.delete(k):checked.add(k);draw();});
+  }
+  document.getElementById("ckReset").onclick=()=>{checked.clear();draw();};
+  draw();
+}
+
+/* shell */
+let CUR="criteria";
+function renderTab(name){
+  CUR=name;
+  if(jTimer){clearInterval(jTimer);jTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="criteria") renderCriteria();
+  else if(name==="domains") renderDomains();
+  else if(name==="journey") renderJourney();
+  else renderChecklist();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("criteria");
+</script>
+</body>
+</html>

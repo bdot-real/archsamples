@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Banking on AWS · Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#fff; --panel2:#f5f8fc;
+    --line:#dbe2ee; --line2:#bcc7d8;
+    --ink:#16202e; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --aws:#e8821e; --aws2:#ec7211;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(232,130,30,.08),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(13,110,168,.06),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--aws2);font-weight:600}
+  h1{margin:5px 0 6px;font-size:25px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:780px}
+  .attrib{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:9px;border-left:3px solid var(--aws);padding:3px 0 3px 10px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:13.5px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--aws2);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:900px;line-height:1.55}
+
+  /* architecture */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .zone{border:1.5px dashed var(--line2);border-radius:12px;padding:9px 11px 11px;margin:0;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(245,248,252,.4))}
+  .zone .zh{display:flex;align-items:center;gap:8px;margin:0 2px 8px}
+  .zone .zh .zb{width:9px;height:9px;border-radius:3px}
+  .zone .zh .zt{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:158px;border:1px solid var(--line2);border-radius:10px;padding:9px 11px 9px 9px;cursor:pointer;background:var(--panel);transition:.13s;display:flex;gap:9px;align-items:flex-start}
+  .tile:hover{border-color:var(--aws);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--aws);box-shadow:0 0 0 3px rgba(232,130,30,.18)}
+  .num{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--aws);color:#fff;font-family:var(--mono);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .num.actor{background:var(--ink-dim);font-size:8px}
+  .tile .tn{font-weight:700;font-size:12px;line-height:1.2}
+  .tile .tsvc{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:3px;line-height:1.35}
+  .conn{display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 0 3px;color:var(--ink-faint)}
+  .conn .cl{font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+  .conn .ar{font-size:14px}
+  .found{margin-top:12px;border:1.5px dashed var(--line2);border-radius:12px;padding:9px 11px 11px;background:var(--panel2)}
+  .found .zh .zt{color:var(--ink-faint)}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(232,130,30,.05);display:flex;align-items:center;gap:11px}
+  .dh .num{width:26px;height:26px;font-size:11px}
+  .dh h3{margin:0;font-size:15.5px;font-weight:700} .dh .zlab{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 6px;font-size:13px;color:var(--ink);line-height:1.55}
+  .sech{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:14px 0 7px}
+  .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+  .ch2{font-family:var(--mono);font-size:9.5px;border:1px solid rgba(232,130,30,.3);border-radius:6px;padding:3px 8px;background:rgba(232,130,30,.07);color:var(--aws2)}
+
+  /* flows */
+  .flow-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .fp{border:1px solid var(--line2);border-radius:10px;padding:9px 14px;cursor:pointer;background:var(--panel);font-weight:600;font-size:12.5px;transition:.13s}
+  .fp:hover{border-color:var(--aws)} .fp.on{border-color:var(--aws);box-shadow:0 0 0 2px rgba(232,130,30,.16)}
+  .fp small{display:block;font-family:var(--mono);font-size:9px;color:var(--ink-faint);font-weight:400;margin-top:2px}
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:10px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:103px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(232,130,30,.07)}
+  .zchip{justify-self:start;font-family:var(--mono);font-size:8.5px;font-weight:600;color:#fff;border-radius:6px;padding:3px 7px;white-space:nowrap;margin-top:1px}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp .w{font-size:12.5px;color:var(--ink);margin-top:1px;line-height:1.45}
+  .stp .rf{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:4px}
+  .lsum{padding:15px 16px;position:sticky;top:14px}
+  .lsum p{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:0 0 12px}
+  .lbtns{display:flex;gap:7px}
+  .lbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .lbtn:hover{border-color:var(--aws)} .lbtn.primary{background:var(--aws);color:#fff;border-color:var(--aws)}
+
+  /* component reference */
+  .cgroup{margin-bottom:18px}
+  .ccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px}
+  .comp{padding:12px 13px;display:flex;gap:11px;align-items:flex-start}
+  .comp .cbody h4{margin:0 0 2px;font-size:13px;font-weight:700}
+  .comp .cbody .svc{font-family:var(--mono);font-size:9px;color:var(--aws2);margin-bottom:5px}
+  .comp .cbody p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">AWS Reference Architecture</div>
+    <h1>Open Banking on AWS</h1>
+    <p class="lead">Opening bank APIs to accredited third parties — account information and payments — over a consent-driven, mutually-authenticated, multi-account AWS design that bridges to the bank's core. Click any component to read what it does and the services behind it.</p>
+    <div class="attrib">Visual representation of the AWS "Open Banking on AWS" reference architecture (reviewed Sep 7, 2021). Architecture, service names and design © Amazon Web Services. Descriptions paraphrased.</div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="arch">▦ Architecture</button>
+    <button class="tab" data-tab="flows">⇶ Request flows</button>
+    <button class="tab" data-tab="ref">▤ Component reference</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Open Banking on AWS</b> — reference architecture by Amazon Web Services (© AWS, 2021)<br>diagram rebuilt by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const ZC={ext:"#54607a",edge:"#0e8a82",api:"#e8821e",idp:"#7437c9",priv:"#1f63c8",ms:"#1a8f45",data:"#0d6ea8",conn:"#a9760a",core:"#3a4256",found:"#0d6ea8"};
+const ZONES=[
+ {id:"ext",n:"Consumer & third parties",down:"consent · mTLS · access token",comps:[
+   {num:"C",actor:1,n:"Consumer",svc:"end user",desc:"A consumer uses a licensed or accredited third-party app and consents to it accessing their data, or to it making a payment on their behalf."},
+   {num:"TP",actor:1,n:"Third-party app",svc:"AISP / PISP",desc:"Authorized institutions offering value-added services on top of banking — account information (balances, transactions, statements) and payments (to merchants, people and registered payees) — enabling spend analysis, credit decisioning, ecommerce payments and more."},
+   {num:"T",actor:1,n:"Trust Service Provider",svc:"TSP · issues digital certs",desc:"A trusted entity authorized by a government supervisory body that verifies the authenticity of banks and third parties and issues digital certificates to third parties."},
+ ]},
+ {id:"edge",n:"Edge & perimeter",down:"",comps:[
+   {num:"8",n:"Route 53 · CloudFront · Shield",svc:"DNS · CDN · L3/L4 DDoS",desc:"Route 53 provides DNS and traffic management; CloudFront serves static content as a CDN; AWS Shield (and Shield Advanced) protect against L3/L4 DDoS attacks."},
+   {num:"5",n:"Mutual TLS (mTLS)",svc:"transport security · client auth",desc:"Mutual TLS secures the transport layer: the bank authenticates accredited third parties and issues them access tokens to call the Open Banking APIs."},
+ ]},
+ {id:"api",n:"API management",down:"AWS PrivateLink",comps:[
+   {num:"6",n:"API Gateway · WAF · S3 trust store",svc:"Amazon API Gateway · AWS WAF · S3",desc:"Amazon API Gateway exposes the Open Banking and Authorization APIs; AWS WAF adds web-application protection; an S3 trust store holds client public certificates used to validate requests; the bank also checks third-party status against the TSP."},
+ ]},
+ {id:"idp",n:"Identity & developer",down:"",comps:[
+   {num:"13",n:"OAuth 2.0 Identity Provider",svc:"separate AWS account",desc:"An OAuth 2.0 identity provider in its own AWS account so other workloads can consume it securely — an AWS partner IdP or a custom build."},
+   {num:"14",n:"Developer sandbox",svc:"third-party integration",desc:"A separate sandbox where third parties integrate with the bank's environment and build their products before going live."},
+ ]},
+ {id:"priv",n:"Private integration",down:"",comps:[
+   {num:"7",n:"Private integration VPC",svc:"API Gateway → microservices",desc:"API Gateway reaches the microservices that live in other AWS accounts through a private integration VPC."},
+   {num:"9",n:"AWS PrivateLink",svc:"private connectivity",desc:"PrivateLink provides secure, private connectivity between VPCs and services across AWS and on-premises, keeping traffic off the public internet."},
+ ]},
+ {id:"ms",n:"Open Banking microservices",down:"",comps:[
+   {num:"10",n:"Account Information & Payments",svc:"Amazon ECS · AWS Fargate · ElastiCache",desc:"The Account Information and Payments API specifications run as multiple container-based microservices on Amazon ECS with AWS Fargate. ElastiCache caches customer account data, and payment-status webhooks are hosted here."},
+ ]},
+ {id:"data",n:"Data",down:"Transit Gateway · Direct Connect + VPN",comps:[
+   {num:"11",n:"DynamoDB",svc:"consents · metrics",desc:"Amazon DynamoDB stores consumer consents, aggregated data and API performance metrics."},
+   {num:"12",n:"RDS — system-of-record copy",svc:"near-real-time sync",desc:"Amazon RDS holds a copy of the system of record, synchronized in near-real-time from the bank's core system."},
+ ]},
+ {id:"conn",n:"Bank connectivity",down:"Apache Kafka · MQ",comps:[
+   {num:"3",n:"Transit Gateway",svc:"central account hub",desc:"AWS Transit Gateway is the central hub that interconnects workloads across the bank's AWS accounts and shares the Direct Connect and VPN links."},
+   {num:"2",n:"Direct Connect + Site-to-Site VPN",svc:"hybrid connectivity",desc:"The bank's data center connects to AWS over AWS Direct Connect plus a Site-to-Site VPN; two diverse Direct Connect connections are recommended for maximum resiliency."},
+   {num:"4",n:"Outbound VPC (Squid proxy)",svc:"secure egress",desc:"An outbound VPC provides secure outbound internet access through a proxy such as Squid."},
+ ]},
+ {id:"core",n:"Core banking · on-premises",down:"",comps:[
+   {num:"1",n:"Core systems + streaming",svc:"Apache Kafka · MQ",desc:"Apache Kafka streaming and MQ queues send and receive all new and updated transactions between the bank's core banking systems and AWS."},
+ ]},
+];
+const FOUND={id:"found",n:"Cross-cutting · security, operations & eventing",comps:[
+ {num:"15",n:"Security services",svc:"GuardDuty · Security Hub",desc:"Amazon GuardDuty monitors for malicious and unauthorized activity; AWS Security Hub gives a comprehensive view of security alerts and posture across AWS accounts."},
+ {num:"16",n:"Logging & analytics",svc:"S3 · OpenSearch (Elasticsearch)",desc:"Logs from all services are collected in Amazon S3, then analyzed and monitored with Amazon OpenSearch (Elasticsearch Service)."},
+ {num:"17",n:"Management & CI/CD",svc:"Systems Manager · CloudFormation · Code services",desc:"AWS Systems Manager handles configuration management; CloudFormation deploys the environment; the AWS code services provide CI/CD."},
+ {num:"18",n:"Eventing & notifications",svc:"EventBridge · SQS · SNS",desc:"Amazon EventBridge, SQS and SNS provide eventing and notification capability between services."},
+]};
+const ALL={}; ZONES.forEach(z=>z.comps.forEach(c=>{c._zone=z.n;c._zid=z.id;ALL[c.num]=c;}));
+FOUND.comps.forEach(c=>{c._zone=FOUND.n;c._zid="found";ALL[c.num]=c;});
+
+const KPIS=[["18 components","numbered reference design"],["multi-account","API · IdP · sandbox isolated"],["mTLS + OAuth 2.0","third-party authentication"],["consent-driven","consents in DynamoDB"],["hybrid","Direct Connect + VPN to core"],["Account info + Payments","the Open Banking APIs"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--aws2)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* architecture */
+function openComp(num){
+  const c=ALL[num]; if(!c) return;
+  document.querySelectorAll("[data-tile]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tile")===num));
+  const isActor=!!c.actor;
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="num ${isActor?'actor':''}">${num}</div><div><h3>${c.n}</h3><div class="zlab">${c._zone}</div></div></div>
+   <div class="db"><p>${c.desc}</p>
+   <div class="sech">${isActor?'Role':'AWS services'}</div><div class="chiprow"><span class="ch2">${c.svc}</span></div></div>`;
+}
+function renderArch(){
+  let s=`<div class="card stack">`;
+  ZONES.forEach((z,i)=>{
+    s+=`<div class="zone"><div class="zh"><span class="zb" style="background:${ZC[z.id]}"></span><span class="zt" style="color:${ZC[z.id]}">${z.n}</span></div><div class="tiles">`;
+    s+=z.comps.map(c=>`<div class="tile" data-tile="${c.num}"><div class="num ${c.actor?'actor':''}">${c.num}</div><div><div class="tn">${c.n}</div><div class="tsvc">${c.svc}</div></div></div>`).join("");
+    s+=`</div></div>`;
+    if(i<ZONES.length-1) s+=`<div class="conn"><span class="ar">↓</span>${z.down?`<span class="cl">${z.down}</span><span class="ar">↓</span>`:""}</div>`;
+  });
+  s+=`<div class="found"><div class="zh"><span class="zb" style="background:${ZC.found}"></span><span class="zt">${FOUND.n}</span></div><div class="tiles">`+
+    FOUND.comps.map(c=>`<div class="tile" data-tile="${c.num}"><div class="num">${c.num}</div><div><div class="tn">${c.n}</div><div class="tsvc">${c.svc}</div></div></div>`).join("")+`</div></div></div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Architecture · consumer → edge → API → microservices → core</div>
+   <p class="intro">A request from a third-party app enters at the edge, is authenticated and authorized at the API layer, routed privately to the Open Banking microservices, and bridged to the bank's core over a hybrid link. The dashed band underneath is cross-cutting — security, logging, management and eventing span everything. Click any numbered component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>Each numbered box matches the AWS reference diagram. Click one for what it does and the AWS services behind it.<br><br>Numbers <b>1–18</b> are the architecture components; <b>C / TP / T</b> are the external actors (consumer, third party, Trust Service Provider).</div></div></div></div>`;
+  document.querySelectorAll("[data-tile]").forEach(el=>el.addEventListener("click",()=>openComp(el.getAttribute("data-tile"))));
+}
+
+/* flows */
+const FLOWS={
+ acct:{n:"Account Information",sub:"read balances, transactions, statements",steps:[
+  {z:"ext",w:"The consumer grants consent in the third-party app.",rf:""},
+  {z:"ext",w:"The third-party app calls the Account Information API over mTLS, presenting its certificate.",rf:"5"},
+  {z:"edge",w:"Route 53 routes the request; CloudFront, Shield and WAF protect and filter it.",rf:"8"},
+  {z:"api",w:"API Gateway validates the client certificate against the S3 trust store and checks the third party's status with the TSP.",rf:"6 · T"},
+  {z:"idp",w:"The OAuth 2.0 identity provider authorizes the request against the consumer's consent.",rf:"13"},
+  {z:"priv",w:"PrivateLink and the private integration VPC route to the microservice in another account.",rf:"7 · 9"},
+  {z:"ms",w:"The Account Information microservice (ECS/Fargate) checks consent and reads account data from the RDS copy, cached in ElastiCache.",rf:"10 · 11 · 12"},
+  {z:"data",w:"The response returns to the third party; performance metrics and logs are recorded.",rf:"11 · 16"},
+ ]},
+ pay:{n:"Payment submission",sub:"pay merchants, people, registered payees",steps:[
+  {z:"ext",w:"The consumer authorizes a payment in the third-party app.",rf:""},
+  {z:"ext",w:"The third-party app calls the Payments API over mTLS.",rf:"5"},
+  {z:"api",w:"Edge and WAF protect the request; API Gateway validates the certificate and the TSP status.",rf:"8 · 6"},
+  {z:"idp",w:"The OAuth 2.0 identity provider authorizes the payment against the consumer's consent.",rf:"13"},
+  {z:"priv",w:"PrivateLink routes to the Payments microservice.",rf:"7 · 9"},
+  {z:"ms",w:"The Payments microservice (ECS/Fargate) verifies consent in DynamoDB and submits the payment.",rf:"10 · 11"},
+  {z:"conn",w:"Transit Gateway and Direct Connect / VPN carry the instruction to the bank's core.",rf:"3 · 2"},
+  {z:"core",w:"The core banking system processes the payment via Kafka / MQ and returns a status.",rf:"1"},
+  {z:"ms",w:"A webhook notifies the third party of the payment status via EventBridge / SNS.",rf:"10 · 18"},
+ ]},
+};
+let fTimer=null, curFlow="acct";
+function renderFlows(){
+  if(fTimer){clearInterval(fTimer);fTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">How a request flows</div>
+   <p class="intro">The two Open Banking journeys, traced through the numbered components. Walk one to see how consent, mutual TLS and the TSP combine to authorize access before anything reaches the core.</p>
+   <div class="flow-pick" id="flowPick"></div>
+   <div class="flow-grid"><div class="card steps" id="stepBox"></div><div class="card lsum" id="lsum"></div></div>`;
+  function drawPick(){document.getElementById("flowPick").innerHTML=Object.entries(FLOWS).map(([k,f])=>`<button class="fp ${k===curFlow?'on':''}" data-f="${k}">${f.n}<small>${f.sub}</small></button>`).join("");
+    document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{stop();curFlow=b.dataset.f;hl=-1;drawPick();draw();});}
+  function draw(){
+    const f=FLOWS[curFlow];
+    document.getElementById("stepBox").innerHTML=f.steps.map((s,i)=>`<div class="stp ${i===hl?'active':''}">
+      <div class="zchip" style="background:${ZC[s.z]}">${s.z.toUpperCase()}</div>
+      <div class="mid"><div class="w">${s.w}</div>${s.rf?`<div class="rf">components ${s.rf}</div>`:""}</div></div>`).join("");
+    document.getElementById("lsum").innerHTML=`<p><b style="color:var(--ink)">${f.n}</b> — ${f.sub}.</p>
+      <p style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">Every request is mutually authenticated (mTLS), the third party is verified against the TSP, and access is bound to the consumer's consent before any data or payment crosses to the core.</p>
+      <div class="lbtns"><button class="lbtn primary" id="lPlay">▶ Walk</button><button class="lbtn" id="lStep">⏭ Step</button><button class="lbtn" id="lReset">↺</button></div>`;
+    document.getElementById("lPlay").onclick=play;document.getElementById("lStep").onclick=step;document.getElementById("lReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){const f=FLOWS[curFlow];if(hl<f.steps.length-1){hl++;draw();}}
+  function play(){stop();const f=FLOWS[curFlow];if(hl>=f.steps.length-1)hl=-1;fTimer=setInterval(()=>{const f=FLOWS[curFlow];if(hl<f.steps.length-1){hl++;draw();}else stop();},820);}
+  function stop(){if(fTimer){clearInterval(fTimer);fTimer=null;}}
+  drawPick(); draw();
+}
+
+/* reference */
+function renderRef(){
+  const groups=[...ZONES,FOUND];
+  document.getElementById("view").innerHTML=`<div class="section-h">Component reference · all 18 + actors</div>
+   <p class="intro">Every numbered component from the reference architecture, grouped by zone, with the AWS services behind it.</p>
+   ${groups.map(z=>`<div class="cgroup"><div class="section-h" style="color:${ZC[z.id]}">${z.n}</div>
+     <div class="ccards">${z.comps.map(c=>`<div class="card comp"><div class="num ${c.actor?'actor':''}">${c.num}</div>
+       <div class="cbody"><h4>${c.n}</h4><div class="svc">${c.svc}</div><p>${c.desc}</p></div></div>`).join("")}</div></div>`).join("")}`;
+}
+
+/* shell */
+let CUR="arch";
+function renderTab(name){
+  CUR=name;
+  if(fTimer){clearInterval(fTimer);fTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="arch") renderArch();
+  else if(name==="flows") renderFlows();
+  else renderRef();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("arch");
+</script>
+</body>
+</html>

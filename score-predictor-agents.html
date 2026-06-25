@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predictor Agents · Score Anything Loyalty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(116,55,201,.06),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:720px}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .aud{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .aud .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:none;border:0;padding:8px 15px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .modebanner{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin:10px 2px 6px;display:flex;align-items:center;gap:8px}
+  .modebanner .b{width:8px;height:8px;border-radius:50%;background:var(--violet)}
+
+  .ctx{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin:8px 0 6px;line-height:1.5}
+  .ctx b{color:var(--ink)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:14px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:14px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:880px;line-height:1.55}
+
+  /* topology */
+  .topo-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.topo-wrap{grid-template-columns:1fr}}
+  .stack{padding:8px 10px 12px}
+  .layer{margin:8px 4px 0}
+  .lh{display:flex;align-items:baseline;gap:9px;padding:7px 6px 8px}
+  .lh .ln{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .lh .ls{font-size:11.5px;color:var(--ink-dim)}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:150px;border:1px solid var(--line2);border-left:4px solid var(--line2);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--violet);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--violet);box-shadow:0 0 0 3px rgba(116,55,201,.14)}
+  .tile .tn{font-weight:700;font-size:12.5px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px;line-height:1.35}
+  .flowdown{text-align:center;color:var(--line2);font-size:15px;margin:1px 0 -2px}
+  .found{margin:14px 4px 2px;border:1px dashed var(--line2);border-radius:12px;padding:10px 12px;background:var(--panel2)}
+  .found .fh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 2px 8px}
+  .found .tile{background:var(--panel)}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(20,40,70,.022)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:16px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 12px;font-size:13px;line-height:1.55}
+  .db p.exec{color:var(--ink)} .db p.eng{color:var(--ink-dim)}
+  .sech{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:14px 0 7px}
+  .facts .fact{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px}
+  .facts .fact:last-child{border-bottom:0}
+  .facts .fk{color:var(--ink-faint)} .facts .fv{color:var(--ink);text-align:right}
+  .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+  .ch2{font-family:var(--mono);font-size:9.5px;border:1px solid rgba(13,110,168,.3);border-radius:6px;padding:3px 8px;background:rgba(13,110,168,.06);color:var(--accent)}
+  .why{font-size:12.5px;color:var(--ink);background:rgba(116,55,201,.06);border:1px solid rgba(116,55,201,.2);border-radius:9px;padding:10px 12px;line-height:1.45;margin-top:12px}
+  .why .wl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);display:block;margin-bottom:4px}
+
+  /* lifecycle stepper */
+  .flow-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:10px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:125px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(116,55,201,.06)}
+  .syschip{justify-self:start;font-family:var(--mono);font-size:9px;font-weight:600;color:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;margin-top:1px}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp.learn .mid::before{border-color:var(--green);background:var(--green)}
+  .stp .a{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .stp .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+  .stp .n{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:4px;line-height:1.4}
+  .bdg{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;margin-top:5px;border:1px solid}
+  .lsum{padding:15px 16px;position:sticky;top:14px}
+  .lsum p{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:0 0 12px}
+  .lbtns{display:flex;gap:7px;margin-top:6px}
+  .lbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .lbtn:hover{border-color:var(--violet)} .lbtn.primary{background:var(--violet);color:#fff;border-color:var(--violet)}
+
+  /* roster */
+  .rgroup{margin-bottom:20px}
+  .rcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:11px}
+  .ag{padding:13px 14px}
+  .ag h4{margin:0 0 2px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .ag .mdl{font-family:var(--mono);font-size:8.5px;color:var(--violet);white-space:nowrap;border:1px solid rgba(116,55,201,.25);background:rgba(116,55,201,.06);border-radius:5px;padding:1px 6px}
+  .ag .body{font-size:12px;line-height:1.5;margin:6px 0 8px}
+  .ag .body.exec{color:var(--ink-dim)} .ag .body.eng{color:var(--ink)}
+  .ag .io{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);line-height:1.45;border-top:1px solid var(--line);padding-top:7px}
+  .ag .tl{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .ag .tl span{font-family:var(--mono);font-size:8.5px;color:var(--accent);background:rgba(13,110,168,.07);border-radius:4px;padding:1px 6px}
+
+  /* memory + loop */
+  .mtiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:22px}
+  .mt{padding:13px 14px;border-top:4px solid var(--teal)}
+  .mt h4{margin:0 0 4px;font-size:13px}
+  .mt p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .mt code{font-family:var(--mono);font-size:10.5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+  .loop{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:2px 0 6px}
+  .lp{flex:1;min-width:120px;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;background:var(--panel);text-align:center}
+  .lp .lpn{font-weight:700;font-size:12px}
+  .lp .lpd{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px}
+  .lparrow{display:flex;align-items:center;color:var(--ink-faint);font-size:16px;padding:0 5px}
+  .loopback{font-family:var(--mono);font-size:10px;color:var(--green);text-align:center;margin-top:6px}
+  .note{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;line-height:1.5;margin-top:14px}
+  .note b{color:var(--ink)} .note code{font-family:var(--mono);font-size:11px}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">3 Halves Labs · Score Anything Loyalty</div>
+      <h1>Predictor Agents — multi-agent framework</h1>
+      <p class="lead">The prediction service behind the loyalty markets: a supervisor that orchestrates specialist predictor agents, blends them into one calibrated forecast, checks and guards it, prices it, and learns from the outcome. Read it as an executive or as an engineer.</p>
+    </div>
+    <div class="aud">
+      <span class="al">Audience</span>
+      <div class="seg" id="audSeg">
+        <button data-mode="exec" class="on"><span class="i">◐</span> Executive</button>
+        <button data-mode="eng"><span class="i">⌨</span> Engineer</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="modebanner" id="modeBanner"></div>
+  <div class="ctx">This framework <b>sits on the Player Data Platform</b> (feature store + history), is <b>governed by the Score AI Guardrails</b> (embargo, no-leakage, market integrity), and <b>feeds the internal loyalty prediction markets</b>. The agents are exposed through the Score AI <code>MCP</code>.</div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="topo">◉ Agent topology</button>
+    <button class="tab" data-tab="life">⇶ Prediction lifecycle</button>
+    <button class="tab" data-tab="roster">▤ Agent roster</button>
+    <button class="tab" data-tab="memory">↻ Memory &amp; learning</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot">reference architecture · representative agent stack · ensemble-of-specialists with calibration, guardrails and a closed learning loop<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+let MODE="exec";
+const ACTORC={trig:"#54607a",orch:"#0d6ea8",spec:"#7437c9",agg:"#1f63c8",mkt:"#1a8f45",found:"#0e8a82"};
+
+const LAYERS=[
+ {k:"trig",n:"Triggers",s:"what starts a prediction",c:ACTORC.trig,comps:[
+   {k:"sched",n:"Match scheduled",note:"fixture → open a market",exec:"A new fixture appears and needs a market.",eng:"Scheduler emits a predict event on RabbitMQ with fixture id and market type.",tools:["Scheduler","RabbitMQ"]},
+   {k:"open",n:"Market opens",note:"new market needs a price",exec:"A market is created and needs an opening price.",eng:"Market-open event requests an initial calibrated probability + price.",tools:["RabbitMQ"]},
+   {k:"live",n:"Live event",note:"goal · card · momentum",exec:"Something happens in-play that should move the odds.",eng:"Streaming event (goal/card/possession swing) requests an in-play re-price.",tools:["Stream processor"]},
+   {k:"news",n:"News / lineup drop",note:"injury · lineup · transfer",exec:"Fresh information arrives that changes the picture.",eng:"News/lineup event triggers a re-run; embargo-checked before use.",tools:["News ingest","Guardrails"]},
+ ]},
+ {k:"orch",n:"Orchestration",s:"plan & route",c:ACTORC.orch,comps:[
+   {k:"orchestrator",n:"Predictor Orchestrator",note:"LangGraph supervisor",model:"supervisor graph",
+    exec:"The conductor. It receives a prediction request, decides which specialists to consult, gathers their answers and drives the whole sequence.",
+    eng:"LangGraph stateful supervisor: decomposes the request, routes to specialist subgraphs, runs them concurrently, handles timeouts, retries and partial failures, and holds run state in Redis.",
+    io:"market request → orchestrated specialist run → aggregated forecast",
+    tools:["LangGraph","Claude (tool-use)","RabbitMQ","Redis"],ties:"Exposed to the platform as a Score AI MCP server."},
+ ]},
+ {k:"spec",n:"Specialist predictor agents",s:"the ensemble — each predicts independently",c:ACTORC.spec,comps:[
+   {k:"match",n:"Match Outcome Agent",note:"P(win / draw / loss)",model:"GBDT + LLM",
+    exec:"Predicts who wins. It blends a statistical model trained on history with reasoning over current context.",
+    eng:"Gradient-boosted model (XGBoost/LightGBM) over feature-store features, with an LLM layer reasoning over form, news and matchups. Emits P(W/D/L) + rationale + confidence.",
+    io:"features + context → P(W/D/L), rationale, confidence",tools:["XGBoost","Claude","Feature store"]},
+   {k:"score",n:"Scoreline Agent",note:"goals distribution",model:"Poisson / Dixon-Coles + ML",
+    exec:"Predicts the actual scoreline and goal totals.",
+    eng:"Dixon-Coles / bivariate Poisson with ML-estimated attack/defence strengths; outputs a full scoreline distribution for derived markets (totals, BTTS).",
+    io:"team strengths → scoreline distribution",tools:["statsmodels","Feature store"]},
+   {k:"player",n:"Player Performance Agent",note:"MOTM · ratings · props",model:"per-player models",
+    exec:"Predicts individual player outcomes — Man of the Match, ratings, prop markets.",
+    eng:"Per-player models over rolling form and matchup features; powers player prop markets and MOTM odds.",
+    io:"player features → prop probabilities",tools:["LightGBM","Feature store"]},
+   {k:"liveagent",n:"Live / In-Play Agent",note:"momentum · next event",model:"online / streaming",
+    exec:"Updates the odds live as the match unfolds.",
+    eng:"Online model consuming the live event stream; re-prices on momentum shifts and key events with low latency.",
+    io:"live state → updated in-play probabilities",tools:["Flink","Online model"]},
+   {k:"newsagent",n:"Sentiment & News Agent",note:"injuries · lineups · social",model:"LLM + retrieval",
+    exec:"Reads the news and turns it into a signal — an injury or a confirmed lineup nudges the forecast.",
+    eng:"RAG over news/social/lineup feeds; LLM produces structured signal adjustments. Embargoed items are tainted and cannot leak downstream.",
+    io:"retrieved news → signal adjustments",tools:["Claude","pgvector","Guardrails"],ties:"Embargo enforced by the Score AI Guardrails."},
+   {k:"narrative",n:"Narrative Agent",note:"engagement signals (ALEX-style)",model:"LLM generation",
+    exec:"Generates the storylines and two-faction narrative that make the market fun to play.",
+    eng:"LLM-generated market narrative/signals for engagement; clearly separated from the quantitative forecast so it never biases the price.",
+    io:"context → narrative signals",tools:["Claude"]},
+ ]},
+ {k:"agg",n:"Aggregation & quality",s:"reconcile · calibrate · guard",c:ACTORC.agg,comps:[
+   {k:"ensemble",n:"Ensemble / Aggregator",note:"one calibrated distribution",model:"stacking / weighted",
+    exec:"Combines every specialist's opinion into a single trusted forecast, trusting each agent in proportion to its past accuracy.",
+    eng:"Accuracy-weighted stacking blends specialist distributions; a judge resolves irreconcilable disagreement by widening uncertainty rather than averaging blindly.",
+    io:"specialist outputs → blended distribution",tools:["scikit-learn","Claude (judge)"]},
+   {k:"critic",n:"Critic & Calibration Agent",note:"Brier-aware · isotonic",model:"calibration + LLM critic",
+    exec:"A second pair of eyes: checks the forecast is well-calibrated and sane, and asks for a re-run when confidence is low.",
+    eng:"Isotonic/Platt calibration against historical reliability; sanity rules; low-confidence or anomalous forecasts trigger a re-run or a wider market.",
+    io:"raw distribution → calibrated, confidence-scored",tools:["scikit-learn","Langfuse"]},
+   {k:"risk",n:"Risk & Guardrail Agent",note:"embargo · integrity · exposure",model:"policy gate",
+    exec:"Ensures nothing leaks and the market stays fair before anything is priced — embargoed facts, the model's own edge, and exposure limits.",
+    eng:"Applies the Score AI Guardrails: taint/embargo egress gate, non-disclosure of the internal edge to public surfaces, and exposure/limit checks.",
+    io:"calibrated forecast → cleared-to-price (or held)",tools:["OPA","Guardrails","IFC/taint"],ties:"This is the Score AI Guardrails egress barrier, applied to predictions."},
+ ]},
+ {k:"mkt",n:"Market integration",s:"price & publish",c:ACTORC.mkt,comps:[
+   {k:"maker",n:"Market-Maker / Pricing Agent",note:"odds · liquidity · exposure",model:"pricing policy",
+    exec:"Turns the forecast into tradeable odds, seeds the market and manages the house's exposure — keeping the model's edge private.",
+    eng:"Probability → price + spread; seeds the order book; manages liquidity and exposure. The internal edge is withheld; only published market state is exposed.",
+    io:"calibrated probability → market price + book",tools:["Pricing engine","Order book"],ties:"Publishes behind the guardrails information barrier."},
+   {k:"market",n:"Internal prediction market",note:"fans play · edge stays internal",model:"market surface",
+    exec:"The live market fans actually play, fed by the framework.",
+    eng:"Published market state exposed via the loyalty APIs / order book; the model's forecast and edge remain internal.",
+    io:"published prices → fan trades",tools:["Loyalty APIs","Order book"],ties:"Reads via score-loyalty-sdk; integrates with the Loyalty Engine."},
+ ]},
+];
+const FOUNDATIONS={k:"found",n:"Foundations · cross-cutting (every layer)",c:ACTORC.found,comps:[
+ {k:"memory",n:"Memory",note:"working · episodic · long-term",exec:"What the agents remember: live run state, per-match episodes, and a long history of past predictions and how they turned out.",eng:"Working state in Redis, episodic per-match context, and long-term vector memory (pgvector/Pinecone) of predictions + outcomes for retrieval and weighting.",tools:["Redis","pgvector / Pinecone"]},
+ {k:"features",n:"Feature store",note:"online + offline parity",exec:"The shared, consistent facts every model reads from.",eng:"Feast/Tecton online + offline features with point-in-time correctness — the same features in training and serving.",tools:["Feast / Tecton"],ties:"The Player Data Platform's feature store."},
+ {k:"registry",n:"Model registry",note:"champion / challenger",exec:"Keeps track of model versions and which one is live.",eng:"MLflow registry with champion/challenger; promotions gated on backtest + calibration.",tools:["MLflow"]},
+ {k:"eval",n:"Observability & eval",note:"Brier · log loss · drift",exec:"Continuous scoring of how good the predictions actually are.",eng:"Langfuse traces every agent call; calibration curves, Brier/log loss, and drift monitors gate retraining.",tools:["Langfuse","OpenTelemetry"]},
+ {k:"learning",n:"Learning loop",note:"outcome → grade → update",exec:"The flywheel: results feed back so the system gets better over time.",eng:"Outcomes grade each agent; weights and champion/challenger update; long-term memory is written; drift triggers retrain.",tools:["Backtester","MLflow"]},
+]};
+const COMP={}; LAYERS.forEach(L=>L.comps.forEach(c=>{c._layer=L.n;c._color=L.c;COMP[c.k]=c;}));
+FOUNDATIONS.comps.forEach(c=>{c._layer=FOUNDATIONS.n;c._color=FOUNDATIONS.c;COMP[c.k]=c;});
+
+const KPI={
+ exec:[["multi-agent","supervisor + specialists"],["one calibrated forecast","blended, not guessed"],["self-improving","learns from every result"],["guardrailed","embargo · market integrity"],["fair markets","model edge stays private"],["explainable","every forecast has a rationale"]],
+ eng:[["LangGraph","stateful supervisor graph"],["ensemble-of-experts","GBDT + LLM + Poisson"],["isotonic calibration","Brier / log loss graded"],["MCP-exposed","Score AI tool surface"],["champion / challenger","MLflow registry"],["closed loop","outcome → retrain"]],
+};
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPI[MODE].map(x=>`<div class="card kpi"><div class="kv" style="color:var(--violet)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* topology */
+function openComp(k){
+  const c=COMP[k]; if(!c) return;
+  document.querySelectorAll("[data-tile]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tile")===k));
+  let facts=`<div class="facts">`+`<div class="fact"><span class="fk">layer</span><span class="fv">${c._layer}</span></div>`+
+    (c.model?`<div class="fact"><span class="fk">approach</span><span class="fv">${c.model}</span></div>`:"")+
+    (c.io?`<div class="fact"><span class="fk">in → out</span><span class="fv">${c.io}</span></div>`:"")+`</div>`;
+  const body = MODE==="exec"
+    ? `<p class="exec">${c.exec}</p>`
+    : `<p class="eng">${c.eng}</p>`+facts;
+  const tools = c.tools?`<div class="sech">Stack</div><div class="chiprow">${c.tools.map(t=>`<span class="ch2">${t}</span>`).join("")}</div>`:"";
+  const ties = c.ties?`<div class="why"><span class="wl">How it connects</span>${c.ties}</div>`:"";
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="dt">${c._layer}</div><h3>${c.n}</h3></div><div class="db">${body}${tools}${ties}</div>`;
+}
+function renderTopo(){
+  let s=`<div class="card stack">`;
+  LAYERS.forEach((L,i)=>{
+    s+=`<div class="layer"><div class="lh"><span class="ln" style="color:${L.c}">${L.n}</span><span class="ls">${L.s}</span></div><div class="tiles">`;
+    s+=L.comps.map(c=>`<div class="tile" data-tile="${c.k}" style="border-left-color:${L.c}"><div class="tn">${c.n}</div><div class="tnote">${c.note}</div></div>`).join("");
+    s+=`</div></div>`;
+    if(i<LAYERS.length-1) s+=`<div class="flowdown">↓</div>`;
+  });
+  s+=`<div class="found"><div class="fh">${FOUNDATIONS.n}</div><div class="tiles">`+
+    FOUNDATIONS.comps.map(c=>`<div class="tile" data-tile="${c.k}" style="border-left-color:${FOUNDATIONS.c}"><div class="tn">${c.n}</div><div class="tnote">${c.note}</div></div>`).join("")+`</div></div></div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Agent topology · request → market</div>
+   <p class="intro">A supervisor orchestrates a panel of specialist predictors; their outputs are blended into one calibrated forecast, checked and guarded, then priced into the market. The dashed band is cross-cutting — memory, features, evaluation and the learning loop run underneath everything. Click any agent.</p>
+   <div class="topo-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT AN AGENT</b><br><br>Each agent shows its role (in the active ${MODE==='exec'?'executive':'engineer'} voice), its approach and stack, and how it connects to the rest of the suite.<br><br>Specialists predict independently; the aggregation chain turns six opinions into one trustworthy, guarded price.</div></div></div></div>`;
+  document.querySelectorAll("[data-tile]").forEach(el=>el.addEventListener("click",()=>openComp(el.getAttribute("data-tile"))));
+}
+
+/* lifecycle */
+const LIFE=[
+ {actor:"trig",a:"Trigger",w:"A fixture, market open, live event or news drop requests a prediction",exec:"Something needs a forecast — a new market, a live moment, or fresh news.",eng:"Event on RabbitMQ carries market id, horizon and context."},
+ {actor:"orch",a:"Orchestrator plans",w:"Decompose into prediction tasks and pick the specialists to consult",exec:"The conductor decides which experts to ask.",eng:"LangGraph supervisor builds the task graph and routes to specialist subgraphs with timeouts."},
+ {actor:"found",a:"Gather features + context",w:"Pull features from the store and retrieve history, news and lineups",exec:"It collects the relevant facts and recent form.",eng:"Feast online features + RAG over history and embargo-checked news (pgvector)."},
+ {actor:"spec",a:"Specialists predict (parallel)",w:"Each agent emits a probability, a rationale and a confidence",exec:"Each expert gives an independent opinion.",eng:"Match/scoreline/player/live/news/narrative agents run concurrently; GBDT + LLM; structured outputs."},
+ {actor:"agg",a:"Reconcile disagreement",w:"Where specialists differ, a short debate/judge resolves it",exec:"Conflicting opinions are reconciled, not averaged blindly.",eng:"Judge agent weighs rationales; irreconcilable splits widen the uncertainty band."},
+ {actor:"agg",a:"Ensemble aggregates",w:"Blend into one distribution, weighted by each agent's track record",exec:"The opinions become a single, trusted forecast.",eng:"Accuracy-weighted stacking → one probability distribution."},
+ {actor:"agg",a:"Critic calibrates",w:"Calibration + sanity checks; low confidence → re-run or widen",exec:"A second pair of eyes confirms the forecast is well-calibrated and sane.",eng:"Isotonic/Platt calibration; Brier-aware confidence; re-run on low confidence."},
+ {actor:"agg",a:"Risk & guardrail gate",w:"Embargo/taint, market integrity and exposure checks",exec:"Guardrails ensure nothing leaks and the market stays fair.",eng:"Score AI Guardrails: taint/embargo egress gate, internal-edge non-disclosure, exposure limits.",badge:"GUARD"},
+ {actor:"mkt",a:"Market-maker prices",w:"Turn the probability into odds, seed the order book, set liquidity",exec:"The forecast becomes a tradeable price for fans.",eng:"Probability → price + spread; seed book; exposure-managed; edge withheld from the public surface."},
+ {actor:"mkt",a:"Publish to the market",w:"The market goes live for fans, behind the information barrier",exec:"Fans can now play the market.",eng:"Published market state via loyalty APIs; the model's own edge stays internal."},
+ {actor:"found",a:"Settle → grade → learn",w:"Outcome settles; grade by Brier/log loss; update weights, retrain, write memory",exec:"Results feed back so the system improves with every match.",eng:"Outcome graded; agent weights + champion/challenger updated; long-term memory written; drift watched.",badge:"LEARN"},
+];
+let lifeTimer=null;
+function renderLife(){
+  if(lifeTimer){clearInterval(lifeTimer);lifeTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">Prediction lifecycle · trigger → market → learn</div>
+   <p class="intro">One prediction, end to end. Walk it through to see how a request becomes a calibrated, guarded, priced market — and how the outcome feeds back. The green node is where the system learns.</p>
+   <div class="flow-grid"><div class="card steps" id="stepBox"></div><div class="card lsum" id="lsum"></div></div>`;
+  function draw(){
+    document.getElementById("stepBox").innerHTML=LIFE.map((s,i)=>{
+      const col=ACTORC[s.actor];
+      const w = MODE==="exec"?s.exec:s.w;
+      return `<div class="stp ${s.badge==='LEARN'?'learn':''} ${i===hl?'active':''}">
+        <div class="syschip" style="background:${col}">${s.actor.toUpperCase()}</div>
+        <div class="mid"><div class="a">${s.a}</div><div class="w">${w}</div>${(MODE==='eng'&&s.eng)?`<div class="n">${s.eng}</div>`:""}${s.badge?`<span class="bdg" style="color:${s.badge==='LEARN'?'var(--green)':'var(--red)'};border-color:${s.badge==='LEARN'?'var(--green)':'var(--red)'}">${s.badge}</span>`:""}</div>
+      </div>`;
+    }).join("");
+    document.getElementById("lsum").innerHTML=`<p>${MODE==='exec'?'A panel of experts, blended into one calibrated forecast, checked and guarded before it ever becomes a price — then graded against reality so it keeps improving.':'Supervisor-orchestrated ensemble: parallel specialists → judge → accuracy-weighted stacking → calibration → guardrail gate → pricing → publish → grade → retrain. State in Redis; traces in Langfuse.'}</p>
+      <div class="lbtns"><button class="lbtn primary" id="lPlay">▶ Walk</button><button class="lbtn" id="lStep">⏭ Step</button><button class="lbtn" id="lReset">↺</button></div>`;
+    document.getElementById("lPlay").onclick=play; document.getElementById("lStep").onclick=step; document.getElementById("lReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<LIFE.length-1){hl++;draw();}}
+  function play(){stop(); if(hl>=LIFE.length-1)hl=-1; lifeTimer=setInterval(()=>{if(hl<LIFE.length-1){hl++;draw();}else{stop();}},800);}
+  function stop(){if(lifeTimer){clearInterval(lifeTimer);lifeTimer=null;}}
+  draw();
+}
+
+/* roster */
+const RGROUPS=[
+ ["Orchestration",["orchestrator"]],
+ ["Specialist predictors",["match","score","player","liveagent","newsagent","narrative"]],
+ ["Aggregation & quality",["ensemble","critic","risk"]],
+ ["Market integration",["maker","market"]],
+ ["Foundations",["memory","features","registry","eval","learning"]],
+];
+function renderRoster(){
+  document.getElementById("view").innerHTML=RGROUPS.map(([g,keys])=>`<div class="rgroup">
+    <div class="section-h">${g}</div>
+    <div class="rcards">${keys.map(k=>{const c=COMP[k];return `<div class="card ag">
+      <h4>${c.n}${c.model?`<span class="mdl">${c.model}</span>`:""}</h4>
+      <div class="body ${MODE}">${MODE==='exec'?c.exec:c.eng}</div>
+      ${c.io?`<div class="io">${c.io}</div>`:""}
+      ${c.tools?`<div class="tl">${c.tools.map(t=>`<span>${t}</span>`).join("")}</div>`:""}</div>`;}).join("")}</div></div>`).join("");
+}
+
+/* memory + learning */
+function renderMemory(){
+  const tiers=[
+   ["Working memory","Live run state for the current prediction — partial results, routing, retries.","Redis"],
+   ["Episodic memory","Per-match context: the lineup, the news, what each agent said, what happened.","Mongo / Redis"],
+   ["Long-term memory","Every past prediction and its outcome, embedded for retrieval and accuracy weighting.","pgvector / Pinecone"],
+   ["Model registry","Versioned models with champion/challenger; promotions gated on backtest + calibration.","MLflow"],
+  ];
+  const loop=["Predict","Publish to market","Outcome settles","Grade (Brier / log loss)","Update weights + retrain","Write memory"];
+  document.getElementById("view").innerHTML=`<div class="section-h">Memory</div>
+   <p class="intro">What the agents remember, from the current run to the full history of how past forecasts turned out.</p>
+   <div class="mtiers">${tiers.map(t=>`<div class="card mt"><h4>${t[0]}</h4><p>${t[1]}</p><p style="margin-top:6px"><code>${t[2]}</code></p></div>`).join("")}</div>
+   <div class="section-h">The learning loop</div>
+   <p class="intro">Every market is graded against reality. Accurate agents earn more weight; models retrain on fresh outcomes; the history grows. The framework gets better the more it is used.</p>
+   <div class="loop">${loop.map((l,i)=>`<div class="lp"><div class="lpn">${i+1}. ${l}</div></div>${i<loop.length-1?'<div class="lparrow">→</div>':''}`).join("")}</div>
+   <div class="loopback">↺ back-attributed to every agent, weighting and the long-term memory</div>
+   <div class="note"><b>Why calibration, not just accuracy.</b> A prediction market needs probabilities that mean what they say — when the framework says 70%, it should happen ~70% of the time. Forecasts are graded with <b>Brier score</b> and <b>log loss</b> and re-calibrated (isotonic/Platt) against historical reliability, so prices are fair and the house edge is honest. ${MODE==='eng'?'Calibration curves and drift gate retraining; champion/challenger promotion requires a backtest win.':''}</div>`;
+}
+
+/* shell */
+function setMode(m){
+  MODE=m;
+  document.querySelectorAll("#audSeg button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+  document.getElementById("modeBanner").innerHTML=`<span class="b"></span>${m==='exec'?'Executive view — what each agent does and why it matters for fair, fun markets. Toggle to Engineer for models, contracts and stack.':'Engineer view — models, in/out contracts, orchestration and the specific stack at each agent. Toggle to Executive for the narrative.'}`;
+  renderKPIs(); renderTab(CUR);
+}
+let CUR="topo";
+function renderTab(name){
+  CUR=name;
+  if(lifeTimer){clearInterval(lifeTimer);lifeTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="topo") renderTopo();
+  else if(name==="life") renderLife();
+  else if(name==="roster") renderRoster();
+  else renderMemory();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+document.querySelectorAll("#audSeg button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+setMode("exec");
+</script>
+</body>
+</html>
