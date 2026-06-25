@@ -133,6 +133,15 @@
       <div class="fname">Architecture Console.html</div>
     </a>
 
+    <a class="card" href="score-user-creation.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--teal);background:rgba(14,138,130,.10)">Identity flow</span><span class="open">Open ↗</span></div>
+      <h3>How a User Is Created</h3>
+      <div class="sub">Auth0 · Keycloak · Mongo · Odoo</div>
+      <p>A user is up to four records across four systems, linked by shared ids. Four entry paths — only two create a user — with a step-through of the primary lazy, JWT-triggered Auth0 → Mongo → RabbitMQ → Odoo flow, the cross-system identity trail, and the caveats the trace surfaced (eventual consistency, no Odoo record for admins, email-collision risk).</p>
+      <div class="tags"><span class="tag">Path walkthrough</span><span class="tag">Identity trail</span><span class="tag">Caveats &amp; gaps</span></div>
+      <div class="fname">score-user-creation.html</div>
+    </a>
+
   </div>
 
   <div class="section-h">The loyalty loop</div>
@@ -170,6 +179,24 @@
       <div class="fname">score-ai-guardrails.html</div>
     </a>
 
+    <a class="card" href="score-predictor-agents.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">Multi-agent</span><span class="open">Open ↗</span></div>
+      <h3>Predictor Agents — multi-agent framework</h3>
+      <div class="sub">supervisor · specialists · ensemble · market</div>
+      <p>The prediction service behind the loyalty markets, seen as executive or engineer. A supervisor orchestrates specialist predictor agents (match, scoreline, player, in-play, news, narrative); an ensemble/critic/risk chain blends, calibrates and guards them; a market-maker prices the result; and a closed learning loop grades every outcome. Sits on the data platform, governed by the AI guardrails, exposed via the Score AI MCP.</p>
+      <div class="tags"><span class="tag">Executive + Engineer</span><span class="tag">Topology + lifecycle walk</span><span class="tag">Ensemble · calibration · learning loop</span></div>
+      <div class="fname">score-predictor-agents.html</div>
+    </a>
+
+    <a class="card" href="score-soc2-compliance.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--green);background:rgba(26,143,69,.10)">Compliance</span><span class="open">Open ↗</span></div>
+      <h3>What SOC 2 Needs</h3>
+      <div class="sub">Trust criteria · controls · journey · checklist</div>
+      <p>What Score has to put in place for a SOC 2, mapped to its actual stack. The five Trust Services Criteria with a scope selector, the nine Common Criteria (CC1–CC9) and the controls that satisfy them, the practical control domains, the road from gap assessment to a Type II report, and a 36-item readiness checklist with a progress bar.</p>
+      <div class="tags"><span class="tag">Trust criteria + CC1–CC9</span><span class="tag">Stack-mapped controls</span><span class="tag">Readiness checklist</span></div>
+      <div class="fname">score-soc2-compliance.html</div>
+    </a>
+
   </div>
 
   <div class="section-h">Reference &amp; tools</div>
@@ -182,6 +209,15 @@
       <p>Pick a caching strategy, fire a read, and watch data move between the component, the client cache and the origin — with freshness, latency and offline outcomes. Includes a comparison matrix and a mapping to Cache-Control, TanStack Query, SWR, Apollo and Workbox.</p>
       <div class="tags"><span class="tag">Interactive simulator</span><span class="tag">Strategy comparison</span><span class="tag">API mapping</span></div>
       <div class="fname">frontend-caching-playground.html</div>
+    </a>
+
+    <a class="card" href="open-banking-aws.html">
+      <div class="ctop"><span class="role-badge" style="color:var(--orange);background:rgba(191,79,23,.10)">Reference arch</span><span class="open">Open ↗</span></div>
+      <h3>Open Banking on AWS</h3>
+      <div class="sub">AWS reference architecture · rebuilt</div>
+      <p>A clean, interactive rebuild of AWS's "Open Banking on AWS" reference architecture: nine zones from consumer through edge, API Gateway (mTLS + OAuth 2.0 + TSP), ECS/Fargate microservices and the hybrid path to the bank core, all 18 numbered components clickable, plus Account-Information and Payment request-flow walkthroughs. Architecture and service names © Amazon Web Services.</p>
+      <div class="tags"><span class="tag">9 zones · 18 components</span><span class="tag">Request-flow walks</span><span class="tag">AWS reference</span></div>
+      <div class="fname">open-banking-aws.html</div>
     </a>
 
   </div>
