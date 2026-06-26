@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Enterprise Architecture Review Board — Architecture Overview</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#11182e; --panel2:#0e1526; --line:#22304f;
+    --ink:#e8edf7; --muted:#9fb0cc; --dim:#6c7c9c;
+    --accent:#ff9900;      /* AWS orange */
+    --accent2:#4f8cff;     /* blue */
+    --green:#37d399; --amber:#f6c453; --red:#ff6b6b; --violet:#b18cff;
+    --chip:#1a2440;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:linear-gradient(180deg,#0a0f1e 0%,#0b1020 100%);
+    color:var(--ink);
+    font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent2);text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+
+  /* Header */
+  header.hero{
+    background:radial-gradient(1200px 400px at 20% -10%,rgba(255,153,0,.14),transparent 60%),
+               radial-gradient(900px 300px at 90% -20%,rgba(79,140,255,.16),transparent 60%),
+               var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:11px;color:var(--accent);font-weight:700}
+  h1{margin:.35em 0 .15em;font-size:30px;line-height:1.15}
+  .sub{color:var(--muted);max-width:760px;font-size:15.5px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .pill{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--muted)}
+  .pill b{color:var(--ink);font-weight:600}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;margin:26px 0 22px;flex-wrap:wrap;position:sticky;top:0;z-index:20;
+        background:linear-gradient(180deg,#0b1020 75%,transparent);padding:10px 0}
+  .tab{
+    cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    padding:11px 18px;border-radius:11px;font-weight:600;font-size:14px;display:flex;gap:9px;align-items:center;
+    transition:.15s;
+  }
+  .tab .ic{width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:#1b2b4a;font-size:15px}
+  .tab small{display:block;font-weight:400;font-size:11.5px;color:var(--dim)}
+  .tab:hover{border-color:#33476f;color:var(--ink)}
+  .tab.active{border-color:var(--accent);color:var(--ink);background:linear-gradient(180deg,#1a2540,#141d36)}
+  .tab.active{box-shadow:0 0 0 1px rgba(255,153,0,.25) inset, 0 6px 18px rgba(255,153,0,.08)}
+
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Generic blocks */
+  section.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 24px;margin:18px 0;box-shadow:var(--shadow)}
+  section.card > h2{margin:0 0 4px;font-size:20px}
+  section.card > .lead{color:var(--muted);margin:0 0 16px;font-size:14px}
+  h3.section-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:26px 0 12px;font-weight:700}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:920px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .tile{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .tile h4{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .tile p{margin:0;color:var(--muted);font-size:13.5px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+  .kpi{display:flex;flex-direction:column;gap:2px}
+  .kpi .num{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .kpi .lbl{color:var(--muted);font-size:12.5px}
+
+  /* score bars */
+  .bar{height:9px;border-radius:6px;background:#1c2842;overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:6px}
+
+  /* badges */
+  .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid transparent;display:inline-block}
+  .b-pass{background:rgba(55,211,153,.13);color:var(--green);border-color:rgba(55,211,153,.35)}
+  .b-warn{background:rgba(246,196,83,.13);color:var(--amber);border-color:rgba(246,196,83,.35)}
+  .b-prop{background:rgba(177,140,255,.13);color:var(--violet);border-color:rgba(177,140,255,.35)}
+
+  /* diagram container */
+  .diagram{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px;overflow:auto}
+  .mermaid{display:flex;justify-content:center}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  tr:hover td{background:rgba(255,255,255,.015)}
+  code{background:#0a1426;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12.5px;color:#cfe0ff}
+
+  ul.clean{margin:8px 0 0;padding-left:18px;color:var(--muted)}
+  ul.clean li{margin:4px 0}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+
+  .callout{border-left:3px solid var(--accent);background:rgba(255,153,0,.06);padding:12px 16px;border-radius:8px;color:var(--muted);font-size:13.5px}
+  .callout b{color:var(--ink)}
+
+  footer{color:var(--dim);font-size:12px;text-align:center;margin-top:30px}
+  .flow-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#1a1300;font-weight:800;font-size:12px;flex:none}
+  .step{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
+  .step p{margin:0;color:var(--muted);font-size:13.5px}
+  .step b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">AWS Bedrock · GenAI Reference Architecture</div>
+    <h1>AI Enterprise Architecture Review Board</h1>
+    <p class="sub">An AI-powered platform that ingests architecture artifacts and acts like a board of specialists —
+      Solution, Security, FinOps, Compliance, and Executive advisors — to identify risks, assess compliance,
+      estimate cloud cost, and produce executive-ready recommendations, every answer grounded in cited evidence.</p>
+    <div class="hero-meta">
+      <span class="pill"><b>Region</b> · ca-central-1 (Canadian data residency)</span>
+      <span class="pill"><b>Model</b> · Claude Sonnet on Bedrock</span>
+      <span class="pill"><b>Pattern</b> · Supervisor + 5 collaborator agents + RAG</span>
+      <span class="pill"><b>ADRs</b> · 14 recorded decisions</span>
+      <span class="pill"><b>Infra</b> · AWS CDK · 4 stacks · built</span>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <a href="https://github.com/bdot-real/arch-review" target="_blank" rel="noopener"
+         style="display:inline-flex;gap:8px;align-items:center;background:#1a2440;border:1px solid var(--accent);border-radius:10px;padding:9px 16px;color:var(--ink);font-weight:700;font-size:13.5px">
+         ⎇ View on GitHub · bdot-real/arch-review ↗</a>
+      <a href="https://github.com/bdot-real/arch-review/issues" target="_blank" rel="noopener"
+         style="display:inline-flex;gap:8px;align-items:center;background:#11182e;border:1px solid var(--line);border-radius:10px;padding:9px 16px;color:var(--muted);font-weight:600;font-size:13.5px">
+         🗂️ Issues / backlog ↗</a>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-view="exec">
+      <span class="ic">📈</span>
+      <span>Executive<small>Value, risk &amp; cost</small></span>
+    </div>
+    <div class="tab" data-view="arch">
+      <span class="ic">🏛️</span>
+      <span>Architect<small>System design &amp; decisions</small></span>
+    </div>
+    <div class="tab" data-view="dev">
+      <span class="ic">⚙️</span>
+      <span>Developer<small>Components &amp; contracts</small></span>
+    </div>
+  </div>
+
+  <!-- ============================ EXECUTIVE ============================ -->
+  <div class="view active" id="view-exec">
+
+    <section class="card">
+      <h2>What it is, in one line</h2>
+      <p class="lead">Upload your architecture. Ask a question. Get a board-level review with evidence.</p>
+      <div class="grid g3">
+        <div class="tile">
+          <h4>🤝 The business problem</h4>
+          <p>Architecture review depends on scarce senior experts and tribal knowledge. Reviews are slow,
+             inconsistent, and rarely produce an audit trail.</p>
+        </div>
+        <div class="tile">
+          <h4>💡 The solution</h4>
+          <p>An always-available AI review board that delivers consistent, explainable, governance-grade
+             assessments in under a minute.</p>
+        </div>
+        <div class="tile">
+          <h4>🎯 The outcome</h4>
+          <p>Faster decisions, lower review cost, documented compliance evidence, and a one-page CIO summary
+             for every engagement.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The five-specialist review board</h2>
+      <p class="lead">One orchestrator coordinates five specialist perspectives — the way a real review board works.</p>
+      <div class="grid g3">
+        <div class="tile"><h4><span class="dot" style="background:var(--accent2)"></span>Solution Architect</h4><p>System design, patterns, scalability.</p></div>
+        <div class="tile"><h4><span class="dot" style="background:var(--red)"></span>Security Architect</h4><p>IAM, network, encryption, threat modeling.</p></div>
+        <div class="tile"><h4><span class="dot" style="background:var(--green)"></span>FinOps</h4><p>Cost estimation and optimization.</p></div>
+        <div class="tile"><h4><span class="dot" style="background:var(--violet)"></span>Compliance</h4><p>PIPEDA, GDPR, HIPAA, EU AI Act, governance.</p></div>
+        <div class="tile"><h4><span class="dot" style="background:var(--amber)"></span>Executive Advisor</h4><p>Business language, ROI, risk summaries.</p></div>
+        <div class="tile" style="background:linear-gradient(180deg,#16213d,#121a30);border-color:#2a3a5e">
+          <h4>🧭 Orchestrator</h4><p>A supervisor agent that interprets the request, delegates to the right specialists in parallel, and synthesizes the final verdict — it holds no tools of its own, so it can't fabricate numbers.</p></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>What a single review delivers</h2>
+      <p class="lead">Actual output from a live board run on the seeded <code>retail-csp</code> demo (Claude Sonnet 4.5, ca-central-1): <i>“Can this architecture support an autonomous AI support agent handling Canadian customer PII?”</i></p>
+
+      <div class="callout" style="margin-bottom:18px;border-left-color:var(--red);background:rgba(255,107,107,.07)">
+        <b>Board verdict: ⛔ DEPLOYMENT BLOCKED</b> — overall architecture score <b>62/100</b>, with 5 critical blockers to clear before processing Canadian PII. Estimated remediation: <b>~10 weeks to safe launch</b>.
+      </div>
+
+      <h3 class="section-title">Architecture scorecard (from the deterministic tools)</h3>
+      <div class="grid g4">
+        <div class="tile kpi"><span class="num" style="color:var(--amber)">70</span><span class="lbl">Security</span>
+          <div class="bar"><i style="width:70%;background:var(--amber)"></i></div></div>
+        <div class="tile kpi"><span class="num" style="color:var(--amber)">75</span><span class="lbl">Reliability</span>
+          <div class="bar"><i style="width:75%;background:var(--amber)"></i></div></div>
+        <div class="tile kpi"><span class="num" style="color:var(--red)">29</span><span class="lbl">Cost efficiency</span>
+          <div class="bar"><i style="width:29%;background:var(--red)"></i></div></div>
+        <div class="tile kpi"><span class="num" style="color:var(--red)">FAIL</span><span class="lbl">Compliance</span>
+          <div class="bar"><i style="width:100%;background:var(--red)"></i></div></div>
+      </div>
+
+      <h3 class="section-title">Compliance assessment</h3>
+      <div class="grid g3">
+        <div class="tile"><h4>PIPEDA <span class="badge b-warn" style="background:rgba(255,107,107,.13);color:var(--red);border-color:rgba(255,107,107,.35)">FAIL</span></h4><p>No formal PII handling / data-classification standard for the AI assistant (Schedule 1 Principles 4.3 / 4.4 / 4.7).</p></div>
+        <div class="tile"><h4>GDPR <span class="badge b-warn" style="background:rgba(255,107,107,.13);color:var(--red);border-color:rgba(255,107,107,.35)">FAIL</span></h4><p>Same PII-governance gaps; data-residency for model inference unverified.</p></div>
+        <div class="tile"><h4>AI governance <span class="badge b-warn">MISSING</span></h4><p>No NIST AI RMF / ISO 42001 / EU AI Act classification, guardrails, or human-in-the-loop.</p></div>
+      </div>
+
+      <h3 class="section-title">One-page CIO summary (generated)</h3>
+      <div class="grid g3">
+        <div class="tile"><h4>📍 Current state &amp; risks</h4><p>Solid serverless foundation, but 5 critical blockers: PIPEDA gap, over-permissive IAM + no MFA, unverified data residency, no AI governance, single-region (no DR).</p></div>
+        <div class="tile"><h4>✅ Recommended actions</h4><p>Adopt a PII standard, decompose IAM to least-privilege + enforce MFA, add Bedrock Guardrails + HITL, design multi-region DR, right-size compute.</p></div>
+        <div class="tile"><h4>💰 Cost &amp; timeline</h4><p>$1,016.68/mo now → $455–$673/mo optimized (34–55% savings). ~$68K one-time remediation; CIO/CISO go/no-go at the Week-10 gate.</p></div>
+      </div>
+      <p style="color:var(--dim);font-size:12px;margin-top:12px">Every figure above came from the deterministic Action Group tools + RAG retrieval with source citations (NFR-004) — not free-form model output. Full transcript: <code>docs/demo-output.md</code>.</p>
+    </section>
+
+    <section class="card">
+      <h2>Why these choices reduce business risk</h2>
+      <div class="grid g2">
+        <div class="tile"><h4>🇨🇦 Data stays in Canada</h4><p>Regulated data plane runs in <b>ca-central-1</b>, directly supporting the PIPEDA / data-residency story.</p></div>
+        <div class="tile"><h4>🔍 Every answer is explainable</h4><p>Recommendations cite source documents with a reasoning summary and confidence score — governance-grade, not a black box.</p></div>
+        <div class="tile"><h4>🧾 Everything is audited</h4><p>Prompt, response, sources, tools invoked, user, and timestamp are logged for every action.</p></div>
+        <div class="tile"><h4>💸 Pay for what you use</h4><p>Serverless throughout; the demo design drops idle cost to near zero while keeping a production scale-up path.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================ ARCHITECT ============================ -->
+  <div class="view" id="view-arch">
+
+    <section class="card">
+      <h2>System context &amp; data flow</h2>
+      <p class="lead">As built across four CDK stacks (Foundation · Data · Agent · Api). React SPA → API Gateway → Lambda → a Bedrock <b>supervisor</b> agent that delegates to five collaborator agents, each calling its own deterministic Action Groups — all on a KMS-encrypted, audited, ca-central-1 data plane.</p>
+      <div class="diagram">
+        <div class="mermaid">
+flowchart TB
+  U([User · CIO / Architect / Security]):::actor
+  subgraph FE[Presentation]
+    SPA[React SPA<br/>Cognito SRP auth]:::fe
+  end
+  subgraph EDGE[Api stack]
+    APIGW[API Gateway · v1<br/>Cognito authorizer · throttle · validate]:::aws
+  end
+  subgraph APP[Api stack · Lambdas]
+    PROJ[project / upload<br/>retrieve]:::aws
+    REVF[review<br/>POST 202 + GET poll]:::aws
+    RW[review-worker<br/>async · 5 min]:::aws
+  end
+  subgraph BR[Agent stack · Bedrock]
+    SUP[Supervisor agent<br/>SUPERVISOR · no tools]:::agent
+    SPEC[5 collaborator agents<br/>SA · Sec · FinOps · Comp · Exec]:::agent
+    FM[Claude Sonnet<br/>cross-region inference profile]:::model
+  end
+  subgraph TOOLS[Lambda Action Groups · deterministic]
+    RET[retrieveContext]:::tool
+    REST[scoreArchitecture · estimateCost<br/>assessCompliance · generateDiagram<br/>generateThreatModel]:::tool
+  end
+  subgraph DATA[Data + Foundation stacks · ca-central-1 · KMS CMK]
+    PT[(DynamoDB<br/>Projects)]:::store
+    VT[(DynamoDB<br/>Vectors · demo)]:::store
+    AT[(DynamoDB<br/>Audit · append-only)]:::store
+    S3U[(S3 uploads)]:::store
+    S3R[(S3 reports + artifacts)]:::store
+    OSS[(OpenSearch Serverless<br/>Bedrock KB · prod mode)]:::store
+  end
+  ING[ingest Lambda<br/>extract · chunk · Titan embed]:::aws
+  EB{{EventBridge<br/>Object Created}}:::aws
+  OBS[CloudWatch<br/>dashboard · alarms · X-Ray]:::sec
+  BUD[Budgets → SNS]:::sec
+
+  U --> SPA --> APIGW
+  APIGW --> PROJ & REVF
+  SPA -. pre-signed PUT .-> S3U
+  REVF -. InvocationType Event .-> RW --> SUP
+  SUP --> SPEC --> FM
+  SPEC --> RET & REST
+  RET --> VT
+  RET -. prod .-> OSS
+  S3U --> EB --> ING --> VT
+  S3U -. prod ingest .-> OSS
+  RW --> S3R
+  PROJ --> PT
+  PROJ & REVF & RW --> AT
+  APIGW --> OBS
+  BUD -.cost guardrail.-> DATA
+
+  classDef actor fill:#1b2440,stroke:#3a4d77,color:#e8edf7;
+  classDef fe fill:#13233f,stroke:#4f8cff,color:#dbe7ff;
+  classDef aws fill:#241a0a,stroke:#ff9900,color:#ffe9c7;
+  classDef agent fill:#1d1530,stroke:#b18cff,color:#eaddff;
+  classDef model fill:#102a22,stroke:#37d399,color:#c9ffe9;
+  classDef tool fill:#10203a,stroke:#4f8cff,color:#d6e6ff;
+  classDef store fill:#0f1a30,stroke:#33476f,color:#cdd9f0;
+  classDef sec fill:#2a1320,stroke:#ff6b6b,color:#ffd5d9;
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:#ff9900"></span>AWS managed service</span>
+        <span><span class="dot" style="background:#b18cff"></span>Bedrock agent</span>
+        <span><span class="dot" style="background:#37d399"></span>Foundation model</span>
+        <span><span class="dot" style="background:#4f8cff"></span>Action Group / tool</span>
+        <span><span class="dot" style="background:#ff6b6b"></span>Security &amp; governance</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Multi-agent collaboration topology</h2>
+      <p class="lead">ADR-0013, as built: a <b>SUPERVISOR</b> orchestrator that owns no tools — it plans, delegates, and synthesises — with five separate collaborator agents, each granted <b>only the Action Groups it needs</b> (least privilege per specialist). All specialists share <code>retrieveContext</code> for grounding.</p>
+      <div class="diagram">
+        <div class="mermaid">
+flowchart LR
+  ORC[Supervisor / Orchestrator<br/>plans · delegates · synthesises]:::sup
+  SA[Solution Architect]:::ag
+  SEC[Security Architect]:::ag
+  FIN[FinOps]:::ag
+  CMP[Compliance]:::ag
+  EXE[Executive Advisor]:::ag
+  ORC --> SA & SEC & FIN & CMP & EXE
+
+  RC([retrieveContext]):::t
+  SC([scoreArchitecture]):::t
+  DG([generateDiagram]):::t
+  TM([generateThreatModel]):::t
+  EC([estimateCost]):::t
+  AC([assessCompliance]):::t
+
+  SA --> RC & SC & DG
+  SEC --> RC & SC & TM
+  FIN --> RC & EC
+  CMP --> RC & AC
+  EXE --> RC & SC & EC
+
+  classDef sup fill:#241a0a,stroke:#ff9900,color:#ffe9c7;
+  classDef ag fill:#1d1530,stroke:#b18cff,color:#eaddff;
+  classDef t fill:#10203a,stroke:#4f8cff,color:#d6e6ff;
+        </div>
+      </div>
+      <div class="callout">
+        <b>Why it matters:</b> a specialist can invoke only its own tools (e.g. FinOps cannot run the threat model),
+        so least-privilege is enforced at the agent boundary — and the supervisor can never fabricate a number because it holds no tools at all.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Review request lifecycle — async job + poll</h2>
+      <p class="lead">A full board run takes ~30–60s, past API Gateway's hard 29s timeout — so <code>POST /review</code> returns <code>202 { reviewId }</code> immediately and a worker Lambda runs the agent off the request (ADR-0012).</p>
+      <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as SPA (api.review)
+  participant G as API Gateway
+  participant V as review Lambda
+  participant J as Projects table (job)
+  participant W as review-worker (async)
+  participant S as Supervisor agent
+  participant C as Collaborator agents
+  participant T as Action Groups
+  participant R as Reports S3
+  U->>G: POST /review (Cognito auth)
+  G->>V: invoke (validated body)
+  V->>J: create job REVIEW#id · status running
+  V-->>W: invoke async (InvocationType Event)
+  V-->>U: 202 { reviewId }
+  Note over S,C: Supervisor plans, delegates in parallel
+  W->>S: InvokeAgent(question, projectId)
+  S->>C: delegate to needed specialists
+  C->>T: retrieveContext + scoring/cost/compliance/threat
+  T-->>C: deterministic JSON + citations
+  C-->>S: evidence-backed findings
+  S-->>W: synthesised recommendation
+  W->>R: write markdown report artifact
+  W->>J: status done + audit record
+  loop poll until done/failed
+    U->>G: GET /review?reviewId
+    G->>V: read job
+    V-->>U: status (+ result when done)
+  end
+        </div>
+      </div>
+      <div class="callout">
+        <b>Key principle:</b> the LLM <b>orchestrates and explains</b>; it never invents numbers. Scores, costs, and
+        compliance verdicts come from deterministic, unit-tested Lambda Action Groups — satisfying explainability (NFR-004).
+        The worker writes both the report artifact and the append-only <code>review.invoke</code> audit record (NFR-003).
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Architecture Decision Records</h2>
+      <p class="lead">Every significant decision is captured as an immutable, Nygard-style ADR in <code>docs/adr/</code>.</p>
+      <table>
+        <thead><tr><th>ADR</th><th>Decision</th><th>Rationale (short)</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0001-record-architecture-decisions.md" target="_blank" rel="noopener">0001</a></td><td>Record architecture decisions</td><td>Model the governance discipline the product enforces.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0002-aws-bedrock-agents-for-orchestration.md" target="_blank" rel="noopener">0002</a></td><td>Bedrock Agents for orchestration</td><td>Managed, AWS-native multi-agent coordination.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0003-bedrock-knowledge-base-opensearch-rag.md" target="_blank" rel="noopener">0003</a></td><td>Bedrock KB + OpenSearch Serverless (RAG)</td><td>Managed retrieval with citations — production target.</td><td><span class="badge b-pass">Accepted*</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0004-claude-sonnet-as-foundation-model.md" target="_blank" rel="noopener">0004</a></td><td>Claude Sonnet as foundation model</td><td>Strong long-doc reasoning + reliable tool calling.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0005-lambda-action-groups-for-deterministic-tools.md" target="_blank" rel="noopener">0005</a></td><td>Lambda Action Groups for tools</td><td>Deterministic, testable, auditable capabilities.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0006-cognito-rbac-kms-for-security.md" target="_blank" rel="noopener">0006</a></td><td>Cognito + RBAC + KMS</td><td>Managed identity, persona RBAC, CMK encryption.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0007-s3-for-document-and-artifact-storage.md" target="_blank" rel="noopener">0007</a></td><td>S3 for documents &amp; artifacts</td><td>Durable object store + event-driven ingestion.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0008-react-spa-api-gateway-frontend.md" target="_blank" rel="noopener">0008</a></td><td>React SPA behind API Gateway</td><td>Clean FE/BE split; central auth &amp; throttling.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0009-infrastructure-as-code-tooling.md" target="_blank" rel="noopener">0009</a></td><td>IaC tooling — AWS CDK (TypeScript)</td><td>One language across FE + infra; built as 4 stacks.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0010-ca-central-1-region-and-data-residency.md" target="_blank" rel="noopener">0010</a></td><td>ca-central-1 region</td><td>Canadian data residency for PIPEDA.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0011-demo-lightweight-vector-store-vs-opensearch.md" target="_blank" rel="noopener">0011</a></td><td>Lightweight vector store (demo)</td><td>Near-zero idle cost; RAG as an Action Group.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0012-async-review-job-poll.md" target="_blank" rel="noopener">0012</a></td><td>Async review via job + poll</td><td>Survives ~30–60s board runs past API Gateway's 29s limit.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0013-multi-agent-collaboration-topology.md" target="_blank" rel="noopener">0013</a></td><td>Supervisor + collaborator topology</td><td>Separate agents, least-privilege tools per specialist.</td><td><span class="badge b-pass">Accepted†</span></td></tr>
+          <tr><td><a href="https://github.com/bdot-real/arch-review/blob/main/docs/adr/0014-eventbridge-ingestion-trigger.md" target="_blank" rel="noopener">0014</a></td><td>EventBridge ingestion trigger</td><td>Auto-ingest on upload with no cross-stack cycle.</td><td><span class="badge b-pass">Accepted</span></td></tr>
+        </tbody>
+      </table>
+      <p style="color:var(--dim);font-size:12px;margin-top:10px">* ADR-0003 remains the production target; ADR-0011 amends it to scope OpenSearch Serverless to production and introduce the demo retrieval path. &nbsp;† ADR-0013 refines ADR-0002 with the as-built supervisor/collaborator wiring (requires aws-cdk-lib ≥ 2.260).</p>
+    </section>
+
+    <section class="card">
+      <h2>Two retrieval architectures, one contract</h2>
+      <p class="lead">Demo and production differ only behind the <code>retrieveContext</code> interface — the agent and UI are retrieval-backend agnostic.</p>
+      <div class="grid g2">
+        <div class="tile">
+          <h4><span class="dot" style="background:var(--green)"></span>Demo path — lightweight (built)</h4>
+          <p>Upload → S3 → EventBridge → ingest extracts/chunks/embeds (Titan) → vectors + citations in a <b>DynamoDB</b> table → <code>retrieveContext</code> Lambda runs similarity search and returns top-k chunks + citations.</p>
+          <ul class="clean"><li>Near-zero idle cost (no OpenSearch OCUs)</li><li>RAG is an explicit, controllable Action Group</li><li>Scale/concurrency limited — demo corpus only</li></ul>
+        </div>
+        <div class="tile">
+          <h4><span class="dot" style="background:var(--accent)"></span>Production path — managed</h4>
+          <p>Bedrock Knowledge Base backed by OpenSearch Serverless (built as <code>OpenSearchKnowledgeBase</code>, switched on by <code>retrievalMode: 'prod'</code>): managed chunking/embedding/sync and native Agent↔KB integration with horizontal scale.</p>
+          <ul class="clean"><li>Always-on OCU baseline cost</li><li>Managed sync &amp; scale</li><li>Same downstream contract: top-k chunks + citations</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Cross-cutting concerns</h2>
+      <div class="grid g4">
+        <div class="tile"><h4>🔐 Security</h4><p>Cognito SRP authN, RBAC by persona (enforced, #45), KMS CMKs at rest, TLS in transit, least-privilege IAM.</p></div>
+        <div class="tile"><h4>🧾 Auditability</h4><p>Append-only DynamoDB audit table — writers hold <code>PutItem</code> only; prompt, response, sources, actions, user, timestamp.</p></div>
+        <div class="tile"><h4>🔎 Explainability</h4><p>Evidence, source docs, reasoning summary, confidence on every recommendation.</p></div>
+        <div class="tile"><h4>📊 Observability</h4><p>CloudWatch dashboard + alarms (API 5xx, worker errors), X-Ray tracing, Budgets→SNS cost alerts (#11/#16/#19).</p></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================ DEVELOPER ============================ -->
+  <div class="view" id="view-dev">
+
+    <section class="card">
+      <h2>Component map — by CDK stack</h2>
+      <p class="lead">As built in <code>infra/</code>: four stacks — <b>Foundation</b> (KMS, S3, Cognito, Budgets), <b>Data</b> (DynamoDB, ingest, EventBridge), <b>Agent</b> (supervisor + 5 collaborators + Action Groups), <b>Api</b> (API Gateway + handlers + observability).</p>
+      <div class="diagram">
+        <div class="mermaid">
+flowchart LR
+  subgraph FE[Frontend]
+    R[React SPA<br/>Tailwind · mock mode]:::fe
+  end
+  subgraph APIS[Api stack]
+    GW[API Gateway v1<br/>Cognito authz · throttle]:::aws
+    PRJ[project · upload<br/>retrieve]:::aws
+    REV[review<br/>POST/GET]:::aws
+    RW[review-worker<br/>async 5 min]:::aws
+    DASH[CloudWatch<br/>dashboard + alarms]:::sec
+  end
+  subgraph FND[Foundation stack]
+    CG[Cognito + RBAC groups]:::sec
+    KMS[KMS CMK]:::sec
+    B1[(S3 uploads)]:::store
+    B2[(S3 reports)]:::store
+    B3[(S3 artifacts)]:::store
+    BUD[Budgets → SNS]:::sec
+  end
+  subgraph DAT[Data stack]
+    PT[(DynamoDB Projects)]:::store
+    VT[(DynamoDB Vectors)]:::store
+    AT[(DynamoDB Audit)]:::store
+    ING[ingest Lambda]:::aws
+    EB{{EventBridge rule}}:::aws
+  end
+  subgraph AGT[Agent stack]
+    ORC[Supervisor agent]:::agent
+    SP[5 collaborator agents]:::agent
+    CS[Claude Sonnet]:::model
+    A1[retrieveContext]:::tool
+    AX[score · cost · compliance<br/>diagram · threatModel]:::tool
+  end
+  R-->GW
+  CG-.authz.->GW
+  GW-->PRJ & REV
+  R-.presign PUT.->B1
+  REV-.async.->RW-->ORC-->SP-->CS
+  SP-->A1-->VT
+  SP-->AX-->PT
+  B1-->EB-->ING-->VT
+  RW-->B2
+  AX-->B3
+  PRJ-->PT
+  PRJ & REV & RW-->AT
+  GW-->DASH
+  classDef fe fill:#13233f,stroke:#4f8cff,color:#dbe7ff;
+  classDef aws fill:#241a0a,stroke:#ff9900,color:#ffe9c7;
+  classDef agent fill:#1d1530,stroke:#b18cff,color:#eaddff;
+  classDef model fill:#102a22,stroke:#37d399,color:#c9ffe9;
+  classDef tool fill:#10203a,stroke:#4f8cff,color:#d6e6ff;
+  classDef store fill:#0f1a30,stroke:#33476f,color:#cdd9f0;
+  classDef sec fill:#2a1320,stroke:#ff6b6b,color:#ffd5d9;
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Action Group contracts</h2>
+      <p class="lead">Typed JSON request/response per tool. Business logic lives in Lambda (unit-testable), not in prompts.</p>
+      <table>
+        <thead><tr><th>Action Group</th><th>Function</th><th>Output shape</th></tr></thead>
+        <tbody>
+          <tr><td>AG-001 Scoring</td><td><code>scoreArchitecture()</code></td><td><code>{ security, reliability, cost, compliance }</code> (0–100)</td></tr>
+          <tr><td>AG-002 Cost</td><td><code>estimateCost()</code></td><td>Monthly estimate across EC2/ECS/Lambda/OpenSearch/Bedrock/S3/RDS</td></tr>
+          <tr><td>AG-003 Compliance</td><td><code>assessCompliance()</code></td><td>pass / warning / fail per PIPEDA · GDPR · HIPAA · SOC2 · ISO27001</td></tr>
+          <tr><td>AG-004 Diagram</td><td><code>generateDiagram()</code></td><td>Mermaid or PlantUML source → S3 artifacts bucket</td></tr>
+          <tr><td>AG-005 Threat model</td><td><code>generateThreatModel()</code></td><td>STRIDE analysis · risk matrix · mitigations → S3 artifacts</td></tr>
+          <tr><td>RAG Retrieval</td><td><code>retrieveContext()</code></td><td>top-k chunks + source citations (<code>query, projectId, topK</code>)</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:14px">
+        <b>Sample — AG-001:</b>
+        <code>request {"architectureId":"123"}</code> →
+        <code>response {"security":87,"reliability":91,"cost":73,"compliance":80}</code>
+      </div>
+      <h3 class="section-title">Which specialist gets which tools (least privilege, ADR-0013)</h3>
+      <table>
+        <thead><tr><th>Collaborator agent</th><th>Granted Action Groups</th></tr></thead>
+        <tbody>
+          <tr><td>Solution Architect</td><td><code>retrieveContext</code> · <code>scoreArchitecture</code> · <code>generateDiagram</code></td></tr>
+          <tr><td>Security Architect</td><td><code>retrieveContext</code> · <code>scoreArchitecture</code> · <code>generateThreatModel</code></td></tr>
+          <tr><td>FinOps</td><td><code>retrieveContext</code> · <code>estimateCost</code></td></tr>
+          <tr><td>Compliance</td><td><code>retrieveContext</code> · <code>assessCompliance</code></td></tr>
+          <tr><td>Executive Advisor</td><td><code>retrieveContext</code> · <code>scoreArchitecture</code> · <code>estimateCost</code></td></tr>
+          <tr><td>Supervisor / Orchestrator</td><td><i>none</i> — plans, delegates, synthesises only</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Ingestion pipeline</h2>
+      <p class="lead">Event-driven: an S3 upload triggers chunking, embedding, and indexing.</p>
+      <div class="step"><span class="flow-num">1</span><p><b>Upload</b> — SPA gets a pre-signed URL and PUTs the file (PDF/DOCX/TXT/MD/PNG/JPG/SVG/PPTX) directly to the KMS-encrypted <code>uploads</code> bucket.</p></div>
+      <div class="step"><span class="flow-num">2</span><p><b>Trigger</b> — the bucket emits an <code>Object Created</code> event to <b>EventBridge</b>; a rule in the Data stack (matched by bucket name, so no cross-stack cycle — ADR-0014) targets the ingest Lambda.</p></div>
+      <div class="step"><span class="flow-num">3</span><p><b>Extract</b> — txt/md read directly; PDF/DOCX/PPTX go through the extractor (#22).</p></div>
+      <div class="step"><span class="flow-num">4</span><p><b>Chunk + embed</b> — text is chunked and embedded with <code>amazon.titan-embed-text</code>.</p></div>
+      <div class="step"><span class="flow-num">5</span><p><b>Index</b> — demo: write vectors + source citations to the <b>DynamoDB</b> Vectors table. Prod (<code>retrievalMode: 'prod'</code>): sync into OpenSearch Serverless via the Bedrock KB.</p></div>
+      <div class="step"><span class="flow-num">6</span><p><b>Retrieve</b> — at query time <code>retrieveContext</code> embeds the query, runs similarity search, returns top-k chunks + citations.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Tech stack &amp; build notes</h2>
+      <div class="grid g3">
+        <div class="tile"><h4>Frontend</h4><p>React SPA (Tailwind), Cognito SRP auth, REST via API Gateway, direct-to-S3 pre-signed uploads. Local <b>mock mode</b> + Playwright e2e (#71/#73).</p></div>
+        <div class="tile"><h4>Backend</h4><p>NodejsFunction Lambdas: project, upload, retrieve, review + <b>review-worker</b> (async). Job + poll for the &lt;60s budget (ADR-0012).</p></div>
+        <div class="tile"><h4>AI</h4><p>Bedrock <b>supervisor</b> + 5 collaborator agents, Claude Sonnet via cross-region inference profile; Titan embeddings for RAG.</p></div>
+        <div class="tile"><h4>Storage</h4><p>3 S3 buckets (uploads / reports / artifacts) + 3 DynamoDB tables (Projects / Vectors / Audit), all KMS-CMK encrypted, PITR on.</p></div>
+        <div class="tile"><h4>Security</h4><p>Cognito + persona RBAC (enforced), KMS CMKs, append-only audit (<code>PutItem</code>-only), least-privilege IAM per Lambda &amp; per agent.</p></div>
+        <div class="tile"><h4>IaC &amp; ops</h4><p><b>AWS CDK</b> (TypeScript), 4 stacks, Jest construct tests; CloudWatch dashboard + alarms, X-Ray, Budgets→SNS; pinned to ca-central-1.</p></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Things to watch (known risks)</h2>
+      <ul class="clean">
+        <li><b>Shared model RPM under fan-out</b> — parallel collaborators share the bound model's RPM; a low cross-region quota causes 429s during a board run (ADR-0013 / NFR-001). Quota increase + retries.</li>
+        <li><b>Pricing drift</b> — <code>estimateCost</code> needs a maintained AWS pricing source (AG-002).</li>
+        <li><b>Two retrieval code paths</b> — demo DynamoDB store vs prod OpenSearch KB; mitigated by the shared <code>retrieveContext</code> contract.</li>
+        <li><b>Open CORS</b> — uploads bucket and API currently allow all origins; must be restricted to the SPA origin before prod (TODOs in <code>foundation-stack.ts</code> / <code>api-stack.ts</code>, ADR-0008).</li>
+        <li><b>Model availability in ca-central-1</b> — Claude Sonnet is reached via a cross-region inference profile; the residency exception needs compliance sign-off (ADR-0010).</li>
+        <li><b>L1 Bedrock constructs</b> — verbose <code>CfnAgent</code> wiring (needs aws-cdk-lib ≥ 2.260); L2 <code>aws-bedrock-alpha</code> is the eventual target (ADR-0009/0013).</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Explore the repository</h2>
+      <p class="lead">Jump straight to the code on GitHub — <a href="https://github.com/bdot-real/arch-review" target="_blank" rel="noopener">bdot-real/arch-review</a>.</p>
+      <style>
+        a.repo-tile{display:block;text-decoration:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:.15s}
+        a.repo-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+        a.repo-tile h4{margin:0 0 4px;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:8px}
+        a.repo-tile p{margin:0;color:var(--muted);font-size:12.5px}
+      </style>
+      <h3 class="section-title">Infrastructure (AWS CDK)</h3>
+      <div class="grid g3">
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/infra" target="_blank" rel="noopener"><h4>📦 infra/</h4><p>The 4 CDK stacks, Lambdas, and construct tests.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/blob/main/infra/lib/agent-stack.ts" target="_blank" rel="noopener"><h4>🧭 agent-stack.ts</h4><p>Supervisor + 5 collaborators + Action Group wiring.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/infra/lib/agents" target="_blank" rel="noopener"><h4>👥 lib/agents/</h4><p>Per-specialist agent definitions (instructions + tools).</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/infra/lambda/action-groups" target="_blank" rel="noopener"><h4>🛠️ action-groups/</h4><p>Deterministic tools: score · cost · compliance · diagram · threat.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/blob/main/infra/lib/opensearch-kb.ts" target="_blank" rel="noopener"><h4>🔎 opensearch-kb.ts</h4><p>Production RAG: OpenSearch Serverless + Bedrock KB (#18).</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/infra/lambda/retrieve-context" target="_blank" rel="noopener"><h4>📚 retrieve-context/</h4><p>RAG retrieval Action Group (Titan + similarity).</p></a>
+      </div>
+      <h3 class="section-title">Frontend, docs &amp; ops</h3>
+      <div class="grid g3">
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/frontend" target="_blank" rel="noopener"><h4>🎨 frontend/</h4><p>React + Tailwind SPA · mock mode · Playwright e2e.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/tree/main/docs/adr" target="_blank" rel="noopener"><h4>📐 docs/adr/</h4><p>14 architecture decision records (0001–0014).</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/blob/main/docs/demo-output.md" target="_blank" rel="noopener"><h4>📄 demo-output.md</h4><p>Full transcript of a live board run.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/blob/main/docs/report-template.md" target="_blank" rel="noopener"><h4>🧩 report-template.md</h4><p>Canonical report layout + data source per section.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/blob/main/docs/requirements.md" target="_blank" rel="noopener"><h4>📋 requirements.md</h4><p>Product + functional/non-functional requirements.</p></a>
+        <a class="repo-tile" href="https://github.com/bdot-real/arch-review/issues" target="_blank" rel="noopener"><h4>🗂️ Issues / backlog</h4><p>~52 of 61 closed; the rest deploy/quota-gated.</p></a>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Generated from
+    <a href="https://github.com/bdot-real/arch-review/blob/main/docs/requirements.md" target="_blank" rel="noopener">requirements.md</a>,
+    <a href="https://github.com/bdot-real/arch-review/tree/main/docs/adr" target="_blank" rel="noopener">docs/adr/*</a> (0001–0014),
+    <a href="https://github.com/bdot-real/arch-review/blob/main/docs/demo-output.md" target="_blank" rel="noopener">demo-output.md</a> &amp; the built
+    <a href="https://github.com/bdot-real/arch-review/tree/main/infra" target="_blank" rel="noopener">infra/</a> CDK stacks ·
+    <a href="https://github.com/bdot-real/arch-review" target="_blank" rel="noopener">github.com/bdot-real/arch-review</a> ·
+    updated 2026-06-26
+  </footer>
+</div>
+
+<!-- Tab switching: self-contained, no library dependency, so it always works. -->
+<script>
+  (function(){
+    function showView(name){
+      document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.view===name));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      var view=document.getElementById('view-'+name);
+      if(view){ view.classList.add('active'); renderDiagrams(view); }
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    document.querySelectorAll('.tab').forEach(function(t){
+      t.addEventListener('click',function(){ showView(t.dataset.view); });
+    });
+    // expose for the mermaid block below
+    window.__renderActiveView=function(){
+      var active=document.querySelector('.view.active');
+      if(active) renderDiagrams(active);
+    };
+    // renderDiagrams is defined in the mermaid block; guard if mermaid failed to load.
+    window.renderDiagrams=window.renderDiagrams||function(){};
+  })();
+</script>
+
+<!-- Mermaid: rendered lazily per visible tab (diagrams can't be measured inside display:none). -->
+<script>
+  (function(){
+    if(typeof mermaid==='undefined'){
+      console.warn('Mermaid library failed to load; diagrams will show as text.');
+      return; // tab switching above still works
+    }
+    mermaid.initialize({
+      startOnLoad:false,
+      theme:'dark',
+      themeVariables:{
+        fontFamily:'ui-sans-serif, system-ui, sans-serif',
+        fontSize:'13px',
+        lineColor:'#5b6f96',
+        primaryColor:'#11182e',
+        primaryTextColor:'#e8edf7',
+        primaryBorderColor:'#33476f',
+        clusterBkg:'#0d1426',
+        clusterBorder:'#22304f'
+      },
+      flowchart:{curve:'basis', useMaxWidth:true},
+      sequence:{useMaxWidth:true}
+    });
+    // Render only un-processed diagrams within a container.
+    window.renderDiagrams=function(container){
+      var nodes=container.querySelectorAll('.mermaid:not([data-processed])');
+      if(!nodes.length) return;
+      try{ mermaid.run({nodes:nodes}); }
+      catch(e){ console.error('Mermaid render error:', e); }
+    };
+    // Render whatever tab is active on first load.
+    window.__renderActiveView();
+  })();
+</script>
+</body>
+</html>
