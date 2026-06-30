@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loyalty Ledger &amp; Reconciliation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(26,143,69,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:720px}
+  .aud{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .aud .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:none;border:0;padding:8px 16px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .modebanner{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin:8px 2px 14px;display:flex;align-items:center;gap:8px}
+  .modebanner .b{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+  .accts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:11px;margin-bottom:14px}
+  .acct{padding:12px 14px;border-top:4px solid var(--line2)}
+  .acct.liab{border-top-color:var(--accent)}
+  .acct .av{font-family:var(--mono);font-size:21px;font-weight:600;letter-spacing:-.01em}
+  .acct .an{font-size:12px;font-weight:700;margin-top:4px}
+  .acct .as{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:2px;line-height:1.35}
+  .acct .dc{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:6px}
+
+  .recon{display:flex;align-items:center;gap:16px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap}
+  .recon .rstat{font-family:var(--mono);font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px}
+  .recon .dot{width:11px;height:11px;border-radius:50%}
+  .recon.ok .dot{background:var(--green)} .recon.ok .rstat{color:var(--green)}
+  .recon.bad{border-color:var(--red);box-shadow:0 0 0 3px rgba(214,47,38,.10)} .recon.bad .dot{background:var(--red)} .recon.bad .rstat{color:var(--red)}
+  .recon .eq{font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .recon .eq b{color:var(--ink)}
+  .recon .rbtns{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
+
+  .ctl{padding:13px 16px;margin-bottom:14px}
+  .cl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 8px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:9px;padding:8px 12px;cursor:pointer;background:var(--panel);color:var(--ink);transition:.13s}
+  .chip:hover{border-color:var(--accent);background:rgba(13,110,168,.05)}
+  .chip.issue{border-left:3px solid var(--green)} .chip.redeem{border-left:3px solid var(--blue)}
+  .chip.expire{border-left:3px solid var(--amber)} .chip.reverse{border-left:3px solid var(--violet)}
+  .chip.dup{border-left:3px solid var(--red)} .chip.reset{border-left:3px solid var(--red);color:var(--ink-dim)}
+  .chip.dev{border-left:3px solid var(--orange)}
+  .devonly{display:none} body.dev .devonly{display:flex}
+
+  .toast{font-family:var(--mono);font-size:11px;padding:9px 13px;border-radius:9px;margin-bottom:14px;display:none}
+  .toast.show{display:block}
+  .toast.rej{color:var(--red);background:rgba(214,47,38,.07);border:1px solid rgba(214,47,38,.25)}
+  .toast.info{color:var(--accent);background:rgba(13,110,168,.06);border:1px solid rgba(13,110,168,.22)}
+
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 11px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:middle}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.mono,th.r{font-family:var(--mono)} td.r,th.r{text-align:right}
+  td .id{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+  td .hash{font-family:var(--mono);font-size:10px;color:var(--teal)}
+  .kind{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px}
+  .kind.issue{color:var(--green);background:rgba(26,143,69,.10)} .kind.redeem{color:var(--blue);background:rgba(31,99,200,.10)}
+  .kind.expire{color:var(--amber);background:rgba(169,118,10,.10)} .kind.reverse{color:var(--violet);background:rgba(116,55,201,.10)}
+  tr.reversed{opacity:.5} tr.reversed td .id{text-decoration:line-through}
+  .delta.pos{color:var(--green)} .delta.neg{color:var(--red)}
+  .ledempty{padding:16px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:center}
+
+  .inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:11px;margin-top:6px}
+  .ic{padding:13px 14px}
+  .ic h4{margin:0 0 5px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .ic h4 .ck{font-family:var(--mono);font-size:9px;color:var(--green)}
+  .ic p{margin:0;font-size:12px;line-height:1.5}
+  .ic p.exec{color:var(--ink-dim)} .ic p.dev{color:var(--ink)}
+  .ic code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">3 Halves Labs · Score Anything</div>
+      <h1>Loyalty Ledger &amp; Reconciliation</h1>
+      <p class="lead">Points are a liability on the books. This is the integrity layer beneath the loyalty engine: an append-only, double-entry, idempotent and reversible ledger that finance can reconcile and audit. Post entries and watch the books stay balanced.</p>
+    </div>
+    <div class="aud">
+      <span class="al">Audience</span>
+      <div class="seg" id="audSeg">
+        <button data-mode="exec" class="on"><span class="i">◐</span> Executive</button>
+        <button data-mode="dev"><span class="i">⌨</span> Developer</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="modebanner" id="modeBanner"></div>
+
+  <div class="accts" id="accts"></div>
+
+  <div class="card recon ok" id="recon">
+    <div class="rstat"><span class="dot"></span><span id="rlabel">Reconciled</span></div>
+    <div class="eq" id="reqn"></div>
+    <div class="rbtns">
+      <button class="chip" id="recompute">↻ recompute from ledger</button>
+      <button class="chip dev devonly" id="drift">inject cache drift</button>
+      <button class="chip dev devonly" id="rebuild">rebuild balance from ledger</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="card ctl">
+    <div class="cl">Post an entry</div>
+    <div class="chips">
+      <button class="chip issue" data-act="issue" data-n="50">Issue 50 (reward)</button>
+      <button class="chip issue" data-act="issue" data-n="20">Issue 20</button>
+      <button class="chip redeem" data-act="redeem" data-n="30">Redeem 30</button>
+      <button class="chip expire" data-act="expire" data-n="10">Expire 10 (breakage)</button>
+      <button class="chip reverse" data-act="reverse">Reverse last</button>
+      <button class="chip dup" data-act="dup">Attempt duplicate</button>
+      <button class="chip reset" data-act="reset">↺ reset</button>
+    </div>
+  </div>
+
+  <div class="section-h">Ledger <span style="color:var(--ink-faint);letter-spacing:0;text-transform:none" id="ledMeta"></span></div>
+  <table id="ledger"><thead><tr>
+    <th>#</th><th>event id</th><th>entry</th><th>debit</th><th>credit</th><th class="r">Δ pts</th><th class="r">balance</th><th>hash</th>
+  </tr></thead><tbody id="ledBody"></tbody></table>
+
+  <div class="section-h" style="margin-top:24px">Why finance can trust it</div>
+  <div class="inv" id="inv"></div>
+
+  <div class="foot">illustrative ledger · points held as a liability · entries map to the immutable score_consent / karma audit log · the ledger is the source of truth, caches reconcile to it<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+let MODE="exec";
+const ACCT={EXP:{n:"Engagement Expense",norm:"dr"},LIAB:{n:"Points Liability",norm:"cr"},RWD:{n:"Rewards Fulfilled",norm:"cr"},BRK:{n:"Breakage Income",norm:"cr"}};
+const ACCT_EXEC={EXP:"cost of rewarding members",LIAB:"points owed to members · outstanding",RWD:"value delivered on redemption",BRK:"expired points released to income"};
+const ACCT_DEV={EXP:"Dr on issue (debit-normal)",LIAB:"Cr issue · Dr redeem/expire · net = member balance",RWD:"Cr on redeem (credit-normal)",BRK:"Cr on expire (credit-normal)"};
+
+let ledger, idSeq, materialized, lastPostedId;
+function reset(){ledger=[];idSeq=0;materialized=0;lastPostedId=null;hideToast();renderAll();}
+
+/* FNV-1a short hash for the chain */
+function h32(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193);}return (h>>>0).toString(16).padStart(8,"0");}
+function delta(e){return (e.cr==="LIAB"?e.amt:0)-(e.dr==="LIAB"?e.amt:0);}
+
+/* fold the ledger → balance, accounts, hashes (event-sourced; recomputed every render) */
+function fold(){
+  let prev="genesis",bal=0;const acc={EXP:{dr:0,cr:0},LIAB:{dr:0,cr:0},RWD:{dr:0,cr:0},BRK:{dr:0,cr:0}};
+  ledger.forEach(e=>{
+    bal+=delta(e); e.balanceAfter=bal;
+    acc[e.dr].dr+=e.amt; acc[e.cr].cr+=e.amt;
+    e.hash=h32(prev+"|"+e.id+"|"+e.kind+"|"+e.dr+"|"+e.cr+"|"+e.amt); prev=e.hash;
+  });
+  const net={}; for(const k in acc) net[k]=ACCT[k].norm==="dr"?acc[k].dr-acc[k].cr:acc[k].cr-acc[k].dr;
+  return {bal,net};
+}
+
+function newId(){idSeq++;return "evt_"+String(idSeq).padStart(4,"0");}
+function post(e){
+  if(ledger.some(x=>x.id===e.id)){ // idempotency gate
+    showToast("rej",`Idempotency gate: ${e.id} already posted — rejected (exactly-once). Balance unchanged.`);
+    return false;
+  }
+  e.seq=ledger.length+1; ledger.push(e); lastPostedId=e.id;
+  materialized+=delta(e); // the cached/materialized balance updates alongside
+  return true;
+}
+function showToast(kind,msg){const t=document.getElementById("toast");t.className="toast show "+kind;t.textContent=msg;}
+function hideToast(){document.getElementById("toast").className="toast";}
+
+function act(a,n){
+  hideToast();
+  if(a==="reset"){reset();return;}
+  if(a==="issue"){post({id:newId(),kind:"issue",dr:"EXP",cr:"LIAB",amt:n,desc:`Issue ${n} pts`});}
+  else if(a==="redeem"){const {bal}=fold(); if(bal<n){showToast("info",`Insufficient balance to redeem ${n} (have ${bal}).`);return;}
+    post({id:newId(),kind:"redeem",dr:"LIAB",cr:"RWD",amt:n,desc:`Redeem ${n} pts`});}
+  else if(a==="expire"){const {bal}=fold(); if(bal<n){showToast("info",`Nothing to expire (balance ${bal}).`);return;}
+    post({id:newId(),kind:"expire",dr:"LIAB",cr:"BRK",amt:n,desc:`Expire ${n} pts (breakage)`});}
+  else if(a==="reverse"){
+    const x=[...ledger].reverse().find(e=>e.kind!=="reverse"&&!e.reversed);
+    if(!x){showToast("info","No entry available to reverse.");return;}
+    x.reversed=true;
+    post({id:newId(),kind:"reverse",dr:x.cr,cr:x.dr,amt:x.amt,desc:`Reverse #${x.seq} (${x.kind})`,reversesSeq:x.seq});}
+  else if(a==="dup"){
+    if(!lastPostedId){showToast("info","Post an entry first, then try to duplicate it.");return;}
+    post({id:lastPostedId,kind:"issue",dr:"EXP",cr:"LIAB",amt:50,desc:"duplicate attempt"}); // will be rejected
+  }
+  renderAll();
+}
+
+/* render */
+function renderAll(){renderAccts();renderRecon();renderLedger();renderInv();}
+function renderAccts(){
+  const {net}=fold();
+  document.getElementById("accts").innerHTML=Object.keys(ACCT).map(k=>{
+    const liab=k==="LIAB";
+    return `<div class="card acct ${liab?"liab":""}">
+      <div class="av" style="color:${liab?"var(--accent)":"var(--ink)"}">${net[k]}</div>
+      <div class="an">${ACCT[k].n}</div>
+      <div class="as">${MODE==="exec"?ACCT_EXEC[k]:ACCT_DEV[k]}</div>
+      <div class="dc">${ACCT[k].norm==="dr"?"debit-normal":"credit-normal"}</div>
+    </div>`;
+  }).join("");
+}
+function renderRecon(){
+  const {bal,net}=fold();
+  const ok = bal===materialized && bal===net.LIAB;
+  const r=document.getElementById("recon"); r.className="card recon "+(ok?"ok":"bad");
+  document.getElementById("rlabel").textContent=ok?"Reconciled":"OUT OF BALANCE";
+  document.getElementById("reqn").innerHTML= MODE==="exec"
+    ? `Σ ledger entries = <b>${bal}</b> &nbsp;·&nbsp; outstanding liability = <b>${net.LIAB}</b> &nbsp;·&nbsp; cached balance = <b>${materialized}</b>`
+    : `fold(Σ Δ) = <b>${bal}</b> &nbsp;·&nbsp; LIAB net (Cr−Dr) = <b>${net.LIAB}</b> &nbsp;·&nbsp; materialized = <b>${materialized}</b>`;
+}
+function renderLedger(){
+  document.getElementById("ledMeta").textContent=ledger.length?`${ledger.length} entries · hash-chained · append-only`:"";
+  if(!ledger.length){document.getElementById("ledBody").innerHTML=`<tr><td colspan="8" class="ledempty">Empty. Post an entry to begin.</td></tr>`;return;}
+  fold();
+  document.getElementById("ledBody").innerHTML=ledger.map(e=>{
+    const d=delta(e),sign=d>0?"pos":(d<0?"neg":"");
+    return `<tr class="${e.reversed?"reversed":""}">
+      <td class="mono">${e.seq}</td>
+      <td><span class="id">${e.id}</span></td>
+      <td><span class="kind ${e.kind}">${e.kind}</span> ${e.desc}</td>
+      <td class="mono">${ACCT[e.dr].n}</td>
+      <td class="mono">${ACCT[e.cr].n}</td>
+      <td class="r mono delta ${sign}">${d>0?"+":""}${d}</td>
+      <td class="r mono">${e.balanceAfter}</td>
+      <td><span class="hash">#${e.hash}</span></td>
+    </tr>`;
+  }).join("");
+}
+const INV=[
+  ["Append-only","exec","Nothing is ever edited or deleted. Every correction is a new entry, so the history is permanent and complete.","dev","Insert-only log — no <code>UPDATE</code>/<code>DELETE</code>. Corrections are new compensating rows; the original always remains."],
+  ["Idempotent","exec","The same event can arrive twice but only ever posts once, so a member is never credited or charged double.","dev","Dedupe on <code>event.id</code> (unique). Upstream at-least-once delivery collapses to exactly-once at the ledger."],
+  ["Reversible","exec","Any entry can be undone with an offsetting entry, leaving a clear, explainable trail rather than a silent edit.","dev","A reversal is a compensating double-entry that flips Dr/Cr and references the original <code>seq</code>; the original stays."],
+  ["Auditable","exec","Each entry is cryptographically chained to the one before it, so any tampering with history is detectable.","dev","<code>hash&#8345; = H(hash&#8345;&#8331;&#8321; ‖ entry)</code>. Recompute the chain to verify integrity end to end."],
+  ["Reconcilable","exec","The running balance always equals the sum of all entries — finance can prove the points liability at any moment.","dev","Balance = fold(Σ Δ). Any cached/materialized balance reconciles to the fold; the ledger is the source of truth."],
+  ["Double-entry","exec","Every point issued is booked as both a reward expense and a liability, so the books always balance.","dev","Each entry debits one account and credits another by an equal amount; Σ debits = Σ credits across the ledger."],
+];
+function renderInv(){
+  document.getElementById("inv").innerHTML=INV.map(x=>`<div class="card ic">
+    <h4>${x[0]}<span class="ck">✓</span></h4>
+    <p class="${MODE}">${MODE==="exec"?x[2]:x[4]}</p></div>`).join("");
+}
+
+/* shell */
+function setMode(m){MODE=m;document.body.classList.toggle("dev",m==="dev");
+  document.querySelectorAll("#audSeg button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+  document.getElementById("modeBanner").innerHTML=`<span class="b"></span>${m==="exec"?"Executive view — points as a liability, framed for finance. Toggle to Developer for the event-sourcing, idempotency and hash-chain detail.":"Developer view — event-sourced, idempotent, hash-chained ledger. Toggle to Executive for the accounting narrative."}`;
+  renderAll();
+}
+document.querySelectorAll("#audSeg button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+document.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click",()=>act(b.dataset.act, +b.dataset.n||0)));
+document.getElementById("recompute").addEventListener("click",()=>{const {bal,net}=fold();
+  showToast("info",`Recomputed from ${ledger.length} entries: Σ Δ = ${bal}, liability = ${net.LIAB}, cached = ${materialized}. ${bal===materialized?"Reconciled ✓":"Drift detected ✗"}`);renderRecon();});
+document.getElementById("drift").addEventListener("click",()=>{materialized+=7;
+  showToast("rej","Simulated cache drift: a downstream materialized balance was bumped by +7 without a ledger entry. Reconciliation now fails.");renderAll();});
+document.getElementById("rebuild").addEventListener("click",()=>{const {bal}=fold();materialized=bal;
+  showToast("info","Rebuilt the cached balance from the ledger. The ledger is the source of truth — reconciled ✓.");renderAll();});
+
+reset(); setMode("exec");
+</script>
+</body>
+</html>
