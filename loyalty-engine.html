@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loyalty Engine · rules → rewards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --bronze:#b97f3a; --silver:#8a93a6; --gold:#c79a2e; --plat:#3f9fc0;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(201,154,46,.06),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:780px}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* player bar */
+  .player{display:flex;align-items:center;gap:18px;padding:15px 18px;margin:16px 0 14px;flex-wrap:wrap}
+  .pts{display:flex;flex-direction:column}
+  .pts .v{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1}
+  .pts .l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+  .tierwrap{flex:1;min-width:220px}
+  .tierhead{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:11px;margin-bottom:6px}
+  .tierhead .tn{font-weight:600;font-size:13px}
+  .tierbar{height:9px;border-radius:5px;background:var(--line);overflow:hidden}
+  .tierbar>i{display:block;height:100%;border-radius:5px;transition:width .5s ease}
+  .badges{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:9.5px;font-weight:600;padding:4px 9px;border-radius:20px;border:1px solid;display:flex;align-items:center;gap:5px}
+
+  /* controls */
+  .ctl{padding:13px 16px;margin-bottom:16px}
+  .cl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 8px}
+  .cl:not(:first-child){margin-top:14px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:9px;padding:8px 12px;cursor:pointer;background:var(--panel);color:var(--ink);transition:.13s}
+  .chip:hover{border-color:var(--accent);background:rgba(13,110,168,.05)}
+  .chip.evt{border-left:3px solid var(--accent)}
+  .chip.time{border-left:3px solid var(--violet);color:var(--ink-dim)}
+  .chip.reset{border-left:3px solid var(--red);color:var(--ink-dim)}
+  .clock{font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:inline-flex;gap:14px;margin-left:auto;align-items:center}
+  .clock b{color:var(--ink)}
+  .togg{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+  .togg input{accent-color:var(--accent)}
+
+  .grid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 11px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .section-h .ct{color:var(--ink-faint);letter-spacing:0;text-transform:none}
+
+  .rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:11px}
+  .rule{border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:11px;padding:11px 13px;background:var(--panel);transition:.2s}
+  .rule .rn{font-weight:700;font-size:13px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .rule .award{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);white-space:nowrap}
+  .rule .match{font-family:var(--mono);font-size:9.5px;color:var(--ink-dim);margin-top:5px;line-height:1.4}
+  .rule .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+  .rule .m{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+  .rule .status{font-family:var(--mono);font-size:9.5px;font-weight:600;margin-top:8px;min-height:13px}
+  .rule.awarded{border-left-color:var(--green);box-shadow:0 0 0 3px rgba(26,143,69,.12)}
+  .rule.awarded .status{color:var(--green)}
+  .rule.limited{border-left-color:var(--amber)}
+  .rule.limited .status{color:var(--amber)}
+  .rule.matched{border-left-color:var(--blue)}
+  .rule.nomatch{opacity:.55}
+  .rule pre{display:none;background:#0e1726;color:#cdd9ec;border-radius:8px;padding:9px 11px;margin:8px 0 0;font-family:var(--mono);font-size:10px;line-height:1.5;overflow:auto}
+  body.internals .rule pre{display:block}
+
+  /* challenges + log */
+  .side .card{padding:13px 15px;margin-bottom:14px}
+  .ch{margin-bottom:11px}
+  .ch:last-child{margin-bottom:0}
+  .chhead{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+  .chhead .cn{font-weight:600}
+  .chhead .cp{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .chbar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:5px}
+  .chbar>i{display:block;height:100%;border-radius:4px;background:var(--violet);transition:width .4s ease}
+  .ch.done .chbar>i{background:var(--green)}
+  .ch.done .cn::after{content:" ✓";color:var(--green)}
+  .ch .sub{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px}
+  .log{max-height:300px;overflow:auto;margin:-4px -4px 0}
+  .lr{display:grid;grid-template-columns:64px 1fr auto;gap:9px;padding:6px 4px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10.5px;align-items:baseline}
+  .lr:last-child{border-bottom:0}
+  .lr .lt{color:var(--ink-faint)}
+  .lr .lp{font-weight:600;text-align:right}
+  .lr.award .lp{color:var(--green)} .lr.bonus{background:rgba(26,143,69,.06)} .lr.bonus .lp{color:var(--green)}
+  .lr.limit .lm{color:var(--amber)} .lr.tier{background:rgba(201,154,46,.08)}
+  .logempty{font-family:var(--mono);font-size:11px;color:var(--ink-faint);padding:10px 4px}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · Score Anything</div>
+    <h1>Loyalty Engine — rules → rewards</h1>
+    <p class="lead">The business core: how a tracked event becomes points. Fire an event and watch the engine match it against rules (on <code>type</code>, <code>url</code>, <code>selector</code>, <code>threshold</code>, <code>payload</code>), check limits, award karma, advance challenges and goals, and move the player up a tier. This is exactly where the Tracking SDK hands off.</p>
+  </header>
+
+  <div class="card player">
+    <div class="pts"><span class="v" id="ptsVal" style="color:var(--accent)">0</span><span class="l">karma points</span></div>
+    <div class="tierwrap">
+      <div class="tierhead"><span class="tn" id="tierName">Bronze</span><span id="tierNext" style="color:var(--ink-faint)">100 to Silver</span></div>
+      <div class="tierbar"><i id="tierFill" style="width:0%;background:var(--bronze)"></i></div>
+    </div>
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <div class="card ctl">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="cl" style="margin:0">Fire an event</div>
+      <div class="clock"><span id="clock">Day 1 · 00:00</span><label class="togg"><input type="checkbox" id="intTog"> show rule internals</label></div>
+    </div>
+    <div class="chips" id="evtChips" style="margin-top:8px"></div>
+    <div class="cl">Advance time / context</div>
+    <div class="chips">
+      <button class="chip time" data-adv="1">+1 hour</button>
+      <button class="chip time" data-adv="24">+1 day</button>
+      <button class="chip time" data-match="1">Next match</button>
+      <button class="chip time" data-session="1">Next session</button>
+      <button class="chip reset" id="resetBtn">↺ reset player</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="section-h">Rules <span class="ct" id="ruleCt"></span></div>
+      <div class="rules" id="rules"></div>
+    </div>
+    <div class="side">
+      <div class="section-h">Challenges &amp; goals</div>
+      <div class="card" id="challenges"></div>
+      <div class="section-h">Event log</div>
+      <div class="card"><div class="log" id="log"><div class="logempty">Fire an event to begin.</div></div></div>
+    </div>
+  </div>
+
+  <div class="foot">illustrative rules · maps to the ERP rules engine (score.tracking.rule → gamification.karma.tracking) downstream of the tracking pipeline<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const TIERS=[{n:"Bronze",min:0,c:"var(--bronze)"},{n:"Silver",min:100,c:"var(--silver)"},{n:"Gold",min:300,c:"var(--gold)"},{n:"Platinum",min:700,c:"var(--plat)"}];
+const RULES=[
+ {id:"checkin",n:"Daily check-in",desc:"pageview · url ∋ /home",match:{type:"pageview",urlContains:"/home"},limit:{kind:"cooldown",windowH:24,label:"once / 24h"},points:5,ch:"streak"},
+ {id:"poll",n:"Vote in the MOTM poll",desc:"track · poll_vote · payload.poll = motm",match:{type:"track",name:"poll_vote",payload:{poll:"motm"}},limit:{kind:"once_per_match",label:"once / match"},points:20,ch:"matchday"},
+ {id:"motm",n:"Submit Man of the Match",desc:"track · motm_submit",match:{type:"track",name:"motm_submit"},limit:{kind:"once_per_match",label:"once / match"},points:15,ch:"matchday"},
+ {id:"rating",n:"Rate a player",desc:"track · player_rating · rating ≥ 1",match:{type:"track",name:"player_rating",threshold:{field:"rating",gte:1}},limit:{kind:"once_per_match",label:"once / match"},points:10,ch:"matchday"},
+ {id:"video",n:"Watch the highlights",desc:"video · video_complete · completion ≥ 0.9",match:{type:"video",name:"video_complete",threshold:{field:"completion",gte:0.9}},points:25,ch:"content"},
+ {id:"minigame",n:"Play the minigame",desc:"track · minigame_play",match:{type:"track",name:"minigame_play"},limit:{kind:"cooldown",windowH:1,label:"once / hour"},points:30,ch:"superfan"},
+ {id:"scroll",n:"Read to the end",desc:"scroll · depth ≥ 75",match:{type:"scroll",threshold:{field:"depth",gte:75}},limit:{kind:"once_per_session",label:"once / session"},points:5},
+ {id:"sponsor",n:"Engage a sponsor",desc:"track · sponsor_click · [data-score-sponsor]",match:{type:"track",name:"sponsor_click",selector:"[data-score-sponsor]"},points:8,ch:"sponsor"},
+];
+const CH={
+ matchday:{n:"Matchday Engagement",type:"challenge",kind:"steps",steps:["poll","motm","rating"],bonus:50,badge:"Matchday MVP",c:"var(--violet)"},
+ content:{n:"Content Consumer",type:"challenge",kind:"count",rule:"video",target:3,bonus:40,badge:"Bingewatcher",c:"var(--violet)"},
+ superfan:{n:"Superfan",type:"challenge",kind:"count",rule:"minigame",target:3,bonus:60,badge:"Superfan",c:"var(--violet)"},
+ sponsor:{n:"Sponsor Supporter",type:"challenge",kind:"count",rule:"sponsor",target:2,bonus:30,badge:"Sponsor Ally",c:"var(--violet)"},
+ streak:{n:"7-day check-in",type:"goal",kind:"count",rule:"checkin",target:7,bonus:100,badge:"Ever-Present",c:"var(--teal)"},
+};
+const PRESETS=[
+ {l:"Visit /home",e:{type:"pageview",url:"/home"}},
+ {l:"Vote MOTM poll",e:{type:"track",name:"poll_vote",payload:{poll:"motm"}}},
+ {l:"Submit MOTM",e:{type:"track",name:"motm_submit"}},
+ {l:"Rate player ★4",e:{type:"track",name:"player_rating",rating:4}},
+ {l:"Finish highlights 95%",e:{type:"video",name:"video_complete",completion:0.95}},
+ {l:"Play minigame",e:{type:"track",name:"minigame_play"}},
+ {l:"Scroll 80%",e:{type:"scroll",depth:80}},
+ {l:"Click sponsor",e:{type:"track",name:"sponsor_click",selector:"[data-score-sponsor]"}},
+];
+const BADGECOLOR={"Matchday MVP":"var(--violet)","Bingewatcher":"var(--blue)","Superfan":"var(--orange)","Sponsor Ally":"var(--teal)","Ever-Present":"var(--green)"};
+
+let P, now, matchId, sessionId, lastResults;
+function reset(){
+  P={points:0, lim:{}, ch:{}, badges:[]};
+  Object.keys(CH).forEach(k=>{P.ch[k]={count:0, set:[], done:false};});
+  now=0; matchId=1; sessionId=1; lastResults={};
+  logArr=[]; renderAll(); document.getElementById("log").innerHTML='<div class="logempty">Fire an event to begin.</div>';
+}
+let logArr=[];
+
+function fmtClock(){const day=Math.floor(now/24)+1,h=now%24;return `Day ${day} · ${String(h).padStart(2,"0")}:00`;}
+function matches(r,e){
+  const m=r.match;
+  if(m.type&&m.type!==e.type) return false;
+  if(m.name&&m.name!==e.name) return false;
+  if(m.urlContains&&!String(e.url||"").includes(m.urlContains)) return false;
+  if(m.selector&&String(e.selector||"")!==m.selector) return false;
+  if(m.payload){for(const k in m.payload){if(!e.payload||e.payload[k]!==m.payload[k]) return false;}}
+  if(m.threshold){const v=e[m.threshold.field];if(v==null||v<m.threshold.gte) return false;}
+  return true;
+}
+function limited(r){
+  const l=r.limit; if(!l) return null;
+  const st=P.lim[r.id]||{};
+  if(l.kind==="cooldown"&&st.lastTs!=null&&(now-st.lastTs)<l.windowH) return `cooldown · ${l.windowH-(now-st.lastTs)}h left`;
+  if(l.kind==="once_per_match"&&st.lastMatch===matchId) return "already done this match";
+  if(l.kind==="once_per_session"&&st.lastSession===sessionId) return "already done this session";
+  return null;
+}
+function pushLog(kind,msg,pts){logArr.unshift({t:fmtClock(),kind,msg,pts});if(logArr.length>40)logArr.pop();}
+function progressCh(ruleId){
+  for(const k in CH){const c=CH[k],st=P.ch[k];if(st.done)continue;
+    if(c.kind==="steps"&&c.steps.includes(ruleId)){if(!st.set.includes(ruleId))st.set.push(ruleId);
+      if(st.set.length>=c.steps.length) completeCh(k);}
+    if(c.kind==="count"&&c.rule===ruleId){st.count++; if(st.count>=c.target) completeCh(k);}
+  }
+}
+function completeCh(k){const c=CH[k];P.ch[k].done=true;P.points+=c.bonus;if(!P.badges.includes(c.badge))P.badges.push(c.badge);
+  pushLog("bonus",`${c.type==="goal"?"Goal":"Challenge"} complete: ${c.n} (+badge ${c.badge})`,"+"+c.bonus);}
+function tierOf(){let t=TIERS[0];TIERS.forEach(x=>{if(P.points>=x.min)t=x;});return t;}
+
+function fire(e){
+  lastResults={}; let any=false; const beforeTier=tierOf().n;
+  RULES.forEach(r=>{
+    if(!matches(r,e)){lastResults[r.id]="nomatch";return;}
+    const lim=limited(r);
+    if(lim){lastResults[r.id]="limited:"+lim; pushLog("limit",`${r.n} — ${lim}`,"·"); return;}
+    // award
+    P.points+=r.points; P.lim[r.id]={lastTs:now,lastMatch:matchId,lastSession:sessionId};
+    lastResults[r.id]="awarded"; any=true;
+    pushLog("award",`${r.n}`,"+"+r.points);
+    if(r.ch) progressCh(r.id);
+  });
+  if(!any && !Object.values(lastResults).some(v=>v.startsWith("limited"))) pushLog("limit","No rule matched that event","·");
+  const afterTier=tierOf().n; if(afterTier!==beforeTier) pushLog("tier",`Tier up → ${afterTier}!`,"★");
+  renderAll();
+}
+
+/* render */
+function renderAll(){renderPlayer();renderRules();renderCh();renderLog();document.getElementById("clock").textContent=fmtClock();}
+function renderPlayer(){
+  document.getElementById("ptsVal").textContent=P.points;
+  const t=tierOf(), i=TIERS.indexOf(t), next=TIERS[i+1];
+  document.getElementById("tierName").textContent=t.n;
+  document.getElementById("tierName").style.color=t.c;
+  document.getElementById("tierFill").style.background=t.c;
+  if(next){const pct=Math.min(100,Math.round((P.points-t.min)/(next.min-t.min)*100));
+    document.getElementById("tierFill").style.width=pct+"%";
+    document.getElementById("tierNext").textContent=(next.min-P.points)+" to "+next.n;}
+  else{document.getElementById("tierFill").style.width="100%";document.getElementById("tierNext").textContent="max tier";}
+  document.getElementById("badges").innerHTML=P.badges.map(b=>{const c=BADGECOLOR[b]||"var(--accent)";return `<span class="badge" style="color:${c};border-color:${c};background:${c.replace('var(--','rgba(').replace(')',',0)')}">● ${b}</span>`;}).join("");
+}
+function ruleInternals(r){return JSON.stringify({match:r.match,limit:r.limit?r.limit.label:null,award:{points:r.points,challenge:r.ch||null}},null,1);}
+function renderRules(){
+  document.getElementById("ruleCt").textContent=RULES.length+" active";
+  document.getElementById("rules").innerHTML=RULES.map(r=>{
+    const st=lastResults[r.id]; let cls="",lab="";
+    if(st==="awarded"){cls="awarded";lab="✓ matched · awarded +"+r.points;}
+    else if(st&&st.startsWith("limited")){cls="limited";lab="⦸ "+st.slice(8);}
+    else if(st==="nomatch"){cls="nomatch";lab="";}
+    const chName=r.ch?CH[r.ch].n:null;
+    return `<div class="rule ${cls}">
+      <div class="rn">${r.n}<span class="award">+${r.points}</span></div>
+      <div class="match">${r.desc}</div>
+      <div class="meta">${r.limit?`<span class="m">${r.limit.label}</span>`:`<span class="m">no limit</span>`}${chName?`<span class="m">→ ${chName}</span>`:""}</div>
+      <div class="status">${lab}</div>
+      <pre>${ruleInternals(r)}</pre>
+    </div>`;
+  }).join("");
+}
+function renderCh(){
+  const order=["matchday","content","superfan","sponsor","streak"];
+  document.getElementById("challenges").innerHTML=order.map(k=>{
+    const c=CH[k],st=P.ch[k];
+    const cur=c.kind==="steps"?st.set.length:st.count, tot=c.kind==="steps"?c.steps.length:c.target;
+    const pct=Math.min(100,Math.round(cur/tot*100));
+    return `<div class="ch ${st.done?"done":""}">
+      <div class="chhead"><span class="cn">${c.n}</span><span class="cp">${cur}/${tot} · +${c.bonus}</span></div>
+      <div class="chbar"><i style="width:${pct}%"></i></div>
+      <div class="sub">${c.type==="goal"?"goal":"challenge"} · badge ${c.badge}</div>
+    </div>`;
+  }).join("");
+}
+function renderLog(){
+  if(!logArr.length){return;}
+  document.getElementById("log").innerHTML=logArr.map(e=>`<div class="lr ${e.kind}"><span class="lt">${e.t}</span><span class="lm">${e.msg}</span><span class="lp">${e.pts}</span></div>`).join("");
+}
+
+/* wire */
+document.getElementById("evtChips").innerHTML=PRESETS.map((p,i)=>`<button class="chip evt" data-evt="${i}">${p.l}</button>`).join("");
+document.querySelectorAll("[data-evt]").forEach(b=>b.addEventListener("click",()=>fire(PRESETS[+b.dataset.evt].e)));
+document.querySelectorAll("[data-adv]").forEach(b=>b.addEventListener("click",()=>{now+=+b.dataset.adv;lastResults={};renderAll();}));
+document.querySelector("[data-match]").addEventListener("click",()=>{matchId++;lastResults={};pushLog("limit","— next match —","·");renderAll();});
+document.querySelector("[data-session]").addEventListener("click",()=>{sessionId++;lastResults={};pushLog("limit","— next session —","·");renderAll();});
+document.getElementById("resetBtn").addEventListener("click",reset);
+document.getElementById("intTog").addEventListener("change",e=>document.body.classList.toggle("internals",e.target.checked));
+
+reset();
+</script>
+</body>
+</html>
