@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sepulchre · Zero-Knowledge Guarantee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#7437c9; --accent2:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(116,55,201,.08),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(214,47,38,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1220px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--violet);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:820px}
+  .lead b{color:var(--ink)}
+  .lead a{color:var(--violet);text-decoration:none}
+  .claim{margin-top:12px;border:1px solid rgba(116,55,201,.3);background:rgba(116,55,201,.06);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:11px;line-height:1.45}
+  .claim .lk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);font-weight:600;white-space:nowrap;border-right:1px solid var(--line2);padding-right:11px}
+  .claim b{color:var(--violet)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:900px;line-height:1.55}
+
+  /* guarantee walk */
+  .g-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.g-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:11px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:125px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(116,55,201,.06)}
+  .lchip{justify-self:start;font-family:var(--mono);font-size:9px;font-weight:600;color:#fff;border-radius:6px;padding:3px 9px;white-space:nowrap;margin-top:1px}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp.done .mid::before{border-color:currentColor}
+  .stp.v-block{color:var(--red)} .stp.v-detect{color:var(--amber)} .stp.v-prove{color:var(--green)}
+  .stp .w{font-size:12.5px;color:var(--ink);margin-top:1px;line-height:1.5}
+  .stp .ct{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:5px}
+  .stp .vb{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;margin-top:6px;border:1px solid currentColor}
+  .gsum{padding:15px 16px;position:sticky;top:14px}
+  .gsum p{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:0 0 12px}
+  .gbtns{display:flex;gap:7px}
+  .gbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .gbtn:hover{border-color:var(--violet)} .gbtn.primary{background:var(--violet);color:#fff;border-color:var(--violet)}
+  .depth{margin-top:12px;border:1px solid rgba(26,143,69,.3);background:rgba(26,143,69,.06);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink);line-height:1.5;display:none}
+  .depth.show{display:block}
+  .depth b{color:var(--green)}
+
+  /* crypto tree */
+  .tree{display:flex;flex-direction:column;align-items:center;gap:0;margin-bottom:20px}
+  .tnode{border:1px solid var(--line2);border-radius:11px;padding:10px 15px;background:var(--panel);text-align:center;max-width:460px}
+  .tnode .tt{font-weight:700;font-size:13px}
+  .tnode .td{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px}
+  .tarrow{color:var(--violet);font-family:var(--mono);font-size:10px;padding:6px 0;text-align:center}
+  .tbranches{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;width:100%;max-width:720px}
+  @media(max-width:720px){.tbranches{grid-template-columns:1fr}}
+  .tbr{border:1px solid var(--line2);border-top:4px solid var(--violet);border-radius:11px;padding:11px 13px;background:var(--panel)}
+  .tbr h4{margin:0 0 4px;font-size:12.5px}
+  .tbr p{margin:0;font-size:11px;color:var(--ink-dim);line-height:1.45}
+  .cryptorow{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+  .cc{padding:12px 14px;border-left:4px solid var(--violet)}
+  .cc.byok{border-left-color:var(--green)}
+  .cc h4{margin:0 0 5px;font-size:13px}
+  .cc p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.5}
+  .cc code{font-family:var(--mono);font-size:10px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+
+  /* audit */
+  .audit-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.audit-grid{grid-template-columns:1fr}}
+  pre{font-family:var(--mono);font-size:11px;line-height:1.5;background:#1b2433;color:#e6ebf3;border-radius:11px;padding:14px 15px;overflow-x:auto;margin:0}
+  pre .k{color:#c9a6f5} pre .s{color:#8fd39a} pre .n{color:#f0b866} pre .c{color:#7e8aa0}
+  .achain{padding:13px 15px;margin-bottom:12px}
+  .achain h4{margin:0 0 6px;font-size:13px}
+  .achain p{margin:0;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .achain b{color:var(--ink)}
+  .sinks{display:grid;grid-template-columns:1fr;gap:9px}
+  .sink{border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:9px;padding:9px 12px;background:var(--panel)}
+  .sink .sn{font-weight:700;font-size:12px}
+  .sink p{margin:3px 0 0;font-size:11px;color:var(--ink-dim);line-height:1.4}
+
+  /* auth table */
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .ac{font-weight:700} td .mth{font-family:var(--mono);font-size:11px;color:var(--violet)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Sepulchre · independent · Apache-2.0</div>
+    <h1>The Zero-Knowledge Guarantee</h1>
+    <p class="lead">The operator's inability to read tenant secrets is enforced by three independent layers and <b>provable from the audit log</b> — not asserted in a privacy statement. This is the security core of the <a href="sepulchre-system-architecture.html">system architecture</a>.</p>
+    <div class="claim"><span class="lk">The claim</span><span>Zero-knowledge <b>by policy, not by promise</b>. No single layer is load-bearing: policy, code and operations each independently prevent an operator read, and a signed attestation report proves the human-read list is empty.</span></div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="guarantee">⛨ The guarantee</button>
+    <button class="tab" data-tab="crypto">⚿ Key hierarchy</button>
+    <button class="tab" data-tab="audit">⛓ Audit &amp; tamper-evidence</button>
+    <button class="tab" data-tab="auth">◑ Authentication</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Sepulchre</b> — zero-knowledge by policy · Apache-2.0<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["3 independent layers","policy · code · operational"],["deny before allow","Vault policy, no override"],["semgrep in CI","no read path can merge"],["hash-chained audit","per-tenant HMAC · tamper-evident"],["continuous attestation","human-read list provably empty"],["BYOK","revoke → inaccessible, even to us"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--violet)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* guarantee walk */
+const STAGES=[
+ {layer:"Policy",lc:"var(--red)",v:"block",vlab:"REFUSED",w:"Vault evaluates deny before allow. The operator's human SSO identity carries an explicit deny on tenant inbound paths, and no policy stacking can override it. The read is refused outright.",ct:"Vault policy · deny-before-allow"},
+ {layer:"Code",lc:"var(--red)",v:"block",vlab:"NO PATH",w:"Suppose the policy were misconfigured. The broker still has no function that reads an inbound secret value. Sensitive-route handlers use distinct types from metadata handlers, and the type system prevents mixing — there is simply no code path that reads and returns an inbound secret.",ct:"Type-separated handlers"},
+ {layer:"CI",lc:"var(--red)",v:"block",vlab:"CAN'T MERGE",w:"Suppose someone tried to add that code. Static analysis (semgrep rules in the repo) fails any PR that introduces a path from vault.read(inbound) to a logger, an HTTP response body, or a queue producer. It cannot merge.",ct:"semgrep · fail the PR"},
+ {layer:"Operational",lc:"var(--amber)",v:"detect",vlab:"DETECTED",w:"Suppose it somehow shipped anyway. There is no human shell access to production; policy-touching changes need signed commits and two-person approval; and continuous attestation queries run hourly, alerting on any read of inbound paths by a non-service identity.",ct:"No shell · 2-person · hourly attestation"},
+ {layer:"Proof",lc:"var(--green)",v:"prove",vlab:"PROVEN",w:"Finally, each tenant can download a continuous attestation report: every identity with potential read access, and every actual read with timestamp and identity, signed by the audit hash chain. For a clean tenant, the human-read list is empty — and provably so.",ct:"Signed attestation report"},
+];
+let gTimer=null;
+function renderGuarantee(){
+  if(gTimer){clearInterval(gTimer);gTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">Can the operator read a tenant's secret? Walk it.</div>
+   <p class="intro">Follow an attempted operator read of an inbound secret through every layer. Each one stops it on its own, so a failure in any single layer is not enough to break the guarantee — and the last step proves it.</p>
+   <div class="g-grid"><div class="card steps" id="stepBox"></div><div class="card gsum" id="gsum"></div></div>`;
+  function draw(){
+    document.getElementById("stepBox").innerHTML=STAGES.map((s,i)=>{
+      const shown=i<=hl;
+      return `<div class="stp ${shown?'done v-'+s.v:''} ${i===hl?'active':''}">
+        <div class="lchip" style="background:${s.lc}">${s.layer.toUpperCase()}</div>
+        <div class="mid"><div class="w">${s.w}</div><div class="ct">${s.ct}</div>${shown?`<span class="vb">${s.vlab}</span>`:""}</div></div>`;
+    }).join("");
+    const done=hl>=STAGES.length-1;
+    document.getElementById("gsum").innerHTML=`<p>An operator with valid SSO tries to read <code style="font-family:var(--mono);font-size:11px">clients/data/&lt;tenant&gt;/inbound/…</code> — the one thing they must never see.</p>
+      <div class="gbtns"><button class="gbtn primary" id="gPlay">▶ Walk</button><button class="gbtn" id="gStep">⏭ Step</button><button class="gbtn" id="gReset">↺</button></div>
+      <div class="depth ${done?'show':''}"><b>No single layer is load-bearing.</b> Policy, code and CI each refuse the read independently; operations detect any bypass; and the signed attestation makes the empty human-read list provable to the tenant.</div>`;
+    document.getElementById("gPlay").onclick=play;document.getElementById("gStep").onclick=step;document.getElementById("gReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<STAGES.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=STAGES.length-1)hl=-1;gTimer=setInterval(()=>{if(hl<STAGES.length-1){hl++;draw();}else stop();},900);}
+  function stop(){if(gTimer){clearInterval(gTimer);gTimer=null;}}
+  draw();
+}
+
+/* crypto */
+function renderCrypto(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Key hierarchy · derived, per-tenant, tamper-evident</div>
+   <p class="intro">A configurable root of trust unseals Vault; from the Vault root keys, each tenant gets three independent masters. Nothing above the root is ever exposed to the operator.</p>
+   <div class="tree">
+     <div class="tnode" style="border-color:var(--green)"><div class="tt">Root of trust</div><div class="td">KMS · HSM · Vault Transit · Shamir (configurable)</div></div>
+     <div class="tarrow">↓ unseal</div>
+     <div class="tnode"><div class="tt">Vault root keys</div></div>
+     <div class="tarrow">↓ derive, per tenant</div>
+     <div class="tbranches">
+       <div class="tbr"><h4>Transit master</h4><p>derives per-share and per-submission keys</p></div>
+       <div class="tbr"><h4>KV master</h4><p>encrypts each stored secret at rest</p></div>
+       <div class="tbr"><h4>Audit HMAC</h4><p>chains every event, making the log tamper-evident</p></div>
+     </div>
+   </div>
+   <div class="section-h">Encryption</div>
+   <div class="cryptorow">
+     <div class="card cc"><h4>At rest</h4><p>Each KV entry is encrypted with a key derived from the mount's master; the master is encrypted by the seal key from the configured root of trust.</p></div>
+     <div class="card cc"><h4>In transit</h4><p>TLS 1.3 everywhere, HSTS, and certificate pinning in the mobile and CLI clients.</p></div>
+     <div class="card cc"><h4>Client-side encryption <span style="font-weight:400;color:var(--ink-faint)">· optional</span></h4><p>Paranoid tenants can have the intake portal derive a key from <code>/transit/datakey/wrapped/&lt;tenant&gt;</code> in the browser, encrypt before submission, and ship only ciphertext. The broker never sees plaintext.</p></div>
+     <div class="card cc byok"><h4>BYOK <span style="font-weight:400;color:var(--green)">· strongest form</span></h4><p>The tenant supplies their own KMS key and Vault seals with it. Revoke the key and that tenant's data becomes cryptographically inaccessible — including to the Sepulchre operator.</p></div>
+   </div>`;
+}
+
+/* audit */
+function renderAudit(){
+  const ev=`{
+  <span class="k">"event_id"</span>: <span class="s">"01HQ…"</span>,
+  <span class="k">"prev_hash"</span>: <span class="s">"sha256:…"</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-05-25T14:23:11.482Z"</span>,
+  <span class="k">"tenant_id"</span>: <span class="s">"t_abc"</span>,
+  <span class="k">"actor"</span>: {
+    <span class="k">"type"</span>: <span class="s">"service | human | recipient"</span>,
+    <span class="k">"identity"</span>: <span class="s">"service-deploy@tenant-abc"</span>,
+    <span class="k">"auth_method"</span>: <span class="s">"approle | oidc | wrap-token"</span>,
+    <span class="k">"ip"</span>: <span class="s">"1.2.3.4"</span>
+  },
+  <span class="k">"action"</span>: <span class="s">"secret.read | share.reveal | …"</span>,
+  <span class="k">"resource"</span>: <span class="s">"clients/data/t_abc/inbound/sub_xyz"</span>,
+  <span class="k">"result"</span>: <span class="s">"success | denied | error"</span>,
+  <span class="k">"metadata"</span>: { <span class="c">/* never contains secret values */</span> },
+  <span class="k">"signature"</span>: <span class="s">"hmac-sha256:…"</span>
+}`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Every operation is a signed, chained event</div>
+   <p class="intro">Each operation produces an audit event. The chain and the signature are what make the guarantee provable rather than merely asserted.</p>
+   <div class="audit-grid">
+     <div><pre>${ev}</pre></div>
+     <div>
+       <div class="card achain"><h4>Why it can't be forged</h4><p><b>prev_hash</b> links each event to the last, so any deletion or reordering breaks the chain. The <b>signature</b> uses a per-tenant HMAC key held in Vault, so even the Sepulchre operator can't forge events after the fact without leaving a detectable gap.</p></div>
+       <div class="section-h" style="margin-top:4px">Streamed three ways</div>
+       <div class="sinks">
+         <div class="sink"><div class="sn">Object store · WORM</div><p>S3-API with Object Lock in compliance mode — immutable for the retention window, undeletable by anyone including root.</p></div>
+         <div class="sink" style="border-left-color:var(--violet)"><div class="sn">Tenant SIEM</div><p>Delivered by webhook or syslog into the tenant's own monitoring.</p></div>
+         <div class="sink" style="border-left-color:var(--accent2)"><div class="sn">Postgres</div><p>A mirror for fast operator-console queries — metadata only.</p></div>
+       </div>
+     </div>
+   </div>
+   <div class="card achain" style="margin-top:14px;border-left:4px solid var(--green)"><h4>The proof</h4><p>From this chain, each tenant downloads a <b>continuous attestation report</b>: every identity with potential read access and every actual read, signed end to end. For a clean tenant the human-read list is empty — and, because the chain is unbroken, provably complete.</p></div>`;
+}
+
+/* auth */
+const AUTH=[
+ ["Operator","OIDC via tenant IdP","Short sessions, refresh tokens; the IdP enforces MFA."],
+ ["Service account","AppRole or cloud IAM","role_id baked into the deployment, secret_id rotated via Vault Agent; or AWS IAM / GCP IAM / Azure MSI / Kubernetes SA JWT."],
+ ["Client · intake","Per-submission token","Issued after following a tenant-specific intake link. No persistent account."],
+ ["Recipient · reveal","Wrap token + optional 2FA","SMS code, email code, or a sender-set passphrase."],
+ ["Auditor","OIDC, read-only","Scoped to audit access for one or more tenants."],
+];
+function renderAuth(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Authentication · per actor</div>
+   <p class="intro">Every actor authenticates differently, matched to what they are allowed to do. Two of them hold no account at all.</p>
+   <table><thead><tr><th>Actor</th><th>Method</th><th>Notes</th></tr></thead><tbody>${
+     AUTH.map(a=>`<tr><td><span class="ac">${a[0]}</span></td><td><span class="mth">${a[1]}</span></td><td>${a[2]}</td></tr>`).join("")
+   }</tbody></table>`;
+}
+
+/* shell */
+let CUR="guarantee";
+function renderTab(name){
+  CUR=name;
+  if(gTimer){clearInterval(gTimer);gTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="guarantee") renderGuarantee();
+  else if(name==="crypto") renderCrypto();
+  else if(name==="audit") renderAudit();
+  else renderAuth();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("guarantee");
+</script>
+</body>
+</html>
