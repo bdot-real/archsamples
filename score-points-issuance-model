@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCORE — Season Issuance Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111820;
+    --ink-2:#4A5763;
+    --ink-3:#7C8B98;
+    --paper:#E9EDF1;
+    --card:#FFFFFF;
+    --rule:#CBD5DE;
+    --rule-2:#E2E8EE;
+    --rp:#B3243C;
+    --rp-soft:#FBEAED;
+    --sp:#2B5CA8;
+    --sp-soft:#EAF0FA;
+    --clear:#17724F;
+    --clear-soft:#E7F2ED;
+    --focus:#2B5CA8;
+
+    --display:"Barlow Condensed",Impact,"Haettenschweiler","Arial Narrow",sans-serif;
+    --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+    --pad:clamp(16px,3vw,32px);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:var(--pad) var(--pad) 64px}
+
+  /* ---------- masthead ---------- */
+  .masthead{padding:8px 0 20px;border-bottom:2px solid var(--ink)}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  }
+  .eyebrow span:not(:last-child)::after{content:"";display:inline-block;width:1px;height:10px;background:var(--rule);margin-left:10px;vertical-align:-1px}
+  h1{
+    font-family:var(--display);
+    font-size:clamp(38px,7vw,68px);
+    font-weight:700;line-height:.92;letter-spacing:-.01em;
+    text-transform:uppercase;
+    margin:10px 0 6px;
+  }
+  .standfirst{max-width:60ch;color:var(--ink-2);margin:0}
+
+  /* ---------- gauge (signature) ---------- */
+  .gauge{
+    background:var(--card);border:1px solid var(--rule);
+    margin-top:22px;padding:20px var(--pad) 22px;
+  }
+  .gauge-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .verdict{
+    font-family:var(--display);text-transform:uppercase;
+    font-size:clamp(24px,4vw,38px);font-weight:700;line-height:1;letter-spacing:.005em;
+  }
+  .verdict.over{color:var(--rp)}
+  .verdict.clear{color:var(--clear)}
+  .verdict-sub{font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.02em}
+
+  .track{
+    position:relative;height:56px;background:var(--paper);
+    border:1px solid var(--rule-2);
+  }
+  .fill{
+    position:absolute;inset:0 auto 0 0;width:0;
+    background:var(--clear);
+    transition:width .45s cubic-bezier(.2,.7,.3,1),background-color .3s;
+  }
+  .fill.over{
+    background:var(--rp);
+    background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 8px,transparent 8px 16px);
+  }
+  .ceiling{
+    position:absolute;top:-9px;bottom:-9px;width:0;
+    border-left:2px solid var(--ink);
+    transition:left .45s cubic-bezier(.2,.7,.3,1);
+  }
+  .ceiling::after{
+    content:"CEILING";position:absolute;top:-16px;left:4px;
+    font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--ink);
+    white-space:nowrap;
+  }
+  .gauge-scale{
+    display:flex;justify-content:space-between;
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    letter-spacing:.04em;margin-top:8px;
+  }
+
+  .readout{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:1px;background:var(--rule-2);margin-top:20px;border:1px solid var(--rule-2);
+  }
+  .stat{background:var(--card);padding:12px 14px}
+  .stat dt{
+    font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 4px;
+  }
+  .stat dd{margin:0;font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:-.01em}
+  .stat dd small{font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:.02em}
+  .stat.is-rp dd{color:var(--rp)}
+  .stat.is-sp dd{color:var(--sp)}
+
+  /* ---------- layout ---------- */
+  .cols{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:22px;align-items:start}
+  @media (max-width:880px){.cols{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--rule)}
+  .panel-head{
+    display:flex;align-items:baseline;gap:10px;
+    padding:12px 16px;border-bottom:1px solid var(--rule-2);
+  }
+  .panel-head h2{
+    font-family:var(--display);text-transform:uppercase;font-size:19px;
+    font-weight:600;letter-spacing:.02em;margin:0;
+  }
+  .panel-head p{margin:0;font-size:12px;color:var(--ink-3)}
+  .panel-body{padding:16px}
+
+  @media (min-width:881px){.side{position:sticky;top:16px}}
+
+  /* ---------- fields ---------- */
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .field label,.minilabel{
+    display:block;font-family:var(--mono);font-size:10px;font-weight:600;
+    letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;
+  }
+  .field .hint{font-family:var(--body);font-size:11px;letter-spacing:0;text-transform:none;color:var(--ink-3);display:block;margin-top:4px}
+  input[type=number],input[type=text]{
+    width:100%;font-family:var(--mono);font-size:14px;color:var(--ink);
+    padding:8px 10px;background:var(--card);
+    border:1px solid var(--rule);border-radius:0;
+  }
+  input[type=text].name{font-family:var(--body);font-size:14px}
+  input:focus-visible,button:focus-visible,select:focus-visible{
+    outline:2px solid var(--focus);outline-offset:1px;
+  }
+  input[type=range]{width:100%;accent-color:var(--rp)}
+
+  .derived{
+    margin-top:16px;padding:12px 14px;background:var(--paper);border-left:3px solid var(--ink);
+  }
+  .derived .minilabel{margin-bottom:4px}
+  .derived .big{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1.1}
+  .derived .formula{font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-top:6px;word-break:break-word}
+
+  /* ---------- action rows ---------- */
+  .action{border-bottom:1px solid var(--rule-2);padding:14px 16px}
+  .action:last-of-type{border-bottom:0}
+  .action-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+  .action-top .name{flex:1;min-width:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+  .cell.out{
+    padding:8px 10px;border:1px dashed var(--rule);
+    font-family:var(--mono);font-size:14px;font-weight:600;
+  }
+  .cell.out.rp{color:var(--rp);background:var(--rp-soft);border-color:#EDC9D0}
+  .cell.out.sp{color:var(--sp);background:var(--sp-soft);border-color:#C9D8EF}
+
+  .ledger{
+    display:inline-flex;border:1px solid var(--rule);overflow:hidden;flex:none;
+  }
+  .ledger button{
+    font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;
+    padding:8px 9px;border:0;background:var(--card);color:var(--ink-3);cursor:pointer;
+  }
+  .ledger button + button{border-left:1px solid var(--rule)}
+  .ledger button[aria-pressed=true]{background:var(--ink);color:#fff}
+  .ledger.is-sp button[aria-pressed=true]{background:var(--sp)}
+  .ledger.is-rp button[aria-pressed=true]{background:var(--rp)}
+
+  .kill{
+    border:1px solid var(--rule);background:var(--card);color:var(--ink-3);
+    font-family:var(--mono);font-size:13px;line-height:1;padding:9px 10px;cursor:pointer;flex:none;
+  }
+  .kill:hover{border-color:var(--rp);color:var(--rp)}
+
+  .toolbar{
+    display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--rule-2);
+    background:var(--paper);
+  }
+  .btn{
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:10px 14px;border:1px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn.primary{background:var(--ink);color:#fff}
+  .btn.primary:hover{background:var(--rp);border-color:var(--rp)}
+
+  /* ---------- levers ---------- */
+  .lever-note{
+    font-size:13px;color:var(--ink-2);border-left:3px solid var(--rp);
+    padding:10px 12px;background:var(--rp-soft);margin-top:14px;
+  }
+  .lever-note.clear{border-color:var(--clear);background:var(--clear-soft)}
+  .lever-note b{font-weight:600;color:var(--ink)}
+
+  /* ---------- contribution bars ---------- */
+  .contrib{padding:4px 16px 16px}
+  .bar-row{display:grid;grid-template-columns:1fr 88px;gap:12px;align-items:center;padding:7px 0}
+  .bar-name{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-track{height:7px;background:var(--paper);margin-top:5px}
+  .bar-fill{height:100%;background:var(--rp);transition:width .4s ease}
+  .bar-fill.sp{background:var(--sp)}
+  .bar-val{font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink-2)}
+
+  footer{
+    margin-top:28px;padding-top:14px;border-top:1px solid var(--rule);
+    font-size:12px;color:var(--ink-3);max-width:70ch;
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow"><span>SCORE</span><span>URC points economy</span><span>Working model</span></div>
+    <h1>Season issuance model</h1>
+    <p class="standfirst">Set the reward budget to get a ceiling on redeemable points, then adjust the earn schedule until projected issuance fits under it. Status points are tracked separately and carry no liability.</p>
+  </header>
+
+  <section class="gauge" aria-labelledby="verdict">
+    <div class="gauge-head">
+      <div>
+        <div class="verdict" id="verdict" role="status" aria-live="polite">—</div>
+        <div class="verdict-sub" id="verdictSub">—</div>
+      </div>
+      <div class="verdict-sub" id="costLine">—</div>
+    </div>
+
+    <div class="track">
+      <div class="fill" id="fill"></div>
+      <div class="ceiling" id="ceilingMark"></div>
+    </div>
+    <div class="gauge-scale"><span>0</span><span id="scaleMax">—</span></div>
+
+    <dl class="readout">
+      <div class="stat"><dt>Reward budget</dt><dd id="oBudget">—</dd></div>
+      <div class="stat is-rp"><dt>RP ceiling</dt><dd id="oCeiling">—</dd></div>
+      <div class="stat is-rp"><dt>RP projected</dt><dd id="oProjRP">—</dd></div>
+      <div class="stat is-sp"><dt>SP projected</dt><dd id="oProjSP">—</dd></div>
+      <div class="stat"><dt>RP per fan</dt><dd id="oPerFan">—</dd></div>
+    </dl>
+  </section>
+
+  <div class="cols">
+
+    <!-- ============ left: budget ============ -->
+    <div class="side">
+      <section class="panel">
+        <div class="panel-head"><h2>Budget</h2><p>Top-down</p></div>
+        <div class="panel-body">
+          <div class="field">
+            <label for="C">Season reward cost (€)</label>
+            <input type="number" id="C" value="150000" min="0" step="1000">
+            <span class="hint">Landed cost of rewards URC expects to be redeemed.</span>
+          </div>
+          <div class="field">
+            <label for="v">Point value (€ per RP)</label>
+            <input type="number" id="v" value="0.01" min="0.0001" step="0.001">
+            <span class="hint">0.01 means 100 RP = €1.</span>
+          </div>
+          <div class="field">
+            <label for="r">Redemption rate</label>
+            <input type="number" id="r" value="0.35" min="0.01" max="1" step="0.05">
+            <span class="hint">Share of issued RP expected to be burned.</span>
+          </div>
+          <div class="field">
+            <label for="m">Margin factor</label>
+            <input type="number" id="m" value="0.7" min="0.05" max="1" step="0.05">
+            <span class="hint">1.0 for cash-cost rewards, lower for owned inventory.</span>
+          </div>
+
+          <div class="derived">
+            <span class="minilabel">RP ceiling for the season</span>
+            <div class="big" id="dCeiling">—</div>
+            <div class="formula" id="dFormula">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Base &amp; levers</h2></div>
+        <div class="panel-body">
+          <div class="field">
+            <label for="N">Active fans</label>
+            <input type="number" id="N" value="250000" min="1" step="1000">
+          </div>
+          <div class="field">
+            <label for="scale">Global RP scale — <span id="scaleVal">100%</span></label>
+            <input type="range" id="scale" min="10" max="150" value="100" step="5">
+            <span class="hint">Scales every RP award at once. Preserves relative fairness.</span>
+          </div>
+          <div class="lever-note" id="leverNote">—</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ right: schedule ============ -->
+    <div>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Earn schedule</h2>
+          <p>Bottom-up · switch any action to status-only to cut liability</p>
+        </div>
+        <div id="rows"></div>
+        <div class="toolbar">
+          <button class="btn primary" id="addFixed">+ Fixed action</button>
+          <button class="btn" id="addSpend">+ Spend action</button>
+          <button class="btn" id="reset">Reset to defaults</button>
+          <button class="btn" id="csv">Download CSV</button>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Where the points go</h2><p>Share of projected issuance</p></div>
+        <div class="contrib" id="contrib"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    Figures are a working model, not a proposal. Redemption rate is the least reliable input — size the budget against the pessimistic end of a range rather than a point estimate. Nothing entered here is saved; use Download CSV to keep a version.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DEFAULTS = [
+    {name:"Verified in-stadium check-in", type:"fixed", fans:60000,  occ:9,  rp:250, sp:500, ledger:"rp"},
+    {name:"Broadcast / stream watched",   type:"fixed", fans:150000, occ:12, rp:50,  sp:200, ledger:"rp"},
+    {name:"Merchandise purchase",         type:"spend", fans:40000,  occ:1,  spend:60, rate:2, sp:0, ledger:"rp"},
+    {name:"Correct match prediction",     type:"fixed", fans:80000,  occ:7,  rp:25,  sp:150, ledger:"rp"},
+    {name:"Partner offer engagement",     type:"fixed", fans:50000,  occ:15, rp:25,  sp:100, ledger:"rp"},
+    {name:"Successful referral",          type:"fixed", fans:5000,   occ:2,  rp:200, sp:750, ledger:"rp"},
+    {name:"Profile completion + consent", type:"fixed", fans:250000, occ:1,  rp:150, sp:700, ledger:"rp"},
+    {name:"Content share",                type:"fixed", fans:90000,  occ:20, rp:0,   sp:25,  ledger:"sp"}
+  ];
+
+  var rows = clone(DEFAULTS);
+
+  var $ = function(id){ return document.getElementById(id); };
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function num(el, fallback){
+    var n = parseFloat(el.value);
+    return isFinite(n) ? n : fallback;
+  }
+
+  function compact(n){
+    if(!isFinite(n)) return "—";
+    var a = Math.abs(n);
+    if(a >= 1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,"") + "B";
+    if(a >= 1e6) return (n/1e6).toFixed(2).replace(/\.?0+$/,"") + "M";
+    if(a >= 1e3) return Math.round(n/1e3) + "K";
+    return Math.round(n).toString();
+  }
+  function euro(n){
+    return "€" + Math.round(n).toLocaleString("en-IE");
+  }
+  function full(n){ return Math.round(n).toLocaleString("en-IE"); }
+
+  // ---------- maths ----------
+  function ceilingRP(){
+    var C = num($("C"),0), v = num($("v"),0.01), r = num($("r"),0.35), m = num($("m"),0.7);
+    var d = v * r * m;
+    return d > 0 ? C / d : 0;
+  }
+
+  function rowRP(row){
+    var scale = num($("scale"),100) / 100;
+    if(row.ledger !== "rp") return 0;
+    var per;
+    if(row.type === "spend"){
+      var v = num($("v"),0.01);
+      per = v > 0 ? (row.spend * (row.rate/100)) / v : 0;
+    } else {
+      per = row.rp;
+    }
+    return row.fans * row.occ * per * scale;
+  }
+
+  function rowSP(row){
+    // every RP-earning action also mints SP
+    return row.fans * row.occ * row.sp;
+  }
+
+  // ---------- render schedule ----------
+  function fieldNum(label, value, key, idx, step, min){
+    return '<div><span class="minilabel">'+label+'</span>'+
+           '<input type="number" data-i="'+idx+'" data-k="'+key+'" value="'+value+'" step="'+(step||1)+'" min="'+(min===undefined?0:min)+'" aria-label="'+label+'"></div>';
+  }
+
+  function renderRows(){
+    var host = $("rows");
+    host.innerHTML = rows.map(function(row, i){
+      var isRP = row.ledger === "rp";
+      var html = '<div class="action">';
+
+      html += '<div class="action-top">';
+      html += '<div class="name"><span class="minilabel">Action</span>'+
+              '<input type="text" class="name" data-i="'+i+'" data-k="name" value="'+escapeHtml(row.name)+'" aria-label="Action name"></div>';
+      html += '<div><span class="minilabel">Ledger</span>'+
+              '<div class="ledger '+(isRP?"is-rp":"is-sp")+'">'+
+              '<button type="button" data-i="'+i+'" data-ledger="rp" aria-pressed="'+isRP+'">RP</button>'+
+              '<button type="button" data-i="'+i+'" data-ledger="sp" aria-pressed="'+(!isRP)+'">SP only</button>'+
+              '</div></div>';
+      html += '<div><span class="minilabel">&nbsp;</span>'+
+              '<button type="button" class="kill" data-del="'+i+'" aria-label="Remove '+escapeHtml(row.name)+'">✕</button></div>';
+      html += '</div>';
+
+      html += '<div class="grid">';
+      html += fieldNum("Fans", row.fans, "fans", i, 1000);
+      html += fieldNum("Times / season", row.occ, "occ", i, 1);
+      if(row.type === "spend"){
+        html += fieldNum("Avg spend €", row.spend, "spend", i, 5);
+        html += fieldNum("Earn rate %", row.rate, "rate", i, 0.5);
+      } else {
+        html += fieldNum("RP each", row.rp, "rp", i, 5);
+      }
+      html += fieldNum("SP each", row.sp, "sp", i, 25);
+
+      var rp = rowRP(row), sp = rowSP(row);
+      html += '<div><span class="minilabel">RP total</span>'+
+              '<div class="cell out rp" title="'+full(rp)+'">'+(isRP?compact(rp):"—")+'</div></div>';
+      html += '<div><span class="minilabel">SP total</span>'+
+              '<div class="cell out sp" title="'+full(sp)+'">'+compact(sp)+'</div></div>';
+      html += '</div></div>';
+      return html;
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  // ---------- render results ----------
+  function update(){
+    var ceil = ceilingRP();
+    var C = num($("C"),0), v = num($("v"),0.01), r = num($("r"),0.35), m = num($("m"),0.7);
+    var N = Math.max(1, num($("N"),1));
+
+    var projRP = 0, projSP = 0;
+    rows.forEach(function(row){ projRP += rowRP(row); projSP += rowSP(row); });
+
+    $("scaleVal").textContent = num($("scale"),100) + "%";
+
+    // budget panel
+    $("dCeiling").textContent = compact(ceil) + " RP";
+    $("dFormula").textContent = euro(C) + " ÷ (" + v + " × " + r + " × " + m + ") = " + full(ceil);
+
+    // gauge
+    var scaleMax = Math.max(ceil * 1.15, projRP * 1.02, 1);
+    var fill = $("fill");
+    var over = projRP > ceil;
+    fill.style.width = Math.min(100, (projRP / scaleMax) * 100) + "%";
+    fill.className = "fill" + (over ? " over" : "");
+    $("ceilingMark").style.left = Math.min(100, (ceil / scaleMax) * 100) + "%";
+    $("scaleMax").textContent = compact(scaleMax) + " RP";
+
+    var verdict = $("verdict"), sub = $("verdictSub");
+    if(over){
+      var mult = ceil > 0 ? projRP / ceil : Infinity;
+      verdict.textContent = "Over the ceiling";
+      verdict.className = "verdict over";
+      sub.textContent = "Issuing " + (isFinite(mult) ? mult.toFixed(1) + "×" : "∞") +
+                        " the ceiling — " + compact(projRP - ceil) + " RP to remove";
+    } else {
+      verdict.textContent = "Clears the ceiling";
+      verdict.className = "verdict clear";
+      sub.textContent = compact(ceil - projRP) + " RP of headroom (" +
+                        (ceil > 0 ? Math.round((1 - projRP/ceil)*100) : 0) + "% spare)";
+    }
+
+    var projCost = projRP * v * r * m;
+    $("costLine").textContent = "Projected reward cost " + euro(projCost) + " vs budget " + euro(C);
+
+    $("oBudget").textContent = euro(C);
+    $("oCeiling").innerHTML = compact(ceil) + ' <small>RP</small>';
+    $("oProjRP").innerHTML = compact(projRP) + ' <small>RP</small>';
+    $("oProjSP").innerHTML = compact(projSP) + ' <small>SP</small>';
+    $("oPerFan").innerHTML = Math.round(projRP/N) + ' <small>≈ ' + euro(projRP/N*v) + '</small>';
+
+    renderContrib(projRP, projSP);
+    renderLever(projRP, ceil);
+  }
+
+  function renderContrib(projRP, projSP){
+    var data = rows.map(function(row){
+      return {name:row.name, rp:rowRP(row), sp:rowSP(row), ledger:row.ledger};
+    }).sort(function(a,b){ return (b.rp - a.rp) || (b.sp - a.sp); });
+
+    var maxRP = Math.max.apply(null, data.map(function(d){return d.rp;}).concat([1]));
+    var maxSP = Math.max.apply(null, data.map(function(d){return d.sp;}).concat([1]));
+
+    $("contrib").innerHTML = data.map(function(d){
+      var isRP = d.ledger === "rp" && d.rp > 0;
+      var w = isRP ? (d.rp/maxRP)*100 : (d.sp/maxSP)*100;
+      var val = isRP ? compact(d.rp) + " RP" : compact(d.sp) + " SP";
+      var share = isRP && projRP > 0 ? Math.round(d.rp/projRP*100) + "% of RP"
+                                     : (projSP > 0 ? Math.round(d.sp/projSP*100) + "% of SP" : "");
+      return '<div class="bar-row"><div>'+
+             '<div class="bar-name">'+escapeHtml(d.name)+'</div>'+
+             '<div class="bar-track"><div class="bar-fill'+(isRP?"":" sp")+'" style="width:'+w+'%"></div></div>'+
+             '</div><div class="bar-val">'+val+'<br><span style="font-size:10px;color:var(--ink-3)">'+share+'</span></div></div>';
+    }).join("");
+  }
+
+  function renderLever(projRP, ceil){
+    var note = $("leverNote");
+    if(projRP <= ceil){
+      note.className = "lever-note clear";
+      note.innerHTML = "Schedule fits. Keep headroom for engagement beating forecast — treat anything under <b>15% spare</b> as fully committed.";
+      return;
+    }
+    note.className = "lever-note";
+    var gap = projRP - ceil;
+    var biggest = null;
+    rows.forEach(function(row){
+      var rp = rowRP(row);
+      if(row.ledger === "rp" && (!biggest || rp > biggest.rp)) biggest = {name:row.name, rp:rp};
+    });
+    if(!biggest || biggest.rp === 0){
+      note.innerHTML = "Over by <b>" + compact(gap) + " RP</b>. No single action dominates — reduce the global RP scale or raise the reward budget.";
+      return;
+    }
+    var msg = "Over by <b>" + compact(gap) + " RP</b>. Moving <b>" + escapeHtml(biggest.name) + "</b> to status-only removes " + compact(biggest.rp) + " RP";
+    msg += biggest.rp >= gap ? " — enough on its own." : ", still short by " + compact(gap - biggest.rp) + ".";
+    note.innerHTML = msg;
+  }
+
+  // ---------- events ----------
+  ["C","v","r","m","N","scale"].forEach(function(id){
+    $(id).addEventListener("input", function(){ renderRows(); update(); });
+  });
+
+  $("rows").addEventListener("input", function(e){
+    var t = e.target, i = t.getAttribute("data-i"), k = t.getAttribute("data-k");
+    if(i === null || !k) return;
+    var row = rows[+i];
+    row[k] = (k === "name") ? t.value : (parseFloat(t.value) || 0);
+    if(k === "name"){ update(); } else { refreshTotals(); update(); }
+  });
+
+  // update only the computed cells so focus/caret is preserved while typing
+  function refreshTotals(){
+    var cards = $("rows").querySelectorAll(".action");
+    rows.forEach(function(row, i){
+      var outs = cards[i] ? cards[i].querySelectorAll(".cell.out") : null;
+      if(!outs || outs.length < 2) return;
+      var rp = rowRP(row), sp = rowSP(row);
+      outs[0].textContent = row.ledger === "rp" ? compact(rp) : "—";
+      outs[0].title = full(rp);
+      outs[1].textContent = compact(sp);
+      outs[1].title = full(sp);
+    });
+  }
+
+  $("rows").addEventListener("click", function(e){
+    var led = e.target.getAttribute && e.target.getAttribute("data-ledger");
+    if(led){
+      rows[+e.target.getAttribute("data-i")].ledger = led;
+      renderRows(); update(); return;
+    }
+    var del = e.target.getAttribute && e.target.getAttribute("data-del");
+    if(del !== null && del !== undefined){
+      rows.splice(+del, 1);
+      renderRows(); update();
+    }
+  });
+
+  $("addFixed").addEventListener("click", function(){
+    rows.push({name:"New action", type:"fixed", fans:10000, occ:1, rp:50, sp:100, ledger:"rp"});
+    renderRows(); update();
+  });
+  $("addSpend").addEventListener("click", function(){
+    rows.push({name:"New purchase type", type:"spend", fans:10000, occ:1, spend:50, rate:2, sp:0, ledger:"rp"});
+    renderRows(); update();
+  });
+  $("reset").addEventListener("click", function(){
+    rows = clone(DEFAULTS);
+    $("C").value=150000; $("v").value=0.01; $("r").value=0.35; $("m").value=0.7;
+    $("N").value=250000; $("scale").value=100;
+    renderRows(); update();
+  });
+
+  $("csv").addEventListener("click", function(){
+    var lines = [["Action","Ledger","Type","Fans","Times per season","RP each","Avg spend","Earn rate %","SP each","RP total","SP total"].join(",")];
+    rows.forEach(function(row){
+      lines.push([
+        '"'+row.name.replace(/"/g,'""')+'"', row.ledger, row.type, row.fans, row.occ,
+        row.type==="spend" ? "" : row.rp,
+        row.type==="spend" ? row.spend : "",
+        row.type==="spend" ? row.rate : "",
+        row.sp, Math.round(rowRP(row)), Math.round(rowSP(row))
+      ].join(","));
+    });
+    var ceil = ceilingRP(), projRP = 0;
+    rows.forEach(function(r){ projRP += rowRP(r); });
+    lines.push("");
+    lines.push("RP ceiling," + Math.round(ceil));
+    lines.push("RP projected," + Math.round(projRP));
+    lines.push("Reward budget EUR," + num($("C"),0));
+    lines.push("Projected reward cost EUR," + Math.round(projRP*num($("v"),0.01)*num($("r"),0.35)*num($("m"),0.7)));
+
+    var blob = new Blob([lines.join("\n")], {type:"text/csv"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "score-points-schedule.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  renderRows();
+  update();
+})();
+</script>
+</body>
+</html>
