@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSSS · Open Sports Scheduling Standard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#1f63c8; --accent2:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(31,99,200,.08),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(14,138,130,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--blue);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:830px}
+  .lead b{color:var(--ink)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* interop */
+  .interop{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;gap:0;align-items:stretch;margin-bottom:16px}
+  @media(max-width:820px){.interop{grid-template-columns:1fr;gap:8px}.interop .ar{display:none}}
+  .iz{border:1px solid var(--line2);border-radius:12px;padding:12px 14px;background:var(--panel)}
+  .iz.solver{border-style:dashed;border-color:var(--blue);background:rgba(31,99,200,.03)}
+  .iz .izt{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);font-weight:600}
+  .iz h4{margin:3px 0 5px;font-size:13.5px}
+  .iz p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .interop .ar{display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:18px}
+
+  .arch-wrap{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .mods{display:flex;flex-wrap:wrap;gap:8px;padding:2px}
+  .mod{flex:1;min-width:150px;border:1px solid var(--line2);border-left:4px solid var(--blue);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .mod:hover{border-color:var(--blue);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .mod.sel{border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,99,200,.14)}
+  .mod .mn{font-weight:700;font-size:12px}
+  .mod .mf{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:3px}
+  .dp{position:sticky;top:14px;min-height:280px;overflow:hidden}
+  .dp-empty{padding:22px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(31,99,200,.05)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:3px 0 0;font-size:15px;font-weight:700}
+  .db{padding:13px 16px}
+  .db p{margin:0;font-size:12.5px;line-height:1.55;color:var(--ink)}
+  .doesnt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  @media(max-width:720px){.doesnt{grid-template-columns:1fr}}
+  .dcol{padding:12px 14px}
+  .dcol h4{margin:0 0 7px;font-size:12.5px}
+  .dcol ul{margin:0;padding:0;list-style:none}
+  .dcol li{font-size:12px;line-height:1.4;padding:4px 0 4px 17px;position:relative;color:var(--ink-dim)}
+  .dcol.do li::before{content:"✓";position:absolute;left:1px;color:var(--green);font-weight:700}
+  .dcol.dont li::before{content:"✕";position:absolute;left:1px;color:var(--red);font-weight:700}
+
+  /* data model */
+  .ents{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px;margin-bottom:8px}
+  .ent{padding:12px 14px;border-top:4px solid var(--blue)}
+  .ent h4{margin:0 0 3px;font-size:13px}
+  .ent p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .feature{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:11px;margin-top:6px}
+  .ft{padding:12px 14px;border-left:4px solid var(--teal)}
+  .ft h4{margin:0 0 4px;font-size:12.5px}
+  .ft p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+
+  /* constraints + objectives */
+  .catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:8px}
+  .cat{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:var(--panel);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .cat .cn{font-size:12px;font-weight:600;text-transform:capitalize}
+  .cat .cnt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--blue);background:rgba(31,99,200,.08);border-radius:6px;padding:2px 8px}
+  .pens{display:flex;flex-wrap:wrap;gap:8px}
+  .pen{border:1px solid var(--line2);border-radius:9px;padding:8px 12px;background:var(--panel);font-size:12px}
+  .pen b{font-family:var(--mono);font-size:11px;color:var(--blue)}
+  .pen span{font-family:var(--mono);font-size:9px;color:var(--ink-faint);display:block;margin-top:2px}
+  .obj{padding:13px 15px;margin-top:6px}
+  .obj p{margin:0 0 8px;font-size:12.5px;color:var(--ink-dim);line-height:1.5}
+  .ranges{display:flex;gap:8px;flex-wrap:wrap}
+  .rg{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:7px;padding:5px 10px;background:var(--panel2)}
+  .rg b{color:var(--blue)}
+
+  /* results + conformance */
+  pre{font-family:var(--mono);font-size:11px;line-height:1.5;background:#1b2433;color:#e6ebf3;border-radius:11px;padding:14px 15px;overflow-x:auto;margin:0}
+  pre .k{color:#a8c7ff} pre .s{color:#8fd39a} pre .n{color:#f0b866} pre .c{color:#7e8aa0}
+  .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.res-grid{grid-template-columns:1fr}}
+  .rfields .rf{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
+  .rfields .rf:last-child{border-bottom:0}
+  .rfields .rk{font-family:var(--mono);font-size:11px;color:var(--blue)} .rfields .rv{color:var(--ink-dim);text-align:right;font-size:11.5px}
+  .profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:8px}
+  .prof{border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:9px;padding:9px 12px;background:var(--panel)}
+  .prof .pn{font-weight:700;font-size:12.5px;text-transform:capitalize}
+  .prof .pd{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:3px}
+  .conf{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+  .cf{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line2);border-radius:8px;padding:6px 11px;background:var(--panel)}
+  .cf.pass{border-left:3px solid var(--green)} .cf.fail{border-left:3px solid var(--red)} .cf.exp{border-left:3px solid var(--blue)}
+  .gov{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;line-height:1.5;margin-top:14px}
+  .gov b{color:var(--ink)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">OSSS · open · vendor-neutral</div>
+    <h1>Open Sports Scheduling Standard</h1>
+    <p class="lead">A neutral, machine-readable language for describing sports scheduling problems and solutions — teams, venues, fixtures, officials, resources, constraints, objectives, and explainable outcomes. It <b>standardizes the problem, not the solver</b>: any compliant engine can consume OSSS inputs, produce OSSS-compliant schedules, and be audited by OSSS rules.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="std">◆ The standard</button>
+    <button class="tab" data-tab="model">▤ Data model</button>
+    <button class="tab" data-tab="cons">⚖ Constraints &amp; objectives</button>
+    <button class="tab" data-tab="results">✓ Results &amp; conformance</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>OSSS</b> — Open Sports Scheduling Standard · vendor-neutral · solver-agnostic · openly governed<br>maintained by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["vendor-neutral","solver-agnostic · openly governed"],["51 constraints","11 categories · hard + soft"],["6 penalty families","linear → piecewise"],["explainable results","reports + scores + Pareto"],["4 profiles","baseline · youth · amateur · pro"],["conformance suite","must-pass / must-fail"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--blue)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* the standard */
+const MODS={
+ core:{f:"osss-core",n:"Core model",d:"The shared data model: teams, venues (physical and virtual), fixtures, officials and resources. Everything else references it."},
+ constraints:{f:"osss-constraints",n:"Constraints",d:"Explicit hard and soft constraints with a canonical registry of 51 entries across 11 categories, including esports-specific latency and regional balance."},
+ objectives:{f:"osss-objectives",n:"Objectives",d:"Standardized objective metrics with optimization goals, per-profile target ranges, and a family of penalty functions for scoring trade-offs."},
+ results:{f:"osss-results",n:"Results",d:"The explainable, auditable output: the schedule plus constraint reports, objective scores, feasibility, Pareto alternatives and version diffs."},
+ competition:{f:"osss-competition",n:"Competition",d:"Leagues, tournaments, playoffs and knockout brackets, with fixture dependencies and bracket seeding."},
+ venue:{f:"venue-resources",n:"Venue resources",d:"Resource-level management for multi-court and multi-field facilities, so a venue is not treated as a single slot."},
+ submission:{f:"osss-submission",n:"Submission",d:"The envelope that packages an instance for a solver or for conformance testing."},
+};
+function openMod(k){
+  const c=MODS[k];document.querySelectorAll("[data-mod]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-mod")===k));
+  document.getElementById("mdetail").innerHTML=`<div class="dh"><div class="dt">${c.f}</div><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function renderStd(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Standardize the problem, not the solver</div>
+   <p class="intro">OSSS is the shared language between a league's problem and whatever engine solves it. Innovation happens above the standard — in the solver — while the problem definition and the audit trail stay portable.</p>
+   <div class="interop">
+     <div class="iz"><div class="izt">Input</div><h4>OSSS instance</h4><p>The problem: core model + constraints + objectives, in machine-readable form.</p></div>
+     <div class="ar">→</div>
+     <div class="iz solver"><div class="izt">Solver-agnostic</div><h4>Any compliant engine</h4><p>Constraint programming, metaheuristics, AI — OSSS prescribes no algorithm.</p></div>
+     <div class="ar">→</div>
+     <div class="iz"><div class="izt">Output</div><h4>OSSS result</h4><p>The schedule plus constraint reports, scores and explanations — auditable by OSSS rules.</p></div>
+   </div>
+   <div class="section-h">Specification modules</div>
+   <p class="intro">Each module is a spec with a JSON Schema behind it. Click one to see what it defines.</p>
+   <div class="arch-wrap">
+     <div class="card" style="padding:10px"><div class="mods">${Object.keys(MODS).map(k=>`<div class="mod" data-mod="${k}"><div class="mn">${MODS[k].n}</div><div class="mf">${MODS[k].f}</div></div>`).join("")}</div></div>
+     <div class="card dp"><div id="mdetail"><div class="dp-empty"><b>SELECT A MODULE</b><br><br>OSSS is a family of specs — core, constraints, objectives, results and more — each with a JSON Schema and conformance tests.<br><br>Click any module for what it standardizes.</div></div></div>
+   </div>
+   <div class="doesnt">
+     <div class="card dcol do"><h4>What OSSS does</h4><ul><li>A common data model across traditional sports and esports</li><li>Official scheduling, resource-level venues, knockout brackets</li><li>Explicit hard/soft constraints and standardized objectives</li><li>Explainable scoring and violation reporting</li><li>Versioning, locks and change management</li></ul></div>
+     <div class="card dcol dont"><h4>What OSSS does not do</h4><ul><li>Prescribe algorithms</li><li>Replace scheduling vendors</li><li>Dictate UI or workflows</li><li>Lock leagues into any platform</li></ul></div>
+   </div>`;
+  document.querySelectorAll("[data-mod]").forEach(el=>el.addEventListener("click",()=>openMod(el.getAttribute("data-mod"))));
+}
+
+/* data model */
+function renderModel(){
+  const ents=[
+   ["Teams","Competitors, with home bases, rest requirements and fairness attributes."],
+   ["Venues","Physical and virtual — a virtual venue models an esports server with a region and latency."],
+   ["Fixtures","The matches to be scheduled, including dependencies for knockout brackets."],
+   ["Officials","Referees and officials with availability, qualifications and conflict-of-interest rules."],
+   ["Resources","Sub-venue resources — courts, fields, streams — so a facility isn't one slot."],
+  ];
+  const feats=[
+   ["Official / referee scheduling","Availability windows, required qualifications per fixture, and conflict-of-interest exclusions."],
+   ["Resource-level venue management","Multi-court and multi-field facilities scheduled at the resource level, not the building level."],
+   ["Knockout tournament support","Fixture dependencies (winner-of / loser-of) and bracket seeding, alongside league and playoff formats."],
+  ];
+  document.getElementById("view").innerHTML=`<div class="section-h">Core entities</div>
+   <p class="intro">One shared model spans youth soccer, professional leagues and global esports. Virtual venues and latency make esports a first-class citizen rather than a bolt-on.</p>
+   <div class="ents">${ents.map(e=>`<div class="card ent"><h4>${e[0]}</h4><p>${e[1]}</p></div>`).join("")}</div>
+   <div class="section-h">Beyond the basics</div>
+   <div class="feature">${feats.map(f=>`<div class="card ft"><h4>${f[0]}</h4><p>${f[1]}</p></div>`).join("")}</div>`;
+}
+
+/* constraints + objectives */
+const CATS=[["feasibility",2],["time",6],["venue",9],["travel",3],["fairness",9],["broadcast",3],["esports",4],["structure",7],["officials",4],["environmental",3],["special",1]];
+const PENS=[["linear","proportional"],["quadratic","penalize outliers"],["exponential","sharp past a limit"],["logarithmic","diminishing"],["step","threshold jumps"],["piecewise","custom shape"]];
+function renderCons(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Constraint registry · 51 across 11 categories</div>
+   <p class="intro">Constraints are explicit and portable — hard constraints must hold for a schedule to be feasible; soft constraints are scored. Every entry is versioned in the registry so leagues and solvers reference the same definition.</p>
+   <div class="catgrid">${CATS.map(c=>`<div class="cat"><span class="cn">${c[0]}</span><span class="cnt">${c[1]}</span></div>`).join("")}</div>
+   <div class="section-h">Penalty functions</div>
+   <p class="intro">Soft constraints and objectives are scored through a standard family of penalty shapes, so "how bad is this violation" means the same thing everywhere.</p>
+   <div class="pens">${PENS.map(p=>`<div class="pen"><b>${p[0]}</b><span>${p[1]}</span></div>`).join("")}</div>
+   <div class="section-h">Objectives · profile-aware targets</div>
+   <div class="card obj"><p>Objectives carry an optimization goal and <b>per-profile target ranges</b>, so the same metric is judged appropriately for a youth league versus a professional one. For example, <code style="font-family:var(--mono);font-size:11px">total_travel_distance</code> (minimize, km):</p>
+     <div class="ranges"><span class="rg"><b>youth</b> · ideal 5k / max 10k</span><span class="rg"><b>amateur</b> · ideal 15k / max 30k</span><span class="rg"><b>pro</b> · ideal 50k / max 100k</span></div></div>`;
+}
+
+/* results + conformance */
+function renderResults(){
+  const res=`{
+  <span class="k">"version"</span>: <span class="s">"0.1.0"</span>,
+  <span class="k">"instance_id"</span>: <span class="s">"…"</span>,
+  <span class="k">"solver_info"</span>: { <span class="c">/* id + config */</span> },
+  <span class="k">"feasible"</span>: <span class="n">true</span>,
+  <span class="k">"assignments"</span>: [ <span class="c">/* the schedule */</span> ],
+  <span class="k">"constraint_reports"</span>: [ <span class="c">/* per-constraint */</span> ],
+  <span class="k">"objective_scores"</span>: [ … ],
+  <span class="k">"total_score"</span>: <span class="n">…</span>,
+  <span class="k">"computation_time_ms"</span>: <span class="n">…</span>,
+  <span class="k">"alternative_solutions"</span>: [ <span class="c">/* Pareto front */</span> ],
+  <span class="k">"diff"</span>: { <span class="c">/* vs previous version */</span> }
+}`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Results · explainable and auditable by design</div>
+   <p class="intro">A solver doesn't just return a schedule; it returns why. Feasibility, per-constraint reports, objective scores, Pareto alternatives and a diff from the previous version are all part of the standard output.</p>
+   <div class="res-grid">
+     <div><pre>${res}</pre></div>
+     <div class="card" style="padding:13px 15px"><div class="rfields">
+       <div class="rf"><span class="rk">feasible</span><span class="rv">all hard constraints satisfied?</span></div>
+       <div class="rf"><span class="rk">constraint_reports</span><span class="rv">detailed violation reports</span></div>
+       <div class="rf"><span class="rk">objective_scores</span><span class="rv">value per objective metric</span></div>
+       <div class="rf"><span class="rk">total_score</span><span class="rv">combined objective score</span></div>
+       <div class="rf"><span class="rk">alternative_solutions</span><span class="rv">other feasible options (Pareto)</span></div>
+       <div class="rf"><span class="rk">diff</span><span class="rv">changes from the prior schedule</span></div>
+     </div></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Profiles</div>
+   <p class="intro">Profiles bundle sensible constraint and objective defaults for a context, so adopters start from a baseline rather than a blank page.</p>
+   <div class="profiles">
+     <div class="prof"><div class="pn">baseline</div><div class="pd">minimal conformance</div></div>
+     <div class="prof"><div class="pn">youth</div><div class="pd">rest, travel, fairness</div></div>
+     <div class="prof"><div class="pn">amateur</div><div class="pd">balanced league play</div></div>
+     <div class="prof"><div class="pn">pro</div><div class="pd">broadcast, officials, scale</div></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Conformance &amp; governance</div>
+   <p class="intro">Compliance is testable, not claimed. A conformance suite decides what a valid implementation must accept and must reject.</p>
+   <div class="conf"><span class="cf pass">must-pass · valid instances</span><span class="cf fail">must-fail · invalid instances</span><span class="cf exp">expected · canonical outputs</span></div>
+   <div class="gov"><b>Openly governed.</b> The standard evolves through a public RFC process with a charter, manifesto and versioning policy — so no single vendor controls it, and changes are proposed and reviewed in the open.</div>`;
+}
+
+/* shell */
+let CUR="std";
+function renderTab(name){
+  CUR=name;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="std") renderStd();
+  else if(name==="model") renderModel();
+  else if(name==="cons") renderCons();
+  else renderResults();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("std");
+</script>
+</body>
+</html>
