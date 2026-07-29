@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Creation · Score Anything Loyalty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(900px 520px at 8% -8%,rgba(13,110,168,.07),transparent 60%),radial-gradient(720px 480px at 100% 0%,rgba(26,143,69,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:8px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink-faint)}
+  h1{margin:4px 0 5px;font-size:23px;font-weight:700;letter-spacing:-.015em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:760px}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:14px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 14px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:880px;line-height:1.55}
+
+  .legend{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:12px}
+  .lg{font-family:var(--mono);font-size:10px;color:var(--ink-dim);display:flex;align-items:center;gap:6px}
+  .lg i{width:10px;height:10px;border-radius:3px}
+
+  .paths{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .pth{border:1px solid var(--line2);border-radius:10px;padding:9px 13px;cursor:pointer;background:var(--panel);transition:.13s;text-align:left}
+  .pth:hover{border-color:var(--accent)}
+  .pth.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(13,110,168,.12)}
+  .pth .pt{font-weight:700;font-size:12.5px}
+  .pth .pg{font-family:var(--mono);font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+
+  .flow-grid{display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:127px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(13,110,168,.06)}
+  .syschip{justify-self:start;font-family:var(--mono);font-size:9.5px;font-weight:600;color:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;margin-top:1px}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp.created .mid::before{border-color:var(--green);background:var(--green)}
+  .stp .a{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .stp .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+  .stp .n{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:4px;line-height:1.4}
+  .bdg{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;margin-top:5px;border:1px solid}
+
+  .summary{padding:15px 16px;position:sticky;top:14px}
+  .summary .st{font-weight:700;font-size:15px}
+  .summary .sg{font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:5px;display:inline-block;margin-top:5px}
+  .summary p{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin:11px 0}
+  .kv2{margin:10px 0}
+  .kv2 .kk{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  .kv2 .vv{font-size:12px;color:var(--ink);margin-top:2px;line-height:1.45}
+  .props{margin:8px 0 0;padding:0;list-style:none}
+  .props li{font-size:11.5px;color:var(--ink-dim);line-height:1.45;padding:5px 0 5px 16px;position:relative;border-top:1px solid var(--line)}
+  .props li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .pbtns{display:flex;gap:7px;margin-top:13px}
+  .pbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .pbtn:hover{border-color:var(--accent)} .pbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* identity map */
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .sy{font-weight:700;display:flex;align-items:center;gap:7px} td .sy i{width:9px;height:9px;border-radius:3px}
+  td code{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .trail{display:flex;flex-direction:column;max-width:600px}
+  .tnode{border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:10px;padding:10px 13px;background:var(--panel);position:relative}
+  .tnode .tnk{font-weight:700;font-size:13px}
+  .tnode small{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:3px}
+  .tnode.src{box-shadow:0 0 0 3px rgba(26,143,69,.12);border-left-color:var(--green)}
+  .srcbadge{position:absolute;top:11px;right:12px;font-family:var(--mono);font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);border:1px solid rgba(26,143,69,.3);border-radius:5px;padding:2px 6px}
+  .tedge{font-family:var(--mono);font-size:9.5px;color:var(--accent);padding:5px 0 5px 18px;position:relative}
+  .tedge::before{content:"↓";position:absolute;left:5px}
+  .tbranch{margin:4px 0 8px 22px;border-left:2px dashed var(--line2);padding:7px 0 7px 14px;font-family:var(--mono);font-size:10px;color:var(--ink-dim);line-height:1.5}
+
+  .gaps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+  .gap{padding:14px 15px;border-top:4px solid var(--amber)}
+  .gap.async{border-top-color:var(--accent)}
+  .gap h4{margin:0 0 6px;font-size:13.5px;font-weight:700}
+  .gap p{margin:0;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .gap code{font-family:var(--mono);font-size:10.5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+  .note{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;line-height:1.5;margin-top:4px}
+  .note b{color:var(--ink)} .note code{font-family:var(--mono);font-size:11px}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">3 Halves Labs · Score Anything Loyalty</div>
+    <h1>How a user is created</h1>
+    <p class="lead">A "user" isn't one record — it's spread across up to four systems linked by shared ids. There are four entry paths, but only two actually create a user; the others enrol or proxy on top. The primary path is <b>lazy and JWT-triggered</b>: there is no <code>register</code> endpoint.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="flow">⇶ Creation paths</button>
+    <button class="tab" data-tab="identity">⊹ Identity map</button>
+    <button class="tab" data-tab="caveats">⚠ Caveats &amp; gaps</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot">traced across the admin app, score-middleware and Odoo repos · Mongo is the source of truth; Odoo is provisioned asynchronously<br>built by 3 Halves Labs · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const SYS={
+ fan:{n:"Fan / client",c:"#54607a"},
+ auth0:{n:"Auth0",c:"#bf4f17"},
+ keycloak:{n:"Keycloak",c:"#7437c9"},
+ admin:{n:"Admin app",c:"#0d6ea8"},
+ mw:{n:"score-middleware",c:"#1a8f45"},
+ rabbit:{n:"RabbitMQ",c:"#a9760a"},
+ odoo:{n:"Odoo",c:"#1f63c8"},
+ wp:{n:"WordPress (URC)",c:"#0e8a82"},
+};
+const BADGE={CREATED:"var(--green)",DECISION:"var(--accent)",ASYNC:"var(--amber)",GATE:"var(--red)",SESSION:"var(--violet)",UPSERT:"var(--teal)",ENROL:"var(--amber)","→ P1":"var(--ink-faint)","→ P3":"var(--ink-faint)"};
+
+const PATHS=[
+ {id:"p1",title:"Fan account",tag:"creates user",tagc:"var(--green)",
+  summary:"The primary path. Lazy and JWT-triggered — there is no register endpoint. A user is minted the first time a valid Auth0 token reaches the middleware.",
+  creates:"Mongo User (synchronously) + Odoo res.partner & res.users (asynchronously, best-effort)",
+  truth:"Mongo User is the source of truth; Odoo is provisioned later.",
+  props:["No register endpoint — creation is a side-effect of the first authenticated request.","Auth0 sub is the join key (Mongo User.auth0Id, Odoo res.partner.auth_user_id); email is the secondary linker.","Non-blocking: Auth0 sign-in succeeds even if RabbitMQ publish or Odoo creation fails (try/caught, logged, not thrown)."],
+  steps:[
+   {sys:"fan",a:"Sign in",w:"Fan signs in via the web/mobile SDK or the URC proxy",n:""},
+   {sys:"auth0",a:"Issue JWT",w:"Auth0 issues an RS256 JWT",n:""},
+   {sys:"mw",a:"routes/middleware/auth.js",w:"Request reaches score-middleware carrying the Auth0 bearer token",n:""},
+   {sys:"mw",a:"auth0Verifier.js",w:"Verify RS256 against AUTH0_JWKS_URI → { sub, email, name }",n:""},
+   {sys:"mw",a:"userService.getOrCreateFromAuth0()",w:"Resolve the user",n:"find by auth0Id == sub → reuse · else find by email → link auth0Id onto the existing User · else create",badge:"DECISION"},
+   {sys:"mw",a:"CREATE Mongo User",w:"{ email, name, auth0Id: sub, role: 'user' }",n:"the app user is created here",badge:"CREATED"},
+   {sys:"rabbit",a:"_queueOdooProvisioning()",w:"Publish user.creation { type:'auth0_created', userId: sub, email, first/last }",n:"best-effort, non-blocking",badge:"ASYNC"},
+   {sys:"odoo",a:"score_user_handler.py :: handle_user_creation()",w:"Consume the message",n:"idempotency check on res.users.login(email)"},
+   {sys:"odoo",a:"CREATE res.partner",w:"{ name, email, auth_user_id: sub, is_company: false }",n:"",badge:"CREATED"},
+   {sys:"odoo",a:"CREATE res.users",w:"{ login: email, partner_id, active }",n:"optionally added to the gamification master challenge",badge:"CREATED"},
+  ]},
+ {id:"p2",title:"Admin operator",tag:"session only",tagc:"var(--violet)",
+  summary:"The back-office operator of the admin app. No persistent user record is created in the admin app — it is stateless on top of Keycloak.",
+  creates:"An Express session (identity = Keycloak sub). No Odoo record. A Mongo admin User may be upserted middleware-side via ForwardAuth.",
+  truth:"Identity lives in Keycloak + the Express session.",
+  props:["Admins get no Odoo record, so their activity isn't on the Odoo karma/audit side.","The middleware can upsert a Mongo User { role:'admin' } when it sees Traefik ForwardAuth headers — but the admin app itself creates nothing.","Keycloak admins are created out-of-band (Keycloak console / LDAP)."],
+  steps:[
+   {sys:"keycloak",a:"Keycloak SSO",w:"Operator authenticates → JWT cookie",n:""},
+   {sys:"admin",a:"GET /api/auth/callback (authRoutes.js)",w:"Decode the JWT, validate /apps/score-anythingloyalty/{reader|writer|admin} groups",n:"store in the Express session"},
+   {sys:"admin",a:"requireUser (middleware/auth.js)",w:"req.session.userInfo → req.user = { id: keycloak_sub, email, score_roles }",n:"identity = Keycloak sub",badge:"SESSION"},
+   {sys:"mw",a:"(side-effect) Traefik ForwardAuth",w:"If the middleware sees ForwardAuth headers for an admin, it upserts a Mongo User { role:'admin' }",n:"middleware-side only — not the admin app",badge:"UPSERT"},
+  ]},
+ {id:"p3",title:"Loyalty enrolment",tag:"enrols existing",tagc:"var(--amber)",
+  summary:"POST /api/loyalty/join. This does NOT create a user — the user must already exist (Path 1). It enrols an existing user into loyalty.",
+  creates:"No user. Adds an existing user to the loyalty master challenge — gated on consent.",
+  truth:"Operates on the existing Mongo User and Odoo res.users.",
+  props:["Consent is a hard gate: if recordTermsAcceptance fails, the whole join is rejected (502).","joinMasterChallenge is idempotent.","Looks up the Odoo user by email (odooUserService.getOdooUserIdByEmail)."],
+  steps:[
+   {sys:"fan",a:"POST /api/loyalty/join",w:"Client calls join — the user already exists",n:""},
+   {sys:"odoo",a:"consentService.recordTermsAcceptance(email)",w:"Hard consent gate — POSTs to Odoo /score/consent",n:"if it fails, the whole join is rejected (502)",badge:"GATE"},
+   {sys:"mw",a:"set favouriteTeamId",w:"Optionally set favouriteTeamId on the Mongo User",n:""},
+   {sys:"odoo",a:"loyaltyEnrolmentService.joinMasterChallenge()",w:"Look up the Odoo user by email → add to gamification.challenge.user_ids (URC_LOYALTY_MASTER_CHALLENGE_ID)",n:"idempotent",badge:"ENROL"},
+  ]},
+ {id:"p4",title:"WordPress proxy",tag:"proxy → P1 + P3",tagc:"var(--teal)",
+  summary:"Not a separate path. URC's WordPress loyalty/join AJAX proxy forwards an already-authenticated Auth0 JWT into Path 1 and Path 3.",
+  creates:"Nothing new — it delegates to Path 1 (mint if first time) and Path 3 (enrol).",
+  truth:"Same as Path 1 + Path 3.",
+  props:["A thin proxy in front of the existing flows.","The Auth0 JWT is already issued before the proxy forwards it."],
+  steps:[
+   {sys:"wp",a:"URC WordPress",w:"Fan on the URC WP site with an already-authenticated Auth0 JWT",n:""},
+   {sys:"wp",a:"loyalty/join AJAX proxy",w:"Forward the Auth0 JWT to score-middleware",n:""},
+   {sys:"mw",a:"→ Path 1",w:"Mint the user if this is the first time",n:"see Path 1",badge:"→ P1"},
+   {sys:"mw",a:"→ Path 3",w:"Enrol the user into loyalty",n:"see Path 3",badge:"→ P3"},
+  ]},
+];
+
+function renderKPIs(){
+  const t=[["4 systems","Auth0 · Keycloak · Mongo · Odoo"],["4 paths","only 2 create a user"],["join key","Auth0 sub"],["source of truth","Mongo User"],["Odoo provisioning","async · best-effort"]];
+  document.getElementById("kpis").innerHTML=t.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");
+}
+
+/* ---------- creation paths ---------- */
+let flowTimer=null;
+function renderFlow(){
+  if(flowTimer){clearInterval(flowTimer);flowTimer=null;}
+  let pid="p1", hl=-1;
+  const legend=`<div class="legend">${["fan","auth0","keycloak","admin","mw","rabbit","odoo","wp"].map(k=>`<span class="lg"><i style="background:${SYS[k].c}"></i>${SYS[k].n}</span>`).join("")}</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">The four entry paths</div>
+   <p class="intro">Pick a path. The primary one (Fan account) is where a user is actually minted; the green nodes are creation points. Use Walk to step through it, or just read the whole sequence.</p>
+   ${legend}
+   <div class="paths" id="pathRow"></div>
+   <div class="flow-grid"><div class="card steps" id="stepBox"></div><div class="card summary" id="sumBox"></div></div>`;
+  const path=()=>PATHS.find(p=>p.id===pid);
+  function drawPaths(){document.getElementById("pathRow").innerHTML=PATHS.map(p=>`<button class="pth ${p.id===pid?"on":""}" data-p="${p.id}"><div class="pt">${p.title}</div><div class="pg" style="color:${p.tagc}">${p.tag}</div></button>`).join("");
+    document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{stop();pid=b.dataset.p;hl=-1;drawPaths();draw();});}
+  function draw(){
+    const p=path();
+    document.getElementById("stepBox").innerHTML=p.steps.map((s,i)=>{
+      const sc=SYS[s.sys];
+      return `<div class="stp ${s.badge==='CREATED'?'created':''} ${i===hl?'active':''}">
+        <div class="syschip" style="background:${sc.c}">${sc.n}</div>
+        <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div>${s.n?`<div class="n">${s.n}</div>`:""}${s.badge?`<span class="bdg" style="color:${BADGE[s.badge]};border-color:${BADGE[s.badge]}">${s.badge}</span>`:""}</div>
+      </div>`;
+    }).join("");
+    document.getElementById("sumBox").innerHTML=`<div class="st">${p.title}</div><span class="sg" style="color:${p.tagc};border:1px solid ${p.tagc};background:transparent">${p.tag}</span>
+      <p>${p.summary}</p>
+      <div class="kv2"><div class="kk">Creates</div><div class="vv">${p.creates}</div></div>
+      <div class="kv2"><div class="kk">Source of truth</div><div class="vv">${p.truth}</div></div>
+      <div class="kk" style="font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:12px">Key properties</div>
+      <ul class="props">${p.props.map(x=>`<li>${x}</li>`).join("")}</ul>
+      <div class="pbtns"><button class="pbtn primary" id="fPlay">▶ Walk</button><button class="pbtn" id="fStep">⏭ Step</button><button class="pbtn" id="fReset">↺</button></div>`;
+    document.getElementById("fPlay").onclick=play; document.getElementById("fStep").onclick=step; document.getElementById("fReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){const p=path(); if(hl<p.steps.length-1){hl++;draw();}}
+  function play(){stop(); const p=path(); if(hl>=p.steps.length-1)hl=-1; flowTimer=setInterval(()=>{const p=path(); if(hl<p.steps.length-1){hl++;draw();}else{stop();}},850);}
+  function stop(){if(flowTimer){clearInterval(flowTimer);flowTimer=null;}}
+  drawPaths(); draw();
+}
+
+/* ---------- identity map ---------- */
+const SYSTBL=[
+ ["keycloak","Keycloak","res users","sub (UUID)","Admin / operator identity (SSO)"],
+ ["auth0","Auth0","users","sub","Fan / end-user identity (external IdP)"],
+ ["mw","MongoDB (middleware)","User","_id","Canonical app user — email, auth0Id, keycloakId, role, favouriteTeamId, profile-completion"],
+ ["odoo","Odoo","res.partner + res.users","id (int)","Gamification / loyalty — karma, tier, challenge membership"],
+];
+function renderIdentity(){
+  const tbl=`<table><thead><tr><th>System</th><th>Record</th><th>Key</th><th>Holds</th></tr></thead><tbody>${
+    SYSTBL.map(r=>`<tr><td><span class="sy"><i style="background:${SYS[r[0]].c}"></i>${r[1]}</span></td><td><code>${r[2]}</code></td><td><code>${r[3]}</code></td><td>${r[4]}</td></tr>`).join("")
+  }</tbody></table>`;
+  const trail=`<div class="trail">
+     <div class="tnode" style="border-left-color:${SYS.auth0.c}"><div class="tnk">Auth0 user</div><small>key: sub (UUID)</small></div>
+     <div class="tedge">auth0Id = sub</div>
+     <div class="tnode src" ><div class="tnk">Mongo User</div><small>_id · auth0Id, email, role, favouriteTeamId</small><span class="srcbadge">source of truth</span></div>
+     <div class="tbranch">Mongo User._id&nbsp; →&nbsp; missions · tracking · AnonymousIdentityLink</div>
+     <div class="tedge">same email (secondary linker)</div>
+     <div class="tnode" style="border-left-color:${SYS.odoo.c}"><div class="tnk">Odoo res.partner</div><small>auth_user_id = sub</small></div>
+     <div class="tedge">partner_id</div>
+     <div class="tnode" style="border-left-color:${SYS.odoo.c}"><div class="tnk">Odoo res.users</div><small>login = email · id (int)</small></div>
+     <div class="tedge">res.users.id</div>
+     <div class="tnode" style="border-left-color:${SYS.odoo.c}"><div class="tnk">karma · tier · challenge membership</div><small>gamification side</small></div>
+   </div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">The systems &amp; their keys</div>
+   <p class="intro">One fan is up to four records, joined by shared ids. The Auth0 <code>sub</code> is the primary join key; email is the secondary linker.</p>
+   ${tbl}
+   <div class="section-h">Canonical identity trail (one fan)</div>
+   ${trail}
+   <div class="note" style="margin-top:16px"><b>Anonymous → authenticated stitching.</b> <code>POST /api/identity/link-anonymous</code> (with the Auth0 token) writes a Mongo <code>AnonymousIdentityLink { anonymousId, userId, linkedAt }</code>, and the tracking worker back-attributes prior events to <code>User._id</code> — the server side of the web tracker's anonymousId → identify(userId) flow.</div>`;
+}
+
+/* ---------- caveats ---------- */
+const GAPS=[
+ ["async","Eventually consistent provisioning","Odoo is provisioned over RabbitMQ, best-effort, and odooUserService caches lookups ~5 min — so a just-created fan may briefly have a Mongo User but no resolvable Odoo id yet.",true],
+ ["","Admins have no Odoo record","Keycloak admin users get no Odoo record, so their activity isn't on the Odoo karma/audit side. The middleware supports a keycloak_created provisioning message, but nothing in the admin app triggers it — Keycloak admins are created out-of-band (console / LDAP).",false],
+ ["","Email-collision risk","Odoo res.users.login is unique and email is the cross-system linker. If an Auth0 fan and a Keycloak admin share an email, there is no documented merge / conflict handling.",false],
+];
+function renderCaveats(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Caveats &amp; gaps the trace surfaced</div>
+   <p class="intro">Properties and sharp edges worth knowing — these fall out of the lazy, multi-system, best-effort design.</p>
+   <div class="gaps">${GAPS.map(g=>`<div class="card gap ${g[0]==='async'?'async':''}"><h4>${g[1]}</h4><p>${g[2]}</p></div>`).join("")}</div>`;
+}
+
+/* shell */
+let CUR="flow";
+function renderTab(name){
+  CUR=name;
+  if(flowTimer){clearInterval(flowTimer);flowTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="flow") renderFlow();
+  else if(name==="identity") renderIdentity();
+  else renderCaveats();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("flow");
+</script>
+</body>
+</html>
