@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sepulchre · System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#7437c9; --accent2:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(116,55,201,.08),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(13,110,168,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--violet);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:820px}
+  .lead b{color:var(--ink)}
+  .lead code{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:13px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:900px;line-height:1.55}
+
+  /* principles */
+  .princ{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin-bottom:16px}
+  .pr{border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:9px;padding:8px 11px;background:var(--panel)}
+  .pr .pn{font-weight:700;font-size:11.5px}
+  .pr .pd{font-family:var(--mono);font-size:9px;color:var(--ink-dim);margin-top:3px;line-height:1.4}
+
+  /* architecture */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .layer{margin:8px 2px 0}
+  .lh{display:flex;align-items:baseline;gap:9px;padding:6px 4px 8px}
+  .lh .ln{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--violet)}
+  .lh .ls{font-size:11px;color:var(--ink-dim)}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:150px;border:1px solid var(--line2);border-left:4px solid var(--violet);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--violet);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--violet);box-shadow:0 0 0 3px rgba(116,55,201,.14)}
+  .tile .tn{font-weight:700;font-size:12px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:3px;line-height:1.35}
+  .flowdown{text-align:center;color:var(--line2);font-size:15px;margin:2px 0}
+
+  .dp{position:sticky;top:14px;min-height:420px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(116,55,201,.05)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:16px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink)}
+
+  /* actors + tenancy */
+  .acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px;margin-bottom:8px}
+  .act{padding:12px 14px}
+  .act h4{margin:0 0 2px;font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .act .auth{font-family:var(--mono);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--violet);background:rgba(116,55,201,.08);border-radius:5px;padding:2px 6px;white-space:nowrap}
+  .act .auth.none{color:var(--amber);background:rgba(169,118,10,.1)}
+  .act p{margin:6px 0 0;font-size:12px;color:var(--ink-dim);line-height:1.45}
+  .ten{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:820px){.ten{grid-template-columns:1fr}}
+  .tn2{padding:14px 15px;border-top:4px solid var(--violet)}
+  .tn2.silo{border-top-color:var(--teal)}
+  .tn2 h4{margin:0 0 3px;font-size:14px}
+  .tn2 .tg{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .tn2 ul{margin:0;padding:0;list-style:none}
+  .tn2 li{font-size:12px;color:var(--ink-dim);line-height:1.45;padding:5px 0 5px 15px;position:relative;border-top:1px solid var(--line)}
+  .tn2 li::before{content:"›";position:absolute;left:2px;color:var(--violet);font-weight:700}
+
+  /* flows */
+  .flow-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .fp{border:1px solid var(--line2);border-radius:10px;padding:9px 14px;cursor:pointer;background:var(--panel);font-weight:600;font-size:12.5px;transition:.13s}
+  .fp:hover{border-color:var(--violet)} .fp.on{border-color:var(--violet);box-shadow:0 0 0 2px rgba(116,55,201,.16)}
+  .fp small{display:block;font-family:var(--mono);font-size:9px;color:var(--ink-faint);font-weight:400;margin-top:2px}
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .steps{padding:8px 10px 12px}
+  .stp{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:10px 8px;border-radius:10px;position:relative;transition:.16s}
+  .stp::before{content:"";position:absolute;left:103px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .stp:first-child::before{top:50%}.stp:last-child::before{bottom:50%}
+  .stp.active{background:rgba(116,55,201,.06)}
+  .zchip{justify-self:start;font-family:var(--mono);font-size:8.5px;font-weight:600;color:#fff;border-radius:6px;padding:3px 7px;white-space:nowrap;margin-top:1px}
+  .stp .mid{position:relative;padding-left:16px}
+  .stp .mid::before{content:"";position:absolute;left:-1px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .stp.key .mid::before{border-color:var(--violet);background:var(--violet)}
+  .stp .w{font-size:12.5px;color:var(--ink);margin-top:1px;line-height:1.45}
+  .stp .rf{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:4px}
+  .lsum{padding:15px 16px;position:sticky;top:14px}
+  .lsum p{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:0 0 12px}
+  .lbtns{display:flex;gap:7px}
+  .lbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .lbtn:hover{border-color:var(--violet)} .lbtn.primary{background:var(--violet);color:#fff;border-color:var(--violet)}
+
+  /* deployment */
+  .dep{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  @media(max-width:820px){.dep{grid-template-columns:1fr}}
+  .dc{padding:14px 15px}
+  .dc h4{margin:0 0 5px;font-size:13.5px}
+  .dc p{margin:0;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .ch2{font-family:var(--mono);font-size:9.5px;border:1px solid rgba(116,55,201,.3);border-radius:6px;padding:3px 8px;background:rgba(116,55,201,.06);color:var(--violet)}
+  .ch2.n{color:var(--ink-dim);border-color:var(--line2);background:var(--panel2)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:6px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tbody tr:last-child td{border-bottom:0}
+  td .sc{font-weight:600}
+  td.blast{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Sepulchre · independent · Apache-2.0</div>
+    <h1>System Architecture <span style="color:var(--ink-faint);font-weight:400">v2</span></h1>
+    <p class="lead">A credential broker built on Vault: <b>zero-knowledge by policy</b>, vendor-neutral by design, and boring by choice. One codebase runs as pooled multi-tenant SaaS or siloed single-tenant from the same binary. The zero-knowledge enforcement and proof have <a href="sepulchre-ai-substrate.html" style="color:var(--violet);text-decoration:none">their own diagram</a>; this one is the system structure.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="arch">▦ Architecture</button>
+    <button class="tab" data-tab="actors">◑ Actors &amp; tenancy</button>
+    <button class="tab" data-tab="flows">⇶ Data flows</button>
+    <button class="tab" data-tab="deploy">☁ Deployment</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Sepulchre</b> — credential broker on Vault · Apache-2.0 · vendor-neutral<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["5 actors","two need no account"],["stateless broker","horizontally scalable"],["Vault core","KV · Transit · wrapping"],["metadata-only Postgres","never secrets"],["one binary","pooled or siloed"],["vendor-neutral","AWS · GCP · Azure · Hetzner · metal"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--violet)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+const PRINCIPLES=[
+ ["Zero-knowledge by policy","enforced by Vault policy and provable from the audit log, not a privacy statement"],
+ ["Vendor-neutral","no required single-cloud dependency; references for AWS, GCP, Azure, Hetzner, bare metal"],
+ ["Boring infrastructure","Postgres, Vault, an S3-API object store, OIDC — nothing exotic"],
+ ["One codebase, two shapes","pooled multi-tenant SaaS and siloed single-tenant from the same binary"],
+ ["The audit log is the product","first-class, signed, exportable — compliance buyers pay for evidence"],
+];
+
+const COMP={
+ intake:{z:"Edge / Presentation",n:"Intake portal",note:"strict CSP · no 3rd-party",resp:"The page where clients submit credentials. No third-party scripts, no analytics, no externally loaded fonts, strictest CSP. Built as its own bundle so a compromise of the operator console cannot reach its DOM."},
+ console:{z:"Edge / Presentation",n:"Operator console",note:"normal SPA",resp:"A normal SPA for tenant operators to manage shares and read metadata. Shares the design system but ships independently from the secret-bearing bundles."},
+ reveal:{z:"Edge / Presentation",n:"Reveal page",note:"one-time recipient surface",resp:"The one-time recipient reveal surface. Same locked-down CSP as intake — no third-party anything."},
+ mobile:{z:"Edge / Presentation",n:"Mobile & CLI",note:"cert pinning",resp:"Native and CLI clients with certificate pinning on the transport."},
+ proxy:{z:"Edge Proxy",n:"Edge proxy",note:"Traefik / nginx / Envoy",resp:"TLS termination, rate limiting and request shaping. Two route classes: secret-bearing (POST /v1/inbox, POST /v1/shares, GET /v1/reveal/:token) whose bodies are never logged at any layer, and metadata routes with normal logging. The distinction is enforced here at the proxy, not left to the application."},
+ broker:{z:"Broker (stateless)",n:"Broker service",note:"Go / TS · N replicas",resp:"Stateless, horizontally scalable. Handles authn/authz, tenant routing, workflow orchestration, Vault calls, audit emission and notifications. Never persists or logs secret values, even transiently — CI static analysis fails any PR that introduces a path from an inbound secret to a logger, response body or queue. Health and readiness are separated so rolling deploys don't drop wrap-token unwraps mid-flight."},
+ vault:{z:"Data & crypto core",n:"Vault cluster",note:"Raft 3–5 · KV · Transit · wrapping",resp:"The cryptographic core. Raft storage, 3 nodes minimum, 5 for multi-AZ. Per tenant: KV v2 for stored secrets, Transit for client-side encryption and key derivation, response wrapping for one-time shares, and an audit device streaming every operation. OSS tenant isolation uses path prefixes plus policy templating."},
+ pg:{z:"Data & crypto core",n:"PostgreSQL",note:"metadata only · RLS",resp:"Metadata only: tenants, users, config, share metadata (hashed recipient id, expiry, view count, status), an audit mirror for fast queries, OIDC identity links. Never secret values and nothing that decrypts one. Row-level security per tenant_id in pooled mode; primary plus async streaming replicas; WAL archived to the object store for PITR; PgBouncer in transaction-pooling mode in front."},
+ audit:{z:"Data & crypto core",n:"Audit pipeline",note:"hash chain → WORM · SIEM · export",resp:"The Vault audit device writes to a Unix socket; a sidecar signs each event into a hash chain (each event embeds the SHA-256 of the previous, so tampering is detectable) and ships it three ways: to the object store under a WORM lock, to a SIEM webhook, and to tenant export. The audit log is treated as the product."},
+ roots:{z:"Roots of trust",n:"Pluggable roots of trust",note:"KMS · HSM · Shamir · BYOK",resp:"Vault auto-unseal is abstracted: AWS KMS, GCP KMS, Azure Key Vault, another Vault's Transit engine, a PKCS#11 HSM, or Shamir for air-gapped. Enterprise tenants can BYOK on any of them; revoking the key makes that tenant's data cryptographically inaccessible, even to the Sepulchre operator."},
+};
+const LAYERS=[
+ {n:"Edge / Presentation",s:"three separately-built bundles, different CSP profiles",keys:["intake","console","reveal","mobile"]},
+ {n:"Edge Proxy",s:"secret-bearing routes excluded from all body logging",keys:["proxy"]},
+ {n:"Broker · stateless",s:"authn/authz · tenant routing · orchestration",keys:["broker"]},
+ {n:"Data & crypto core",s:"secrets in Vault · metadata in Postgres · signed audit",keys:["vault","pg","audit"]},
+ {n:"Roots of trust",s:"per-deployment · pluggable",keys:["roots"]},
+];
+function openComp(k){
+  const c=COMP[k]; if(!c) return;
+  document.querySelectorAll("[data-tile]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tile")===k));
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="dt">${c.z}</div><h3>${c.n}</h3></div><div class="db"><p>${c.resp}</p></div>`;
+}
+function renderArch(){
+  let s=`<div class="card stack">`;
+  LAYERS.forEach((L,i)=>{
+    s+=`<div class="layer"><div class="lh"><span class="ln">${L.n}</span><span class="ls">${L.s}</span></div><div class="tiles">`;
+    s+=L.keys.map(k=>`<div class="tile" data-tile="${k}"><div class="tn">${COMP[k].n}</div><div class="tnote">${COMP[k].note}</div></div>`).join("");
+    s+=`</div></div>`;
+    if(i<LAYERS.length-1) s+=`<div class="flowdown">↓</div>`;
+  });
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Design principles</div>
+   <div class="princ">${PRINCIPLES.map(p=>`<div class="pr"><div class="pn">${p[0]}</div><div class="pd">${p[1]}</div></div>`).join("")}</div>
+   <div class="section-h">Logical layers</div>
+   <p class="intro">Client and operator surfaces at the edge, a stateless broker in the middle, and a data-and-crypto core where secrets live in Vault and only metadata lives in Postgres — over a pluggable root of trust. Click any component for its responsibilities.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>The broker is stateless and never stores or logs a secret. Vault is the only place secret values live; Postgres holds metadata only.<br><br>Click any box for what it does and how it is isolated.</div></div></div></div>`;
+  document.querySelectorAll("[data-tile]").forEach(el=>el.addEventListener("click",()=>openComp(el.getAttribute("data-tile"))));
+}
+
+/* actors + tenancy */
+const ACTORS=[
+ ["Client","no account",true,"Uses the intake portal to submit credentials the operator cannot read. Holds a create-only submission token — it cannot even read its own submission back."],
+ ["Recipient","no account",true,"Receives a one-time, response-wrapped reveal link. Unwrap is single-use; a second attempt raises an alert."],
+ ["Ops user","SSO",false,"Manages shares and reads metadata through the operator console. Explicitly denied read on tenant inbound paths."],
+ ["Service accounts","AppRole / IAM",false,"The designated per-tenant roles that are actually permitted to read inbound submissions."],
+ ["Auditor","SSO + scope",false,"Read-only access to the audit stream, scoped to a tenant."],
+];
+function renderActors(){
+  document.getElementById("view").innerHTML=`<div class="section-h">System context · five actors</div>
+   <p class="intro">Two of the five need no account at all — the client who submits and the recipient who reveals. Access for everyone else is bound to a tenant and an identity.</p>
+   <div class="acards">${ACTORS.map(a=>`<div class="card act"><h4>${a[0]}<span class="auth ${a[2]?'none':''}">${a[1]}</span></h4><p>${a[3]}</p></div>`).join("")}</div>
+   <div class="section-h">Tenancy · one codebase, two shapes</div>
+   <p class="intro">Selection is a Terraform module choice, not a feature flag in code. The Helm charts and Terraform modules ship in the repo alongside the application.</p>
+   <div class="ten">
+     <div class="card tn2"><h4>Pooled multi-tenant</h4><div class="tg">default SaaS</div><ul>
+       <li>One Vault cluster, path-prefix isolation per tenant with policy templating</li>
+       <li>Shared Postgres with row-level security keyed on tenant_id — enforced at the DB layer, every table, every query</li>
+       <li>Shared broker fleet, tenant context threaded through every call and bound to the request token</li></ul></div>
+     <div class="card tn2 silo"><h4>Siloed single-tenant</h4><div class="tg">regulated · paranoid · self-hosted</div><ul>
+       <li>Dedicated Vault cluster, Postgres and broker replicas per tenant</li>
+       <li>Tenant supplies their own root of trust (BYOK or HSM)</li>
+       <li>Can run entirely inside the tenant's own infrastructure</li></ul></div>
+   </div>`;
+}
+
+/* flows */
+const FLOWS={
+ inbound:{n:"Inbound",sub:"client submits credentials the operator cannot see",steps:[
+  {z:"client",zc:"var(--amber)",w:"Client browser loads the tenant intake portal (GET /portal/:tenant).",rf:""},
+  {z:"broker",zc:"var(--violet)",w:"Broker resolves the tenant and issues a create-only submission token.",rf:""},
+  {z:"client",zc:"var(--amber)",w:"Optionally, the browser encrypts the payload with a Vault Transit datakey — client-side encryption before it ever leaves the device.",rf:"optional"},
+  {z:"edge",zc:"var(--teal)",w:"Client POSTs to /v1/inbox with the (encrypted) payload — the body is NOT logged at any layer.",rf:"key",key:true},
+  {z:"vault",zc:"var(--accent2)",w:"Broker writes to Vault KV at clients/data/<tenant>/inbound/<submission_id>.",rf:""},
+  {z:"audit",zc:"var(--green)",w:"The audit device records the write; broker returns 202.",rf:""},
+ ],note:"Policy on the inbound path: the submission token can create only (never read back); the operator's human SSO identity has an explicit deny on read; only designated per-tenant service accounts may read. The zero-knowledge proof is the policy itself, continuously attested by the audit log."},
+ outbound:{n:"Outbound",sub:"operator sends credentials to a recipient, one-time",steps:[
+  {z:"operator",zc:"var(--violet)",w:"Operator POSTs /v1/shares { value, recipient, ttl, max_views, second_factor }.",rf:""},
+  {z:"vault",zc:"var(--accent2)",w:"Broker writes the value to Vault KV, then asks Vault to response-wrap it.",rf:""},
+  {z:"vault",zc:"var(--accent2)",w:"Vault returns a wrap_token that reveals nothing about the underlying secret.",rf:"key",key:true},
+  {z:"recipient",zc:"var(--amber)",w:"Broker notifies the recipient with the reveal link.",rf:""},
+  {z:"recipient",zc:"var(--amber)",w:"Recipient opens GET /reveal/:token.",rf:""},
+  {z:"broker",zc:"var(--violet)",w:"Broker verifies the second factor, then unwraps via Vault — a single-use operation.",rf:""},
+  {z:"broker",zc:"var(--violet)",w:"Secret delivered over TLS, one-shot; the broker deletes the KV entry.",rf:""},
+ ],note:"Vault response wrapping does the work. The wrap token reveals nothing about the secret; unwrap is single-use, so a second unwrap attempt means someone else already read it — and raises an alert."},
+};
+let fTimer=null, curFlow="inbound";
+function renderFlows(){
+  if(fTimer){clearInterval(fTimer);fTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">Two canonical data flows</div>
+   <p class="intro">Everything reduces to these two journeys: a client submitting a secret the operator can't see, and the operator handing a secret to a recipient exactly once. Walk either one.</p>
+   <div class="flow-pick" id="flowPick"></div>
+   <div class="flow-grid"><div class="card steps" id="stepBox"></div><div class="card lsum" id="lsum"></div></div>`;
+  function drawPick(){document.getElementById("flowPick").innerHTML=Object.entries(FLOWS).map(([k,f])=>`<button class="fp ${k===curFlow?'on':''}" data-f="${k}">${f.n}<small>${f.sub}</small></button>`).join("");
+    document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{stop();curFlow=b.dataset.f;hl=-1;drawPick();draw();});}
+  function draw(){
+    const f=FLOWS[curFlow];
+    document.getElementById("stepBox").innerHTML=f.steps.map((s,i)=>`<div class="stp ${s.key?'key':''} ${i===hl?'active':''}">
+      <div class="zchip" style="background:${s.zc}">${s.z.toUpperCase()}</div>
+      <div class="mid"><div class="w">${s.w}</div>${s.rf?`<div class="rf">${s.rf}</div>`:""}</div></div>`).join("");
+    document.getElementById("lsum").innerHTML=`<p><b style="color:var(--ink)">${f.n}</b> — ${f.sub}.</p><p style="font-size:12px">${f.note}</p>
+      <div class="lbtns"><button class="lbtn primary" id="lPlay">▶ Walk</button><button class="lbtn" id="lStep">⏭ Step</button><button class="lbtn" id="lReset">↺</button></div>`;
+    document.getElementById("lPlay").onclick=play;document.getElementById("lStep").onclick=step;document.getElementById("lReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){const f=FLOWS[curFlow];if(hl<f.steps.length-1){hl++;draw();}}
+  function play(){stop();const f=FLOWS[curFlow];if(hl>=f.steps.length-1)hl=-1;fTimer=setInterval(()=>{const f=FLOWS[curFlow];if(hl<f.steps.length-1){hl++;draw();}else stop();},820);}
+  function stop(){if(fTimer){clearInterval(fTimer);fTimer=null;}}
+  drawPick(); draw();
+}
+
+/* deployment */
+const ROOTS=["AWS KMS","GCP KMS","Azure Key Vault","Vault Transit","PKCS#11 HSM","Shamir (air-gapped)"];
+const ARTIFACTS=["deploy/docker-compose","deploy/kubernetes/helm","deploy/terraform/aws","deploy/terraform/gcp","deploy/terraform/hetzner","deploy/ansible"];
+const FAILURES=[
+ ["Vault seal / KMS access loss","tenant data cryptographically inaccessible","Onboarding recommends a key-backup procedure for BYOK"],
+ ["Compromised broker host","can issue tokens and bogus shares; cannot read inbound","By design — the broker has no inbound-read capability"],
+ ["Compromised operator SSO","manage shares, read metadata; cannot read inbound","Audit log captures everything; tenant alerts on anomalies"],
+ ["Compromised recipient channel","wrap link intercepted in transit","Second factor; single-use unwrap means the real recipient sees a consumed link and alerts"],
+ ["Insider at the operator","the hardest case","BYOK + siloed deployment + tenant SIEM on the audit stream; two-person production access"],
+ ["Postgres compromise","metadata only — no secrets, no decryption material","Volume encryption, row-level security, no human read access"],
+ ["Object store compromise","audit ciphertext + WAL","Object Lock prevents deletion even by root; WAL is useless without DB keys"],
+];
+function renderDeploy(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Deployment topologies</div>
+   <div class="dep">
+     <div class="card dc"><h4>SaaS reference · cloud-agnostic</h4><p>Multi-region: a load balancer in front of a broker fleet, a 5-node Vault Raft cluster across AZs, Postgres primary with a streaming replica, and a WORM-locked object store with cross-region replication. A warm DR region mirrors Vault and Postgres asynchronously. Portable across AWS, GCP, Azure, Hetzner or bare metal.</p></div>
+     <div class="card dc"><h4>Self-hosted reference · Hetzner</h4><p>Single-region: a 3-node Vault Raft cluster on dedicated boxes, Traefik in front, Postgres primary with a streaming replica, and MinIO or Hetzner Object Storage for WAL and audit archive. Auto-unseal via Transit from a small secondary Vault, or Shamir with sealed envelopes for fully air-gapped.</p></div>
+   </div>
+   <div class="section-h">Pluggable roots of trust</div>
+   <p class="intro">Auto-unseal is abstracted, so the same application runs anywhere. Enterprise tenants can bring their own key on any of these.</p>
+   <div class="chiprow">${ROOTS.map(r=>`<span class="ch2">${r}</span>`).join("")}</div>
+   <div class="section-h" style="margin-top:22px">Shipped in the repo</div>
+   <p class="intro">Same application everywhere; the difference is only how the infrastructure is provisioned.</p>
+   <div class="chiprow">${ARTIFACTS.map(a=>`<span class="ch2 n">${a}</span>`).join("")}</div>
+   <div class="section-h" style="margin-top:22px">Failure modes · blast radius is bounded by design</div>
+   <table><thead><tr><th>Scenario</th><th>Blast radius</th><th>Mitigation</th></tr></thead><tbody>${
+     FAILURES.map(f=>`<tr><td class="sc">${f[0]}</td><td class="blast">${f[1]}</td><td>${f[2]}</td></tr>`).join("")
+   }</tbody></table>`;
+}
+
+/* shell */
+let CUR="arch";
+function renderTab(name){
+  CUR=name;
+  if(fTimer){clearInterval(fTimer);fTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="arch") renderArch();
+  else if(name==="actors") renderActors();
+  else if(name==="flows") renderFlows();
+  else renderDeploy();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("arch");
+</script>
+</body>
+</html>
