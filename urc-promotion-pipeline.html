@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Promotion to URC · Gitea Actions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8; --accent2:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(13,110,168,.09),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(26,143,69,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:830px}
+  .lead b{color:var(--ink)}
+  .thesis{margin-top:12px;border:1px solid rgba(13,110,168,.3);background:rgba(13,110,168,.06);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:11px;line-height:1.45}
+  .thesis .lk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;white-space:nowrap;border-right:1px solid var(--line2);padding-right:11px}
+  .thesis b{color:var(--accent)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12.5px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* gate badges */
+  .gb{font-family:var(--mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .gb.block{color:var(--red);background:rgba(214,47,38,.1)} .gb.warn{color:var(--amber);background:rgba(169,118,10,.12)}
+  .gb.human{color:var(--violet);background:rgba(116,55,201,.1)} .gb.pass{color:var(--green);background:rgba(26,143,69,.1)} .gb.none{color:var(--ink-faint);background:var(--panel2)}
+  .ai-pill{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--violet);background:rgba(116,55,201,.1);border-radius:5px;padding:2px 6px;letter-spacing:.03em}
+
+  /* pipeline */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .stg{border:1px solid var(--line2);border-left:4px solid var(--accent);border-radius:11px;padding:9px 12px;cursor:pointer;background:var(--panel);transition:.13s;display:flex;gap:11px;align-items:center}
+  .stg:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .stg.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.14)}
+  .stg .num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--mono);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .stg .sbody{flex:1}
+  .stg .sn{font-weight:700;font-size:12.5px;line-height:1.2}
+  .stg .snote{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);margin-top:2px}
+  .stg .flags{display:flex;gap:5px;align-items:center}
+  .flowdown{text-align:center;color:var(--line2);font-size:14px;margin:1px 0}
+  .yml{margin-top:14px}
+  pre{font-family:var(--mono);font-size:10.5px;line-height:1.55;background:#1b2433;color:#e6ebf3;border-radius:11px;padding:13px 14px;overflow-x:auto;margin:6px 0 0}
+  pre .k{color:#7fb0ff} pre .s{color:#8fd39a} pre .c{color:#7e8aa0} pre .y{color:#f0b866}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(13,110,168,.05);display:flex;align-items:center;gap:11px}
+  .dh .num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .dh h3{margin:0;font-size:15px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 10px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+  .db .row{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:11.5px}
+  .db .row .rk{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);flex:0 0 84px;padding-top:1px}
+  .db .row .rv{color:var(--ink);flex:1;line-height:1.4}
+  .db .row .rv.ai{color:var(--violet)} .db .row .rv.fb{color:var(--ink-dim)}
+
+  /* checks table */
+  .mx-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:820px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11.5px;vertical-align:top}
+  th{font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  tr.grp td{background:var(--panel2);font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  tbody tr:last-child td{border-bottom:0}
+  td .cn{font-weight:700} td .tool{font-family:var(--mono);font-size:10px;color:var(--ink-dim)} td .ai{color:var(--violet);font-size:11px} td .dash{color:var(--ink-faint)}
+
+  /* ai fallbacks */
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .flow{padding:8px 10px 12px}
+  .fs{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:11px 8px;border-radius:10px;position:relative;transition:.16s}
+  .fs::before{content:"";position:absolute;left:125px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .fs:first-child::before{top:50%}.fs:last-child::before{bottom:50%}
+  .fs.active{background:rgba(13,110,168,.06)}
+  .stchip{justify-self:start;font-family:var(--mono);font-size:8.5px;font-weight:600;color:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;margin-top:1px}
+  .fs .mid{position:relative;padding-left:16px}
+  .fs .mid::before{content:"";position:absolute;left:-1px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .fs.active .mid::before{border-color:var(--accent);background:var(--accent)}
+  .fs .a{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .fs .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.45}
+  .gsum{padding:15px 16px;position:sticky;top:14px}
+  .gsum p{font-size:12px;color:var(--ink-dim);line-height:1.5;margin:0 0 12px}
+  .gbtns{display:flex;gap:7px}
+  .gbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .gbtn:hover{border-color:var(--accent)} .gbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .princ{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px;margin-top:6px}
+  .pr{padding:12px 14px;border-left:4px solid var(--violet)}
+  .pr h4{margin:0 0 5px;font-size:12.5px}
+  .pr p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+
+  /* promotion */
+  .envs{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;gap:0;align-items:stretch;margin-bottom:16px}
+  @media(max-width:820px){.envs{grid-template-columns:1fr}.envs .ar{display:none}}
+  .env{border:1px solid var(--line2);border-radius:12px;padding:12px 14px;background:var(--panel)}
+  .env.prod{border-color:var(--accent);background:rgba(13,110,168,.04)}
+  .env .et{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .env h4{margin:3px 0 5px;font-size:13px}
+  .env p{margin:0;font-size:11px;color:var(--ink-dim);line-height:1.45}
+  .envs .ar{display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:16px}
+  .trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+  .tr2{padding:12px 14px;border-top:4px solid var(--accent)}
+  .tr2 h4{margin:0 0 5px;font-size:12.5px}
+  .tr2 p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .integrity{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .ic{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:8px;padding:6px 11px;background:var(--panel)}
+  .ic b{color:var(--accent)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Delivery · Gitea Actions · publishing to the URC repo</div>
+    <h1>Code Promotion to URC</h1>
+    <p class="lead">A Gitea Actions pipeline that gates code on its way into the <b>URC repository</b> — the same safety, security and supply-chain checks whether the publisher is 3 Halves Labs, another agency, or URC itself. <b>URC hosts none of it</b>; 3HL runs the gate. AI assists the judgement calls, deterministic tooling is always the floor, and only a signed, attested build lands in the URC repo and deploys to its runtime — which can be hosted by URC or by 3HL.</p>
+    <div class="thesis"><span class="lk">The principle</span><span>URC has to trust the code regardless of who published it. So the gate is <b>the same for every publisher</b> — 3HL, other agencies, or URC — AI can raise concern but never wave a build through, and <b>no unsigned or critical-flagged commit lands in the URC repo</b>.</span></div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="pipe">⇶ The pipeline</button>
+    <button class="tab" data-tab="checks">🛡 The checks</button>
+    <button class="tab" data-tab="ai">◐ AI with fallbacks</button>
+    <button class="tab" data-tab="promote">☁ Publishing &amp; trust</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Code Promotion to URC</b> — Gitea Actions · one neutral gate for every agency<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["Gitea Actions","3HL-hosted act_runner"],["SBOM + SCA","every library, every version"],["SAST + secrets","code + IaC scanned"],["AI triage","deterministic fallback"],["signed publish","cosign · attested"],["any publisher","3HL · agencies · URC"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+function gbadge(g){const m={block:["block","Block"],warn:["warn","Warn"],human:["human","Human"],pass:["pass","Deploy"],none:["none","—"]};const x=m[g]||m.none;return `<span class="gb ${x[0]}">${x[1]}</span>`;}
+
+/* pipeline */
+const STAGES=[
+ {n:"Intake & identity",note:"Gitea Actions · 3HL-hosted",ai:false,gate:"block",
+  p:"A publish request toward the URC repo — from 3HL's own repo, another agency, or URC itself — triggers the workflow on the 3HL-hosted act_runner. The publisher's identity and the commit and tag signatures are verified before anything else runs.",
+  tools:"Gitea Actions, act_runner (3HL-hosted), gitsign / GPG",aiRole:null,fb:null,gtext:"Block on unverified identity or unsigned tag"},
+ {n:"Build & provenance",note:"isolated · reproducible",ai:false,gate:"block",
+  p:"The code is built in a clean, network-restricted runner with a pinned toolchain. Build metadata is captured into a provenance attestation recording who built what, from which commit.",
+  tools:"act_runner, pinned toolchain, SLSA provenance",aiRole:null,fb:null,gtext:"Block on build failure or provenance mismatch"},
+ {n:"Supply chain & libraries",note:"SBOM + SCA + license",ai:true,gate:"block",
+  p:"Every dependency is enumerated into an SBOM, scanned for known vulnerabilities, checked against a license allow/deny policy, and verified for lockfile integrity and version pinning. Typosquatted and abandoned packages are flagged.",
+  tools:"Syft (SBOM), Grype / Trivy / OSV-Scanner (CVE), license policy, lockfile check",
+  aiRole:"Triage and prioritise findings; assess the risk of an unfamiliar or newly-added package in context.",
+  fb:"CVSS thresholds and a maintained deny-list decide when AI is unavailable.",gtext:"Block on critical CVE, disallowed license, or unpinned dependency"},
+ {n:"Application security",note:"SAST · secrets · IaC",ai:true,gate:"block",
+  p:"Static analysis looks for insecure code patterns, secret scanning catches leaked credentials across the whole history, and infrastructure-as-code is scanned for misconfiguration.",
+  tools:"Semgrep / CodeQL (SAST), gitleaks / trufflehog (secrets), checkov / tfsec (IaC)",
+  aiRole:"Explain findings, deduplicate, cut false positives, and suggest a concrete fix.",
+  fb:"Severity gates on raw scanner output stand on their own.",gtext:"Block on any leaked secret or high-severity finding"},
+ {n:"Code safety & tests",note:"lint · types · tests · coverage",ai:true,gate:"block",
+  p:"Linting, type-checking, unit and integration tests, and a coverage floor establish that the code behaves and meets quality bars.",
+  tools:"linters, type-checkers, test runners, coverage",
+  aiRole:"Review the diff for logic and safety regressions a linter won't catch.",
+  fb:"Deterministic lint, type and test gates must pass on their own.",gtext:"Block on failing tests or below-floor coverage"},
+ {n:"AI risk gate & decision",note:"aggregate · decide",ai:true,gate:"human",
+  p:"All signals are aggregated into a risk score and a recommendation with evidence. Hard gates are enforced no matter what; borderline or elevated risk routes to a human approver.",
+  tools:"policy engine, risk aggregator",
+  aiRole:"Holistic risk assessment across all findings, with a written rationale.",
+  fb:"A rules-only decision is made if the AI is unavailable or low-confidence.",gtext:"Human approval required for elevated risk"},
+ {n:"Publish to the URC repo",note:"cosign · push to URC repo",ai:false,gate:"pass",
+  p:"On a pass, the commit and artifact are signed and the Gitea Actions job publishes them to the URC repository. Whatever URC or its downstream does with the repo afterwards is out of this gate's scope — URC hosts none of the pipeline.",
+  tools:"cosign, Gitea Actions push job, URC repo",aiRole:null,fb:null,gtext:"Publish only if every prior gate passed"},
+ {n:"Deploy to target",note:"Gitea deploy job · URC or 3HL",ai:false,gate:"pass",
+  p:"From the signed artifact in the URC repo, the Gitea Actions deploy job releases to the runtime environment — staging then production — with a one-command rollback held ready. The target is configurable per environment: the application can be hosted by URC or by 3HL, and the gate that produced the artifact is identical either way.",
+  tools:"Gitea Actions deploy job, cosign verify, target: urc | 3hl",aiRole:null,fb:null,gtext:"Deploy the signed artifact only; verify signature at the target"},
+ {n:"Attest & audit",note:"immutable · auditable",ai:false,gate:"none",
+  p:"A signed attestation records everything checked, every result, and who approved, stored immutably so URC can audit any promotion long after the fact.",
+  tools:"in-toto attestation, immutable store",aiRole:null,fb:null,gtext:"—"},
+];
+const YML=`<span class="c"># .gitea/workflows/publish-to-urc.yml  · runs on the 3HL-hosted runner</span>
+<span class="k">on</span>:
+  <span class="k">push</span>: { <span class="k">tags</span>: [<span class="s">"release-*"</span>] }   <span class="c"># signed release tag from any publisher</span>
+<span class="k">jobs</span>:
+  <span class="y">build</span>:     { verify-signature, build --isolated, provenance: <span class="s">true</span> }
+  <span class="y">supply</span>:    { needs: build, run: syft . && grype --fail-on critical && license-check }
+  <span class="y">appsec</span>:    { needs: build, run: semgrep ci && gitleaks detect && checkov -d infra }
+  <span class="y">test</span>:      { needs: build, run: lint && typecheck && test --min-coverage }
+  <span class="y">risk-gate</span>: { needs: [supply, appsec, test], uses: ./ai-risk-gate, fallback: rules }
+  <span class="y">publish</span>:   { needs: risk-gate, if: passed, run: cosign sign && push --to urc-repo }
+  <span class="y">deploy</span>:    { needs: publish, run: cosign verify && deploy --env staging,prod --to <span class="s">"\${{ TARGET }}"</span> }  <span class="c"># TARGET = urc | 3hl</span>`;
+function openStage(i){
+  const c=STAGES[i];
+  document.querySelectorAll("[data-stg]").forEach(e=>e.classList.toggle("sel",+e.getAttribute("data-stg")===i));
+  let rows=`<div class="row"><span class="rk">Tooling</span><span class="rv fb">${c.tools}</span></div>`;
+  if(c.aiRole) rows+=`<div class="row"><span class="rk">AI assist</span><span class="rv ai">${c.aiRole}</span></div>`;
+  if(c.fb) rows+=`<div class="row"><span class="rk">Fallback</span><span class="rv fb">${c.fb}</span></div>`;
+  rows+=`<div class="row"><span class="rk">Gate</span><span class="rv">${gbadge(c.gate)} &nbsp;${c.gtext}</span></div>`;
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="num">${i+1}</div><h3>${c.n}</h3></div><div class="db"><p>${c.p}</p>${rows}</div>`;
+}
+function renderPipe(){
+  let s=`<div class="card stack">`;
+  s+=STAGES.map((c,i)=>`<div class="stg" data-stg="${i}"><div class="num">${i+1}</div><div class="sbody"><div class="sn">${c.n}</div><div class="snote">${c.note}</div></div><div class="flags">${c.ai?'<span class="ai-pill">AI</span>':''}${gbadge(c.gate)}</div></div>${i<STAGES.length-1?'<div class="flowdown">↓</div>':''}`).join("");
+  s+=`<div class="yml"><div class="section-h" style="margin:10px 2px 4px">The Gitea Action</div><pre>${YML}</pre></div></div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">One workflow, gate by gate</div>
+   <p class="intro">Nine stages run on a self-hosted Gitea Actions runner. Read top to bottom: identity and build first, then the security and supply-chain gates, then an aggregated decision, then the signed publish to the URC repo and the deploy to its runtime. The <span class="ai-pill">AI</span> tag marks a stage where AI assists; the badge is its gate policy. Click any stage.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A STAGE</b><br><br>Every stage has a deterministic gate. Some are AI-assisted on top — but the AI never relaxes a gate.<br><br>The workflow file below is the shape that gates the URC repo; the reusable actions it calls are operated by 3HL, not URC.</div></div></div></div>`;
+  document.querySelectorAll("[data-stg]").forEach(el=>el.addEventListener("click",()=>openStage(+el.getAttribute("data-stg"))));
+}
+
+/* checks */
+const CHECKS=[
+ ["grp","Supply chain &amp; libraries — what's actually in the build"],
+ ["SBOM generation","A complete inventory of every library and version","Syft → CycloneDX / SPDX","—","warn"],
+ ["Known vulnerabilities","CVEs in direct and transitive dependencies","Grype / Trivy / OSV-Scanner","Triage &amp; prioritise by real exploitability","block"],
+ ["License compliance","Copyleft or forbidden licences pulled in transitively","allow / deny policy","Flag ambiguous or dual licences","block"],
+ ["Pinning &amp; integrity","Unpinned, tampered, typosquatted or abandoned packages","lockfile + hash check","Assess risk of a new / unknown package","block"],
+ ["grp","Application security"],
+ ["SAST","Injection, unsafe crypto, insecure patterns","Semgrep / CodeQL","Explain, dedupe, cut false positives","block"],
+ ["Secret scanning","Leaked keys and tokens across full history","gitleaks / trufflehog","—","block"],
+ ["IaC scanning","Cloud misconfiguration in Terraform / manifests","checkov / tfsec","Summarise blast radius","block"],
+ ["grp","Code safety &amp; quality"],
+ ["Lint &amp; types","Style, type errors, obvious defects","linters / type-checkers","—","block"],
+ ["Tests &amp; coverage","Behaviour regressions, coverage below floor","test runner + coverage","—","block"],
+ ["Diff review","Logic &amp; safety regressions a linter misses","(deterministic gates)","AI reviews the changeset","human"],
+ ["grp","Provenance &amp; integrity"],
+ ["Signed commits / tags","Unsigned or unattributable code","gitsign / GPG","—","block"],
+ ["Build provenance","Artifact not traceable to source","SLSA provenance","—","block"],
+ ["Artifact signing","Unsigned artifact reaching URC","cosign","—","pass"],
+];
+function renderChecks(){
+  let rows=CHECKS.map(c=>{
+    if(c[0]==="grp") return `<tr class="grp"><td colspan="5">${c[1]}</td></tr>`;
+    const ai=c[3]==="—"?'<span class="dash">—</span>':`<span class="ai">${c[3]}</span>`;
+    return `<tr><td><span class="cn">${c[0]}</span></td><td>${c[1]}</td><td><span class="tool">${c[2]}</span></td><td>${ai}</td><td>${gbadge(c[4])}</td></tr>`;
+  }).join("");
+  document.getElementById("view").innerHTML=`<div class="section-h">Every check, its tool, its AI layer, its gate</div>
+   <p class="intro">The "Tooling" column is the deterministic floor — it runs and decides on its own. The "AI assist" column is what AI adds on top when it's available. "Which libraries are being used" is answered by the supply-chain block: an SBOM plus vulnerability, licence and integrity checks over every dependency.</p>
+   <div class="mx-wrap"><table><thead><tr><th>Check</th><th>What it catches</th><th>Tooling (the floor)</th><th>AI assist</th><th>Gate</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="intro" style="margin-top:12px;color:var(--ink-faint)">Block = promotion stops. Warn = recorded, doesn't stop. Human = routed to an approver. Deploy = required to ship.</p>`;
+}
+
+/* ai with fallbacks */
+const DEC=[
+ {st:"Hard gates",sc:"var(--red)",a:"Rules run first",w:"Critical CVE, a leaked secret, a disallowed licence, an unsigned commit — any of these blocks the promotion immediately. No AI is consulted; these are non-negotiable."},
+ {st:"AI available?",sc:"var(--accent)",a:"Check AI health",w:"For everything that isn't a hard fail, the gate asks: is the AI reachable and confident? If not, it skips straight to deterministic policy — AI being down never blocks or silently passes a build."},
+ {st:"AI triage",sc:"var(--violet)",a:"When available",w:"The AI prioritises findings by real exploitability, deduplicates, explains, assesses the risk of a novel dependency, and reviews the diff — producing a recommendation with evidence attached."},
+ {st:"Fallback",sc:"var(--amber)",a:"When not",w:"Deterministic policy decides on its own: severity thresholds, deny-lists, coverage floors. The same build gets a defensible verdict with or without AI."},
+ {st:"Human-in-the-loop",sc:"var(--teal)",a:"Elevated risk",w:"If aggregate risk is elevated or borderline, it routes to a human approver with the AI's rationale and the raw findings. A person makes the call to promote."},
+];
+let aTimer=null;
+function renderAI(){
+  if(aTimer){clearInterval(aTimer);aTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">How a finding is judged</div>
+   <p class="intro">AI is used where it genuinely helps — triage, explanation, novel-risk assessment — but it sits on top of a deterministic floor that can always decide alone. Walk the decision.</p>
+   <div class="flow-grid"><div class="card flow" id="flowBox"></div><div class="card gsum" id="gsum"></div></div>
+   <div class="section-h" style="margin-top:22px">The five rules that keep it safe</div>
+   <div class="princ">
+     <div class="card pr"><h4>Deterministic is the floor</h4><p>Every check runs its tool regardless of AI. The pipeline never depends on a model being up.</p></div>
+     <div class="card pr"><h4>AI is additive</h4><p>AI triages, explains, deduplicates and assesses novel risk on top of tool output — it doesn't replace it.</p></div>
+     <div class="card pr"><h4>Escalate, never downgrade</h4><p>AI can raise a concern or send a build to a human. It can never turn a hard-gated failure green.</p></div>
+     <div class="card pr"><h4>Fail-safe fallback</h4><p>If the AI errors, times out or is low-confidence, the decision falls back to rules — never to "allow".</p></div>
+     <div class="card pr"><h4>Human holds the risky calls</h4><p>Elevated aggregate risk always routes to a person, with the AI's evidence attached.</p></div>
+   </div>`;
+  function draw(){
+    document.getElementById("flowBox").innerHTML=DEC.map((s,i)=>`<div class="fs ${i===hl?'active':''}">
+      <div class="stchip" style="background:${s.sc}">${s.st.toUpperCase()}</div>
+      <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div></div></div>`).join("");
+    document.getElementById("gsum").innerHTML=`<p>The same build gets a defensible verdict whether or not the AI is available. AI improves the signal; it never becomes a single point of failure or a way around a gate.</p>
+      <div class="gbtns"><button class="gbtn primary" id="aPlay">▶ Walk</button><button class="gbtn" id="aStep">⏭ Step</button><button class="gbtn" id="aReset">↺</button></div>`;
+    document.getElementById("aPlay").onclick=play;document.getElementById("aStep").onclick=step;document.getElementById("aReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<DEC.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=DEC.length-1)hl=-1;aTimer=setInterval(()=>{if(hl<DEC.length-1){hl++;draw();}else stop();},1050);}
+  function stop(){if(aTimer){clearInterval(aTimer);aTimer=null;}}
+  draw();
+}
+
+/* publishers + trust */
+function renderPromote(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Three publishers · one gate · one repo</div>
+   <p class="intro">URC hosts none of this. 3 Halves Labs runs the gate, and code only reaches the URC repository through it — with the identical check suite no matter who is publishing.</p>
+   <div class="envs">
+     <div class="env"><div class="et">publishers</div><h4>3HL · agencies · URC</h4><p>3 Halves Labs publishes from its own repo; other agencies and URC can publish directly. Any of the three can be the source.</p></div>
+     <div class="ar">→</div>
+     <div class="env"><div class="et">the gate · 3HL-hosted</div><h4>Checks · Gitea Actions</h4><p>The full check suite runs on a 3HL-hosted act_runner, calling the shared reusable actions. Same suite, same policy, every time.</p></div>
+     <div class="ar">→</div>
+     <div class="env prod"><div class="et">destination</div><h4>URC repo</h4><p>Only a signed, attested build that passed every gate is published into the URC repository.</p></div>
+   </div>
+   <div class="section-h">Trust model</div>
+   <p class="intro">The gate is neutral by design: it doesn't care who is publishing, only whether the code clears the same bar.</p>
+   <div class="trust">
+     <div class="card tr2"><h4>URC hosts nothing</h4><p>URC owns the destination repository but runs no CI, no runners and no environments. 3HL operates the gate.</p></div>
+     <div class="card tr2"><h4>One gate for every publisher</h4><p>3HL, other agencies and URC itself all pass the identical check suite and policy — no special paths, no exceptions.</p></div>
+     <div class="card tr2"><h4>3HL's two-step</h4><p>3 Halves Labs commits to its own repo first, then promotes that to the URC repo through the gate — day-to-day work and publishing stay separate.</p></div>
+     <div class="card tr2"><h4>No self-approval</h4><p>A publisher can request promotion but cannot approve its own elevated-risk build; the credential that writes to the URC repo lives only in the gate.</p></div>
+     <div class="card tr2"><h4>Provenance to source</h4><p>Every published commit is traceable to the exact source commit and publisher, signed end to end.</p></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Deploy target · URC or 3HL</div>
+   <p class="intro">URC doesn't host the gate, but it can host the running application. The deploy target is a per-environment setting; the artifact and the checks behind it are identical wherever it lands.</p>
+   <div class="envs">
+     <div class="env prod"><div class="et">option A</div><h4>URC-hosted</h4><p>The deploy job releases into URC's own runtime. URC still runs no CI — it only receives a signed, verified artifact.</p></div>
+     <div class="ar">or</div>
+     <div class="env prod"><div class="et">option B</div><h4>3HL-hosted</h4><p>3 Halves Labs hosts the runtime and operates it for URC. Same signed artifact, same attestation.</p></div>
+     <div class="ar"></div>
+     <div class="env"><div class="et">either way</div><h4>Signature verified at the target</h4><p>The runtime verifies the cosign signature before it runs anything, so a tampered artifact never starts.</p></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Integrity &amp; rollback</div>
+   <div class="integrity">
+     <span class="ic"><b>cosign</b> · commit &amp; artifact signing</span>
+     <span class="ic"><b>in-toto</b> · signed attestation</span>
+     <span class="ic"><b>SLSA</b> · build provenance</span>
+     <span class="ic"><b>immutable audit</b> · every publish &amp; deploy</span>
+     <span class="ic"><b>rollback</b> · redeploy the last signed build</span>
+   </div>`;
+}
+
+/* shell */
+let CUR="pipe";
+function renderTab(name){
+  CUR=name; if(aTimer){clearInterval(aTimer);aTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="pipe") renderPipe();
+  else if(name==="checks") renderChecks();
+  else if(name==="ai") renderAI();
+  else renderPromote();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("pipe");
+</script>
+</body>
+</html>
