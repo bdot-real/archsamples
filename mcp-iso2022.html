@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP · ISO 20022 Payment Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#1a8f45; --accent2:#0d6ea8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(26,143,69,.08),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(13,110,168,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--green);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:830px}
+  .lead b{color:var(--ink)}
+  .thesis{margin-top:12px;border:1px solid rgba(26,143,69,.3);background:rgba(26,143,69,.06);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:11px;line-height:1.45}
+  .thesis .lk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);font-weight:600;white-space:nowrap;border-right:1px solid var(--line2);padding-right:11px}
+  .thesis b{color:var(--green)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12.5px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* architecture */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .zone{border:1.5px solid var(--line2);border-radius:12px;padding:9px 11px 11px;margin:0}
+  .zone.server{border-style:dashed;border-color:var(--green);background:rgba(26,143,69,.03)}
+  .zone .zt{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--green);margin:0 2px 8px;display:block}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:140px;border:1px solid var(--line2);border-left:4px solid var(--green);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--green);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,143,69,.14)}
+  .tile .tn{font-weight:700;font-size:11.5px;line-height:1.2;font-family:var(--mono)}
+  .tile .tnote{font-size:9px;color:var(--ink-faint);margin-top:3px;line-height:1.35}
+  .flowdown{text-align:center;color:var(--line2);font-size:15px;margin:2px 0}
+  .flowdown small{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);display:block}
+
+  .dp{position:sticky;top:14px;min-height:420px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(26,143,69,.05)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:15px;font-weight:700;font-family:var(--mono)}
+  .db{padding:14px 16px}
+  .db p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink)}
+
+  /* tools */
+  .tools{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
+  @media(max-width:980px){.tools{grid-template-columns:1fr}}
+  .tgrid{display:flex;flex-direction:column;gap:9px}
+  .tool{border:1px solid var(--line2);border-left:4px solid var(--green);border-radius:11px;padding:10px 13px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tool:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tool.sel{box-shadow:0 0 0 3px rgba(26,143,69,.14)}
+  .tool.authorised{border-left-color:var(--amber)} .tool.destructive{border-left-color:var(--red)}
+  .tool .th{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .tool .tnm{font-family:var(--mono);font-size:12px;font-weight:600}
+  .tool .badge{font-family:var(--mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px}
+  .tool.unrestricted .badge{color:var(--green);background:rgba(26,143,69,.1)}
+  .tool.authorised .badge{color:var(--amber);background:rgba(169,118,10,.12)}
+  .tool.destructive .badge{color:var(--red);background:rgba(214,47,38,.1)}
+  .tool .td{font-size:11.5px;color:var(--ink-dim);margin-top:4px;line-height:1.4}
+  .tdetail{position:sticky;top:14px}
+  pre{font-family:var(--mono);font-size:10.5px;line-height:1.5;background:#1b2433;color:#e6ebf3;border-radius:9px;padding:11px 12px;overflow-x:auto;margin:6px 0 0}
+  pre .k{color:#9be3ac} pre .s{color:#8fd39a} pre .n{color:#f0b866} pre .c{color:#7e8aa0}
+  .td-head{padding:13px 16px;border-bottom:1px solid var(--line)}
+  .td-head .tnm{font-family:var(--mono);font-size:13.5px;font-weight:600}
+  .td-head .meta{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+  .mtag{font-family:var(--mono);font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+  .td-body{padding:13px 16px}
+  .td-body p{margin:0 0 4px;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .iolab{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:11px}
+
+  /* governance */
+  .flow{padding:8px 10px 12px}
+  .fs{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:11px 8px;border-radius:10px;position:relative;transition:.16s}
+  .fs::before{content:"";position:absolute;left:137px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .fs:first-child::before{top:50%}.fs:last-child::before{bottom:50%}
+  .fs.active{background:rgba(26,143,69,.06)}
+  .actor{justify-self:start;font-family:var(--mono);font-size:8.5px;font-weight:600;color:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;margin-top:1px}
+  .fs .mid{position:relative;padding-left:16px}
+  .fs .mid::before{content:"";position:absolute;left:-1px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .fs.gate .mid::before{border-color:var(--red);background:var(--red)}
+  .fs .a{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+  .fs .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.45}
+  .fs .g{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:5px;padding:2px 6px;margin-top:6px}
+  .gsum{padding:15px 16px;position:sticky;top:14px}
+  .gsum p{font-size:12px;color:var(--ink-dim);line-height:1.5;margin:0 0 12px}
+  .gbtns{display:flex;gap:7px}
+  .gbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .gbtn:hover{border-color:var(--green)} .gbtn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .sep{margin-top:12px;border:1px solid rgba(214,47,38,.25);background:rgba(214,47,38,.04);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.45;display:none}
+  .sep.show{display:block} .sep b{color:var(--red)}
+  .layers{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:6px}
+  @media(max-width:820px){.layers{grid-template-columns:1fr}}
+  .ly{padding:12px 14px;border-top:4px solid var(--green)}
+  .ly .ln{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
+  .ly h4{margin:2px 0 6px;font-size:13px}
+  .ly p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .ly ul{margin:6px 0 0;padding-left:15px} .ly li{font-size:11px;color:var(--ink-dim);line-height:1.4;margin-bottom:2px}
+  .tiers{display:grid;grid-template-columns:1fr;gap:7px;margin-top:6px}
+  .tier{display:grid;grid-template-columns:150px 1fr;gap:10px;border:1px solid var(--line);border-radius:9px;padding:8px 12px;align-items:center}
+  .tier .tl{font-family:var(--mono);font-size:10px;font-weight:700}
+  .tier.u .tl{color:var(--green)} .tier.a .tl{color:var(--amber)} .tier.h .tl{color:var(--red)}
+  .tier .tr{font-size:11.5px;color:var(--ink-dim)}
+
+  /* deployment */
+  .dep{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  @media(max-width:820px){.dep{grid-template-columns:1fr}}
+  .dc{padding:14px 15px}
+  .dc h4{margin:0 0 5px;font-size:13px}
+  .dc p{margin:0 0 7px;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .ep{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:6px;padding:3px 8px;background:var(--panel2);display:inline-block;margin:2px 4px 2px 0}
+  .down{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media(max-width:820px){.down{grid-template-columns:1fr}}
+  .dn{padding:12px 14px;border-left:4px solid var(--accent2)}
+  .dn h4{margin:0 0 4px;font-size:12.5px}
+  .dn p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Open banking · governed MCP · bdot-real/mcp-iso20022</div>
+    <h1>ISO 20022 Payment Operations over MCP</h1>
+    <p class="lead">A governed MCP server that exposes ISO 20022 payment capabilities as tools any MCP-compatible AI agent can call — Claude, GPT-4, Gemini. The agent can validate, build and query payment messages in natural language, but <b>every action passes through a governance layer before execution</b>. Payment operations run against Odoo.</p>
+    <div class="thesis"><span class="lk">The control</span><span>An AI agent on a payment rail with no governance is a risk no regulated institution would accept. This server is the engineering answer: <b>no single agent action can move money</b>.</span></div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="arch">▦ Architecture</button>
+    <button class="tab" data-tab="tools">⚒ Tools</button>
+    <button class="tab" data-tab="gov">⛨ Governance</button>
+    <button class="tab" data-tab="deploy">☁ Deployment</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>mcp-iso20022</b> — governed ISO 20022 payment operations for Odoo, over MCP<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["governed MCP","AI agents on payment rails, safely"],["6 tools","4 read · 1 write · 1 destructive"],["3 governance layers","identity · audit · PII"],["human-in-the-loop","only money movement gated"],["immutable audit","append-only · regulator-ready"],["ISO 20022","pain.001 on Odoo"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--green)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* architecture */
+const COMP={
+ agent:{z:"Client",n:"AI Agent",note:"Claude · GPT-4 · Gemini",d:"Any MCP-compatible client. It reasons in natural language and calls the server's tools — but it never talks to Odoo or the database directly."},
+ transport:{z:"Transport",n:"MCP protocol",note:"stdio or SSE",d:"The Model Context Protocol carries tool calls over stdio (local) or SSE (remote). On SSE, an API key is required via a Bearer token."},
+ router:{z:"MCP Server",n:"Tool Router",note:"dispatch",d:"Receives the tool call and dispatches it to the right handler — but only after the governance chain below has cleared it."},
+ policy:{z:"MCP Server",n:"Policy Engine",note:"identity · permission · HITL",d:"The gate. Checks the agent's identity, enforces the permission tier for the requested tool, and requires a human confirmation token for the one destructive action."},
+ pii:{z:"MCP Server",n:"PII Filter",note:"strip IBAN · account · BIC",d:"Before anything is written to the audit log, this filter redacts IBANs, account numbers and BIC/SWIFT codes. The agent still receives the full response — only the log copy is sanitised."},
+ validator:{z:"MCP Server",n:"ISO 20022 Validator + Builder",note:"pain.001",d:"Validates raw payloads against the pain.001 schema and constructs compliant credit-transfer messages, returning structured diagnostics on failure."},
+ audit:{z:"MCP Server",n:"Audit Logger",note:"append-only",d:"Writes an immutable record of every tool call — success, error or denied — with agent, session, parameters, status and duration."},
+ odoo:{z:"Downstream",n:"Odoo",note:"JSON-RPC · ISO 20022 module",d:"The system of record. Payments are staged and executed here through Odoo's JSON-RPC interface and ISO 20022 module."},
+ pg:{z:"Downstream",n:"PostgreSQL audit store",note:"write-once",d:"The audit table has no UPDATE or DELETE permissions — records are immutable. This is the trail a regulator reviews."},
+};
+const ZONES=[
+ {id:"Client",n:"Client",keys:["agent"]},
+ {id:"Transport",n:"Transport",keys:["transport"]},
+ {id:"MCP Server",n:"MCP Server · mcp-iso20022-odoo",cls:"server",keys:["router","policy","pii","validator","audit"]},
+ {id:"Downstream",n:"Downstream systems",keys:["odoo","pg"]},
+];
+function openComp(k){
+  const c=COMP[k];document.querySelectorAll("[data-tile]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tile")===k));
+  document.getElementById("detail").innerHTML=`<div class="dh"><div class="dt">${c.z}</div><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function renderArch(){
+  let s=`<div class="card stack">`;
+  ZONES.forEach((z,i)=>{
+    s+=`<div class="zone ${z.cls||''}"><span class="zt">${z.n}</span><div class="tiles">`+z.keys.map(k=>`<div class="tile" data-tile="${k}"><div class="tn">${COMP[k].n}</div><div class="tnote">${COMP[k].note}</div></div>`).join("")+`</div></div>`;
+    if(i<ZONES.length-1){ const lbl=i===0?'MCP protocol':(i===1?'every call, in order':''); s+=`<div class="flowdown">↓${lbl?`<small>${lbl}</small>`:''}</div>`; }
+  });
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">The governed request path</div>
+   <p class="intro">A tool call runs the gauntlet in order: routed, checked by policy, sanitised for the log, then validated or executed — and every step is audited. The agent never touches Odoo or the database directly. Click any component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>The dashed zone is the MCP server. Its internal order is the whole point: <b>Tool Router → Policy Engine → PII Filter → Validator / Audit</b>.<br><br>Money only moves through Odoo, and only after policy clears it.</div></div></div></div>`;
+  document.querySelectorAll("[data-tile]").forEach(el=>el.addEventListener("click",()=>openComp(el.getAttribute("data-tile"))));
+}
+
+/* tools */
+const TOOLS=[
+ {id:"validate",n:"validate_payment_message",tier:"unrestricted",access:"Read-only",req:"Any agent",d:"Validates a raw ISO 20022 XML payload against the pain.001 schema.",
+  in:'{ <span class="k">"xml"</span>: <span class="s">"&lt;Document …pain.001.001.09&gt;…"</span> }',
+  out:'{\n  <span class="k">"valid"</span>: <span class="n">false</span>,\n  <span class="k">"messageType"</span>: <span class="s">"pain.001"</span>,\n  <span class="k">"diagnostics"</span>: [ { <span class="k">"field"</span>: <span class="s">"GrpHdr.MsgId"</span>, <span class="k">"code"</span>: <span class="s">"MISSING_REQUIRED"</span> } ]\n}'},
+ {id:"create",n:"create_credit_transfer",tier:"authorised",access:"Write",req:"Authorised agent",d:"Builds a compliant pain.001 credit transfer and stages it in Odoo. Does not execute — stages only, and returns a confirmation token.",
+  in:'{ <span class="k">"debtor"</span>: {…iban, bic}, <span class="k">"creditor"</span>: {…},\n  <span class="k">"amount"</span>: <span class="n">15000</span>, <span class="k">"currency"</span>: <span class="s">"EUR"</span> }',
+  out:'{\n  <span class="k">"messageId"</span>: <span class="s">"MSG-A1B2C3D4"</span>,\n  <span class="k">"status"</span>: <span class="s">"staged"</span>,\n  <span class="k">"confirmationToken"</span>: <span class="s">"550e…"</span>,\n  <span class="k">"confirmationExpiresAt"</span>: <span class="s">"…+15 min"</span>\n}'},
+ {id:"status",n:"get_payment_status",tier:"unrestricted",access:"Read-only",req:"Any agent",d:"Queries a staged or submitted payment message by ID.",
+  in:'{ <span class="k">"messageId"</span>: <span class="s">"MSG-A1B2C3D4"</span> }',
+  out:'{ <span class="k">"status"</span>: <span class="s">"staged"</span>, <span class="k">"amount"</span>: <span class="n">15000</span>, <span class="k">"currency"</span>: <span class="s">"EUR"</span> }'},
+ {id:"list",n:"list_pending_messages",tier:"unrestricted",access:"Read-only",req:"Any agent",d:"Returns all staged messages awaiting authorisation.",
+  in:'<span class="c">(none)</span>',
+  out:'{ <span class="k">"count"</span>: <span class="n">2</span>, <span class="k">"messages"</span>: [ { <span class="k">"messageId"</span>: <span class="s">"MSG-…"</span>, <span class="k">"status"</span>: <span class="s">"staged"</span> } ] }'},
+ {id:"submit",n:"submit_payment",tier:"destructive",access:"Destructive",req:"Authorised agent + human token",d:"Submits a staged payment for execution. The only destructive tool — requires both an authorised agent ID and a valid human confirmation token.",
+  in:'{ <span class="k">"messageId"</span>: <span class="s">"MSG-A1B2C3D4"</span>,\n  <span class="k">"confirmationToken"</span>: <span class="s">"550e…"</span> }',
+  out:'{ <span class="k">"previousStatus"</span>: <span class="s">"staged"</span>, <span class="k">"newStatus"</span>: <span class="s">"submitted"</span> }'},
+ {id:"audit",n:"get_audit_log",tier:"unrestricted",access:"Read-only",req:"Any agent",d:"Returns the full audit trail: every call, agent, parameter and timestamp — with PII redacted.",
+  in:'{ <span class="k">"messageId"</span>: <span class="s">"MSG-A1B2C3D4"</span> }',
+  out:'{ <span class="k">"records"</span>: [ {\n  <span class="k">"agentId"</span>: <span class="s">"agent-claude-001"</span>,\n  <span class="k">"toolName"</span>: <span class="s">"create_credit_transfer"</span>,\n  <span class="k">"inputParams"</span>: { <span class="k">"iban"</span>: <span class="s">"DE89****3000"</span> },\n  <span class="k">"piiDetected"</span>: <span class="n">true</span>\n} ] }'},
+];
+const TIERLAB={unrestricted:"Unrestricted",authorised:"Authorised agent",destructive:"Human confirmation"};
+function openTool(id){
+  const t=TOOLS.find(x=>x.id===id);
+  document.querySelectorAll("[data-tool]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-tool")===id));
+  const col=t.tier==="unrestricted"?"var(--green)":t.tier==="authorised"?"var(--amber)":"var(--red)";
+  document.getElementById("tdetail").innerHTML=`<div class="td-head"><div class="tnm">${t.n}</div><div class="meta"><span class="mtag" style="color:${col}">${t.access}</span><span class="mtag" style="color:${col}">${TIERLAB[t.tier]}</span></div></div>
+   <div class="td-body"><p>${t.d}</p><div class="iolab">Input</div><pre>${t.in}</pre><div class="iolab">Output</div><pre>${t.out}</pre></div>`;
+}
+function renderTools(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Six tools · three permission tiers</div>
+   <p class="intro">Four tools are read-only and open to any agent. One writes (stages a payment). One is destructive and executes — and it is fenced off behind both an authorised identity and a human token. Click a tool for its shape.</p>
+   <div class="tools"><div class="tgrid">${TOOLS.map(t=>`<div class="card tool ${t.tier}" data-tool="${t.id}"><div class="th"><span class="tnm">${t.n}</span><span class="badge">${t.access}</span></div><div class="td">${t.d}</div></div>`).join("")}</div>
+   <div class="card tdetail" id="tdetail"><div class="td-body" style="padding:24px 18px"><p style="font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7"><b style="color:var(--ink-dim)">SELECT A TOOL</b><br><br>Green tools are unrestricted reads. The amber tool stages a payment. The red tool is the only one that moves money — and it needs a human token.</p></div></div></div>`;
+  document.querySelectorAll("[data-tool]").forEach(el=>el.addEventListener("click",()=>openTool(el.getAttribute("data-tool"))));
+}
+
+/* governance */
+const FLOW=[
+ {actor:"Authorised agent",ac:"var(--amber)",a:"create_credit_transfer",w:"An authorised agent builds a pain.001 message and stages it in Odoo. Nothing executes. The server returns a confirmation token."},
+ {actor:"Server",ac:"var(--green)",a:"Token issued",w:"The token is bound to that message ID, single-use, and expires in 15 minutes. The agent cannot generate, guess or reuse it."},
+ {actor:"Human",ac:"var(--blue)",a:"Human review",w:"A person reviews the staged payment and hands the token to the agent. This is the gate for the only action that moves money.",gate:true},
+ {actor:"Authorised agent",ac:"var(--red)",a:"submit_payment",w:"The agent submits with the token. Only now does the payment execute — staged becomes submitted.",gate:true},
+];
+let gTimer=null;
+function renderGov(){
+  if(gTimer){clearInterval(gTimer);gTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">How money moves · two-step separation</div>
+   <p class="intro">The path from "build a payment" to "money leaves" is deliberately split so that no single agent action completes it. Walk it.</p>
+   <div class="arch-wrap"><div class="card flow" id="flowBox"></div><div class="card gsum" id="gsum"></div></div>
+   <div class="section-h" style="margin-top:22px">Three layers of engineering control</div>
+   <div class="layers">
+     <div class="card ly"><div class="ln">Layer 1</div><h4>Identity &amp; permission</h4><p>Every session presents an agent ID; the server enforces three tiers:</p>
+       <div class="tiers"><div class="tier u"><span class="tl">Unrestricted</span><span class="tr">the four read tools · any agent</span></div><div class="tier a"><span class="tl">Authorised</span><span class="tr">create_credit_transfer · agent on the list</span></div><div class="tier h"><span class="tl">Human confirm</span><span class="tr">submit_payment · authorised + token</span></div></div></div>
+     <div class="card ly"><div class="ln">Layer 2</div><h4>Immutable audit log</h4><p>Every call — success, error or denied — writes an append-only record.</p><ul><li>Timestamp, agent, session, tool</li><li>Sanitised input, output summary</li><li>Status and duration</li><li>No UPDATE or DELETE — regulator-ready</li></ul></div>
+     <div class="card ly"><div class="ln">Layer 3</div><h4>PII sanitisation</h4><p>Before the audit write, a filter redacts sensitive identifiers.</p><ul><li>IBAN → DE89****3000</li><li>Account no. → 05****13</li><li>BIC / SWIFT → COBA****</li><li>Agent still gets the full response</li></ul></div>
+   </div>`;
+  function draw(){
+    document.getElementById("flowBox").innerHTML=FLOW.map((s,i)=>`<div class="fs ${s.gate?'gate':''} ${i===hl?'active':''}">
+      <div class="actor" style="background:${s.ac}">${s.actor.toUpperCase()}</div>
+      <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div>${s.gate?'<span class="g">GATE</span>':''}</div></div>`).join("");
+    const done=hl>=FLOW.length-1;
+    document.getElementById("gsum").innerHTML=`<p>Two authorised steps with a human between them. Compromise the agent and you still can't move money without a human-issued token — and everything is on the immutable log.</p>
+      <div class="gbtns"><button class="gbtn primary" id="gPlay">▶ Walk</button><button class="gbtn" id="gStep">⏭ Step</button><button class="gbtn" id="gReset">↺</button></div>
+      <div class="sep ${done?'show':''}"><b>No single agent action moves money.</b> Staging and submission are separate tools, submission needs a human token, and the token is single-use, time-boxed and bound to one message.</div>`;
+    document.getElementById("gPlay").onclick=play;document.getElementById("gStep").onclick=step;document.getElementById("gReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<FLOW.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=FLOW.length-1)hl=-1;gTimer=setInterval(()=>{if(hl<FLOW.length-1){hl++;draw();}else stop();},1000);}
+  function stop(){if(gTimer){clearInterval(gTimer);gTimer=null;}}
+  draw();
+}
+
+/* deployment */
+function renderDeploy(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Two transports, same governance</div>
+   <div class="dep">
+     <div class="card dc"><h4>Local · stdio</h4><p>Runs with in-memory stores and no external dependencies — build and start, then point an MCP client (e.g. Claude Desktop) at the built server with an agent ID and the authorised-agents list in the environment.</p><span class="ep">command: node dist/index.js</span><span class="ep">MCP_AGENT_ID</span><span class="ep">AUTHORISED_AGENTS</span></div>
+     <div class="card dc"><h4>Remote · SSE</h4><p>Configured with real Odoo and PostgreSQL credentials and started as an SSE server on a configurable port. API-key authentication is enforced with a Bearer token when a key is set.</p><span class="ep">GET /sse</span><span class="ep">POST /messages?sessionId=…</span><span class="ep">GET /health</span><span class="ep">Authorization: Bearer &lt;key&gt;</span></div>
+   </div>
+   <div class="section-h">Downstream systems</div>
+   <div class="down">
+     <div class="card dn"><h4>Odoo · JSON-RPC</h4><p>The system of record for payments, reached through its JSON-RPC interface and ISO 20022 module. Messages are staged and executed here.</p></div>
+     <div class="card dn"><h4>PostgreSQL · write-once</h4><p>The audit store, with no UPDATE or DELETE permissions on the audit table — the immutable trail behind get_audit_log.</p></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Stack</div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap">${["TypeScript · Node.js","MCP SDK","stdio + SSE","Odoo JSON-RPC","PostgreSQL","ISO 20022 · pain.001"].map(t=>`<span class="ep">${t}</span>`).join("")}</div>`;
+}
+
+/* shell */
+let CUR="arch";
+function renderTab(name){
+  CUR=name; if(gTimer){clearInterval(gTimer);gTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="arch") renderArch();
+  else if(name==="tools") renderTools();
+  else if(name==="gov") renderGov();
+  else renderDeploy();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("arch");
+</script>
+</body>
+</html>
