@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Architecture · TOGAF &amp; Zachman</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8; --accent2:#1f63c8;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82; --gold:#c79a2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(13,110,168,.09),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(31,99,200,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:840px}
+  .lead b{color:var(--ink)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12.5px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* togaf domains */
+  .domains{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:820px){.domains{grid-template-columns:1fr}}
+  .dom{padding:13px 15px;border-top:4px solid var(--accent)}
+  .dom.b{border-top-color:var(--gold)} .dom.d{border-top-color:var(--teal)} .dom.a{border-top-color:var(--violet)} .dom.t{border-top-color:var(--accent2)}
+  .dom h4{margin:0 0 8px;font-size:14px;display:flex;align-items:center;gap:9px}
+  .dom .lt{width:22px;height:22px;border-radius:6px;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .dom.b .lt{background:var(--gold)} .dom.d .lt{background:var(--teal)} .dom.a .lt{background:var(--violet)} .dom.t .lt{background:var(--accent2)}
+  .dom ul{margin:0;padding:0;list-style:none}
+  .dom li{font-size:11.5px;color:var(--ink-dim);line-height:1.4;padding:4px 0 4px 15px;position:relative;border-top:1px solid var(--line)}
+  .dom li:first-child{border-top:0}
+  .dom li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+
+  /* adm */
+  .adm{padding:4px 0}
+  .ph{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:9px 8px;position:relative;border-radius:9px}
+  .ph::before{content:"";position:absolute;left:125px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .ph:first-child::before{top:50%}.ph:last-child::before{bottom:50%}
+  .ph.req{background:rgba(13,110,168,.05)}
+  .phl{justify-self:start;display:flex;align-items:center;gap:8px}
+  .phl .pb{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .ph.req .phl .pb{background:var(--gold)}
+  .phl .pn{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em}
+  .ph .mid{position:relative;padding-left:16px;align-self:center}
+  .ph .mid::before{content:"";position:absolute;left:-1px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);z-index:1}
+  .ph .pt{font-weight:700;font-size:12.5px}
+  .ph .pd{font-size:11.5px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+
+  /* zachman */
+  .zwrap{overflow-x:auto;padding-bottom:4px}
+  .ztable{border-collapse:separate;border-spacing:5px;min-width:900px}
+  .ztable th{font-family:var(--mono);font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);padding:4px 6px;text-align:left;vertical-align:bottom}
+  .ztable th.col{color:var(--accent);font-weight:600}
+  .ztable th.col span{display:block;color:var(--ink-faint);font-weight:400;margin-top:2px}
+  .ztable td.rowh{font-family:var(--mono);font-size:9.5px;color:var(--accent);font-weight:600;white-space:nowrap;padding-right:8px;vertical-align:middle}
+  .ztable td.rowh span{display:block;color:var(--ink-faint);font-weight:400;font-size:8px;text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
+  .zc{border:1px solid var(--line2);border-radius:8px;padding:7px 9px;background:var(--panel);cursor:pointer;transition:.12s;min-width:118px;max-width:150px}
+  .zc:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,42,74,.08)}
+  .zc.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.14)}
+  .zc .zl{font-size:11px;color:var(--ink);line-height:1.3;font-weight:500}
+  .zdetail{margin-top:14px;min-height:70px}
+  .zd-empty{padding:16px 18px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);line-height:1.6}
+  .zd-empty b{color:var(--ink-dim)}
+  .zdh{padding:12px 16px 0}
+  .zdh .zt{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .zdh h3{margin:4px 0 0;font-size:14.5px}
+  .zdb{padding:6px 16px 14px}
+  .zdb p{margin:0;font-size:12.5px;color:var(--ink-dim);line-height:1.55}
+
+  /* crosswalk */
+  .maprow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .mp{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line2);border-radius:8px;padding:7px 11px;background:var(--panel)}
+  .mp b{color:var(--accent)}
+  table.cw{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  table.cw th,table.cw td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  table.cw th{font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  table.cw tbody tr:last-child td{border-bottom:0}
+  table.cw td .cmp{font-weight:700}
+  table.cw td .dm{font-family:var(--mono);font-size:10px;color:var(--accent)}
+  table.cw td .zz{font-family:var(--mono);font-size:10px;color:var(--violet)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  @media(max-width:820px){.twocol{grid-template-columns:1fr}}
+  .fw{padding:13px 15px}
+  .fw h4{margin:0 0 5px;font-size:13px}
+  .fw p{margin:0;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .fw b{color:var(--ink)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Score Anything · enterprise architecture</div>
+    <h1>Score Architecture · TOGAF &amp; Zachman</h1>
+    <p class="lead">The <b>Score Anything</b> multi-tenant fan-loyalty and identity platform, seen through two enterprise-architecture frameworks. <b>TOGAF</b> organises it into the four architecture domains and maps the delivery method (ADM) to real Score work; <b>Zachman</b> classifies every part of it into a 6×6 matrix of perspectives and questions. Same platform, two formal lenses.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="togaf">▤ TOGAF view</button>
+    <button class="tab" data-tab="zachman">▦ Zachman view</button>
+    <button class="tab" data-tab="cross">⇄ Crosswalk</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Score Anything</b> — enterprise-architecture views · TOGAF ADM + BDAT · Zachman 6×6<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["TOGAF + Zachman","two EA lenses"],["4 domains","Business · Data · App · Tech"],["ADM mapped","11 phases to Score work"],["6×6 matrix","36 cells populated"],["one platform","two classifications"],["founding client","URC / PRC"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* TOGAF */
+const DOMAINS=[
+ {c:"b",t:"B",n:"Business Architecture",items:["Multi-tenant fan loyalty &amp; identity for sports","Actors: fans, clubs/leagues, club admins, sponsors, 3HL, URC/PRC","Capabilities: earn · redeem · engage · tiers · identity","Points economy: redeemable rewards + status / leaderboard","Founding client: PRC / URC"]},
+ {c:"d",t:"D",n:"Data Architecture",items:["Unified fan identity","Double-entry loyalty ledger · points liability","Medallion data platform: Bronze → Silver → Gold","Event bus · feature store · catalog &amp; lineage","Data classification, consent &amp; privacy (GDPR / CCPA)","Stores: PostgreSQL · MongoDB · vector (RAG)"]},
+ {c:"a",t:"A",n:"Application Architecture",items:["SCORE SDK — consent-gated ingest","Loyalty Engine — rule-based earn &amp; tiers","Loyalty Ledger service · Season Issuance","User Creation &amp; identity","AI Estate — Predictor agents · Guardrails (MCP)","Privacy Control Plane · Architecture Console","ScoreMotion · SCORE Amateur Connect"]},
+ {c:"t",t:"T",n:"Technology Architecture",items:["Hetzner · Docker · Traefik","Odoo 18/19 · multi-tenant","Keycloak OIDC · Auth0 JWT","PostgreSQL · MongoDB · vector DB (RAG)","Anthropic Claude API · LangGraph · MCP","Kotlin Multiplatform SDK (ScoreTrackerKit)","Gitea CI/CD · blue-green deploys"]},
+];
+const ADM=[
+ ["P","Preliminary","EA principles — privacy-first, multi-tenant, vendor-pragmatic; the 3HL-Score Gitea org",false],
+ ["A","Architecture Vision","The Score Anything loyalty vision; the Architecture Console as the landscape tool",false],
+ ["B","Business Architecture","Fan-loyalty domain, tenants, the points economy, engagement KPIs",false],
+ ["C","Information Systems · Data","Fan identity, loyalty ledger, medallion data platform, privacy control plane",false],
+ ["C","Information Systems · Application","SDK, Loyalty Engine, AI Estate, User Creation",false],
+ ["D","Technology Architecture","Odoo · Keycloak · Postgres · Mongo, Hetzner, the AI stack",false],
+ ["E","Opportunities &amp; Solutions","The SCORE product family: Amateur Connect, ScoreAI, ScoreMotion",false],
+ ["F","Migration Planning","Rollout across clubs; the L0–L5 module-readiness system",false],
+ ["G","Implementation Governance","SOC 2, AI Guardrails, the URC promotion pipeline, the consent audit log",false],
+ ["H","Architecture Change Mgmt","Ledger integrity, versioning, blue-green deployment",false],
+ ["R","Requirements Management","Continuous — consent and privacy requirements thread through every phase",true],
+];
+function renderTogaf(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Architecture domains · B / D / A / T</div>
+   <p class="intro">TOGAF splits an enterprise architecture into four domains. Here is where each part of Score sits — the business it serves, the data it holds, the applications that run it, and the technology underneath.</p>
+   <div class="domains">${DOMAINS.map(d=>`<div class="card dom ${d.c}"><h4><span class="lt">${d.t}</span>${d.n}</h4><ul>${d.items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`).join("")}</div>
+   <div class="section-h">Architecture Development Method · mapped to Score work</div>
+   <p class="intro">The ADM is TOGAF's delivery cycle. These are the real Score deliverables that populate each phase — with requirements management running through the centre of all of them.</p>
+   <div class="card adm">${ADM.map(p=>`<div class="ph ${p[3]?'req':''}"><div class="phl"><span class="pb">${p[0]}</span><span class="pn">${p[3]?'centre':'phase'}</span></div><div class="mid"><div class="pt">${p[1]}</div><div class="pd">${p[2]}</div></div></div>`).join("")}</div>`;
+}
+
+/* ZACHMAN */
+const ZCOLS=[["What","Data"],["How","Function"],["Where","Network"],["Who","People"],["When","Time"],["Why","Motivation"]];
+const ZROWS=[["Scope","Contextual · Executive"],["Business","Conceptual · Owner"],["System","Logical · Architect"],["Tech","Physical · Engineer"],["Detail","Out-of-context · Technician"],["Operations","Functioning · Enterprise"]];
+const Z=[
+ [ {l:"Fan identity, points, events",d:"The core things Score tracks at the highest level: who the fan is, the points they hold, and the engagement events they generate."},
+   {l:"Earn · redeem · engage",d:"The headline processes the platform exists to run — earning points, redeeming rewards, and driving fan engagement."},
+   {l:"Clubs, leagues, cloud",d:"Where it operates: multi-tenant across clubs and leagues, founding client URC/PRC, running on Hetzner cloud."},
+   {l:"Fans, clubs, 3HL, sponsors",d:"The players in scope: fans, club/league tenants, sponsors, 3HL as operator, URC/PRC as the founding partner."},
+   {l:"Season &amp; matchday calendar",d:"Activity is paced by the sporting calendar — seasons, matchdays and campaigns set the rhythm."},
+   {l:"Fan engagement &amp; loyalty",d:"The reason the whole thing exists: deepen fan engagement and reward loyalty for clubs and sponsors."} ],
+ [ {l:"Fan &amp; loyalty domain model",d:"The business concepts: fan, membership, points balance, reward, tier and engagement event."},
+   {l:"Earn / redeem / tier rules",d:"How actions turn into points, how tiers progress (Bronze→Platinum), and how rewards are redeemed."},
+   {l:"Tenant topology",d:"Each club or league is an isolated tenant with its own configuration, branding and data."},
+   {l:"Fan · admin · operator · sponsor",d:"The business roles and their responsibilities across the loyalty programme."},
+   {l:"Season issuance schedule",d:"Points budgets and campaigns planned per season — the season issuance model."},
+   {l:"Loyalty strategy &amp; KPIs",d:"Engagement, retention and sponsor-value goals the programme is measured against."} ],
+ [ {l:"Identity · ledger · event schemas",d:"The logical data model: unified fan identity, a double-entry loyalty ledger, and event streams."},
+   {l:"SDK · Engine · Ledger · AI Estate",d:"The logical services: the ingest SDK, rule-based Loyalty Engine, the Ledger, and the AI Estate."},
+   {l:"SDK → API → services → stores",d:"The logical topology: client SDK to APIs to services to the medallion data platform."},
+   {l:"OIDC roles &amp; authz",d:"Identity and access design: Keycloak/Auth0 roles and tenant scoping."},
+   {l:"Event &amp; state lifecycle",d:"How an event becomes a ledger entry, flowing Bronze→Silver→Gold through the platform."},
+   {l:"Privacy control-plane rules",d:"Policy design: consent, data classification, retention and egress guards."} ],
+ [ {l:"Postgres · Mongo · vector DB",d:"Physical stores: PostgreSQL for ledger and identity, MongoDB for Amateur Connect, a vector DB for RAG."},
+   {l:"Node/TS · Python · LangGraph · MCP",d:"Implementation: TypeScript/Node services, Python AI/data, LangGraph agents, MCP tools."},
+   {l:"Hetzner · Docker · Traefik",d:"Physical deployment: Dockerised services behind Traefik on Hetzner, multi-tenant Odoo."},
+   {l:"Keycloak OIDC · Auth0 JWT",d:"Concrete authentication: Keycloak realms, Auth0 RS256 JWTs, service accounts."},
+   {l:"Schedulers · CDC · event bus",d:"Timing mechanisms: CDC upserts, the event bus, and batch / retrain schedules."},
+   {l:"Guardrails &amp; SOC 2 controls",d:"Enforced policy: AI guardrail layers, SOC 2 controls, and the consent audit."} ],
+ [ {l:"Table DDL · vector indexes",d:"The concrete schemas: ledger tables, identity collections and embedding indexes."},
+   {l:"MCP tools · agent nodes · rules",d:"Individual functions: MCP tool definitions, LangGraph nodes, and earn-rule configs."},
+   {l:"Containers · endpoints · realms",d:"Deployment units: container images, API endpoints and Keycloak realm config."},
+   {l:"Keys · tokens · secrets",d:"Credentials and secrets management — moved out of git after the Amateur Connect audit."},
+   {l:"TTLs · cron · retrain cadence",d:"Concrete timers: token TTLs, crypto-shred expiry, and the bi-weekly model retrain."},
+   {l:"Thresholds · policies as code",d:"Codified rules: risk thresholds, retention windows and egress deny-lists."} ],
+ [ {l:"Live fan data",d:"The actual fan records, balances and events running in production."},
+   {l:"Running loyalty transactions",d:"Earn and redeem happening live, agents scoring, the ledger balancing in real time."},
+   {l:"Production Hetzner cluster",d:"The live multi-tenant deployment serving real clubs."},
+   {l:"Real fans &amp; operators",d:"Actual users: fans engaging and club operators administering the programme."},
+   {l:"Real matchday events",d:"Live activity paced by real fixtures and campaigns."},
+   {l:"Realized engagement metrics",d:"Observed outcomes: engagement, retention, sponsor value and breakage."} ],
+];
+function openZ(r,c){
+  document.querySelectorAll(".zc").forEach(e=>e.classList.remove("sel"));
+  const cell=document.querySelector(`.zc[data-rc="${r}-${c}"]`); if(cell)cell.classList.add("sel");
+  const z=Z[r][c];
+  document.getElementById("zdetail").innerHTML=`<div class="card"><div class="zdh"><div class="zt">${ZROWS[r][0]} · ${ZROWS[r][1]}  ✕  ${ZCOLS[c][0]} (${ZCOLS[c][1]})</div><h3>${z.l}</h3></div><div class="zdb"><p>${z.d}</p></div></div>`;
+}
+function renderZachman(){
+  let head=`<tr><th></th>${ZCOLS.map(c=>`<th class="col">${c[0]}<span>${c[1]}</span></th>`).join("")}</tr>`;
+  let rows=ZROWS.map((r,ri)=>`<tr><td class="rowh">${r[0]}<span>${r[1]}</span></td>${ZCOLS.map((c,ci)=>`<td><div class="zc" data-rc="${ri}-${ci}"><div class="zl">${Z[ri][ci].l}</div></div></td>`).join("")}</tr>`).join("");
+  document.getElementById("view").innerHTML=`<div class="section-h">The Zachman matrix · 6 perspectives × 6 questions</div>
+   <p class="intro">Zachman classifies an architecture by <b>perspective</b> (rows, from the executive's scope down to the running system) and <b>question</b> (columns: what, how, where, who, when, why). Every intersection is a distinct description of Score. Tap any cell.</p>
+   <div class="card" style="padding:12px 14px"><div class="zwrap"><table class="ztable"><thead>${head}</thead><tbody>${rows}</tbody></table></div></div>
+   <div class="zdetail" id="zdetail"><div class="card"><div class="zd-empty"><b>TAP A CELL</b> — each of the 36 intersections describes Score from one perspective answering one question. Rows go from contextual scope (top) to the functioning enterprise (bottom); columns are the six primitive interrogatives.</div></div></div>`;
+  document.querySelectorAll(".zc").forEach(el=>{const[r,c]=el.getAttribute("data-rc").split("-").map(Number);el.addEventListener("click",()=>openZ(r,c));});
+  openZ(0,0);
+}
+
+/* CROSSWALK */
+const CROSS=[
+ ["SCORE SDK","Application","How · Logical→Physical"],
+ ["Loyalty Engine","Application","How · Conceptual→Physical"],
+ ["Loyalty Ledger","Data + Application","What / How · Logical→Physical"],
+ ["Fan identity (Keycloak / Auth0)","Data + Technology","What + Who"],
+ ["Data platform (medallion)","Data","What + When"],
+ ["AI Estate (Predictor · Guardrails)","Application","How + Why"],
+ ["Privacy Control Plane","Business + Data","Why + What"],
+ ["Architecture Console","Vision · ADM-A","cross-cutting"],
+ ["Odoo · Postgres · Mongo · Hetzner","Technology","Where"],
+ ["SOC 2 · URC promotion pipeline","Governance · ADM-G","Why + When"],
+ ["ScoreMotion","Application","How"],
+ ["Points economy","Business","Why + When"],
+];
+function renderCross(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Two frameworks, one architecture</div>
+   <div class="twocol">
+     <div class="card fw"><h4>TOGAF — method + domains</h4><p>TOGAF is a <b>process</b>: the ADM tells you how to develop and govern an architecture, and the four domains (business, data, application, technology) tell you what to produce. It answers <b>how you build and run</b> the architecture.</p></div>
+     <div class="card fw"><h4>Zachman — a classification ontology</h4><p>Zachman is a <b>schema</b>, not a method: a 6×6 grid naming every description that could exist. It doesn't say how to proceed — it says which cells must be filled. It answers <b>what descriptions</b> the architecture needs.</p></div>
+   </div>
+   <div class="section-h">How the two line up</div>
+   <p class="intro">The TOGAF domains map loosely onto Zachman's columns; TOGAF's ADM has no Zachman equivalent (Zachman is deliberately method-neutral), and Zachman's perspective rows cut across every TOGAF domain.</p>
+   <div class="maprow">
+     <span class="mp"><b>Business</b> → Who · When · Why</span>
+     <span class="mp"><b>Data</b> → What</span>
+     <span class="mp"><b>Application</b> → How</span>
+     <span class="mp"><b>Technology</b> → Where</span>
+   </div>
+   <div class="section-h">Where each Score component sits in both</div>
+   <table class="cw"><thead><tr><th>Score component</th><th>TOGAF domain</th><th>Zachman cell(s)</th></tr></thead><tbody>${
+     CROSS.map(r=>`<tr><td><span class="cmp">${r[0]}</span></td><td><span class="dm">${r[1]}</span></td><td><span class="zz">${r[2]}</span></td></tr>`).join("")
+   }</tbody></table>`;
+}
+
+/* shell */
+let CUR="togaf";
+function renderTab(name){
+  CUR=name;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="togaf") renderTogaf();
+  else if(name==="zachman") renderZachman();
+  else renderCross();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("togaf");
+</script>
+</body>
+</html>
