@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open-Source Structured Streaming Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0e8a82;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82; --gold:#c79a2e;
+    --kafka:#bf4f17; --rabbit:#a9760a; --redis:#d62f26; --engine:#0e8a82;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(14,138,130,.09),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(191,79,23,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:860px}
+  .lead b{color:var(--ink)}
+  .thesis{margin-top:12px;border:1px solid rgba(14,138,130,.3);background:rgba(14,138,130,.06);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:11px;line-height:1.45}
+  .thesis .lk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;white-space:nowrap;border-right:1px solid var(--line2);padding-right:11px}
+  .thesis b{color:var(--accent)}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0 2px}
+  .lg{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+  .lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* topology */
+  .arch-wrap{display:grid;grid-template-columns:1fr 366px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .band{margin:7px 2px 0}
+  .bl{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;padding:4px 2px 7px}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:132px;border:1px solid var(--line2);border-left:4px solid var(--engine);border-radius:10px;padding:8px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{box-shadow:0 0 0 3px rgba(14,138,130,.14)}
+  .tile .tn{font-weight:700;font-size:11.5px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:8px;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+  .tile .tech{font-family:var(--mono);font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 5px;border-radius:4px;color:#fff;float:right}
+  .flowdown{text-align:center;color:var(--line2);font-size:14px;margin:1px 0}
+  .runtime-band{border:1.5px solid var(--engine);background:rgba(14,138,130,.04);border-radius:12px;padding:8px 10px 10px}
+  .runtime-band .rt{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--engine);font-weight:600;margin:0 2px 7px;display:block}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .dh .tb{font-family:var(--mono);font-size:8px;font-weight:700;text-transform:uppercase;color:#fff;padding:3px 7px;border-radius:5px}
+  .dh h3{margin:0;font-size:15px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0 0 10px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+  .db .row{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:11.5px}
+  .db .row .rk{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);flex:0 0 74px;padding-top:1px}
+  .db .row .rv{color:var(--ink);flex:1;line-height:1.4}
+
+  /* parity */
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+  th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}
+  th{font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  th.spark{color:var(--orange)} th.eng{color:var(--engine)}
+  tbody tr:last-child td{border-bottom:0}
+  td .sp{font-weight:700}
+  td .eng2{font-family:var(--mono);font-size:11px;color:var(--engine)}
+  pre{background:#0f1626;color:#e6ecf7;border:1px solid var(--line2);border-radius:12px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6;margin:0 0 8px}
+  pre .k{color:#3fb6e6} pre .s{color:#3fce86} pre .c{color:#6b789c}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .cc{padding:13px 15px;border-top:4px solid var(--engine)}
+  .cc h4{margin:0 0 5px;font-size:13px}
+  .cc p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .cc p b{color:var(--ink)}
+
+  /* walk */
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .flow{padding:8px 10px 12px}
+  .fs{display:grid;grid-template-columns:112px 1fr;gap:12px;padding:10px 8px;border-radius:10px;position:relative;transition:.16s}
+  .fs::before{content:"";position:absolute;left:119px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .fs:first-child::before{top:50%}.fs:last-child::before{bottom:50%}
+  .fs.active{background:rgba(14,138,130,.06)}
+  .lchip{justify-self:start;font-family:var(--mono);font-size:8px;font-weight:700;color:#fff;border-radius:6px;padding:3px 7px;white-space:nowrap;margin-top:1px;text-align:center;line-height:1.3}
+  .fs .mid{position:relative;padding-left:16px}
+  .fs .mid::before{content:"";position:absolute;left:-1px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .fs.active .mid::before{border-color:var(--accent);background:var(--accent)}
+  .fs .a{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .fs .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.45}
+  .fs .feat{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--engine);border:1px solid var(--engine);border-radius:5px;padding:1px 6px;margin-top:5px}
+  .gsum{padding:15px 16px;position:sticky;top:14px}
+  .gsum p{font-size:12px;color:var(--ink-dim);line-height:1.5;margin:0 0 12px}
+  .gbtns{display:flex;gap:7px}
+  .gbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .gbtn:hover{border-color:var(--accent)} .gbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .note{font-size:12px;color:var(--ink-dim);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;line-height:1.5;margin-top:14px}
+  .note b{color:var(--ink)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Open source · stream processing</div>
+    <h1>Structured Streaming, without Spark</h1>
+    <p class="lead">An open-source stream-processing engine that gives you <b>Spark Structured Streaming's programming model and exactly-once guarantees</b> — event-time windows, watermarks, stateful aggregations, replay — on infrastructure you already run: <b>Kafka</b> for the log, <b>Redis</b> for state, <b>RabbitMQ</b> for side-effects, and plain worker processes as the runtime. No JVM, no Spark cluster.</p>
+    <div class="thesis"><span class="lk">The idea</span><span>Spark's guarantees come from a <b>durable log + checkpointed state + idempotent sinks</b> — not from Spark itself. Rebuild those three on commodity infra and you get the same correctness at a fraction of the operational weight.</span></div>
+    <div class="legend">
+      <span class="lg"><i style="background:var(--engine)"></i>the engine</span>
+      <span class="lg"><i style="background:var(--kafka)"></i>Kafka — log</span>
+      <span class="lg"><i style="background:var(--redis)"></i>Redis — state</span>
+      <span class="lg"><i style="background:var(--rabbit)"></i>RabbitMQ — side-effects</span>
+    </div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="engine">⚙ Engine architecture</button>
+    <button class="tab" data-tab="parity">⇄ Spark parity</button>
+    <button class="tab" data-tab="internals">◈ Guarantees &amp; internals</button>
+    <button class="tab" data-tab="ref">▶ Reference app · Score</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Structured Streaming, without Spark</b> — Kafka log · Redis state · RabbitMQ side-effects · worker runtime<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const TECHC={kafka:"var(--kafka)",rabbit:"var(--rabbit)",redis:"var(--redis)",engine:"var(--engine)"};
+const TECHN={kafka:"Kafka",rabbit:"RabbitMQ",redis:"Redis",engine:"engine"};
+const KPIS=[["no Spark cluster","runs on plain workers"],["exactly-once","offsets + state, atomic"],["event-time","watermarks · late data"],["state store","Redis / embedded"],["Kafka source","replayable log"],["open source","commodity infra"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* engine topology */
+const C={
+ ksrc:{band:"Sources",tech:"kafka",n:"Kafka topics",note:"partitioned · replayable",d:"The primary source: a durable, ordered, partitioned log. Partitions are the unit of parallelism and the basis for exactly-once — you can always replay from an offset."},
+ rsrc:{band:"Sources",tech:"redis",n:"Redis Streams",note:"lightweight source",d:"For lighter workloads, Redis Streams act as a source with consumer groups — the same pull model without standing up Kafka."},
+ qsrc:{band:"Sources",tech:"rabbit",n:"RabbitMQ queues",note:"command streams",d:"Queues can feed the engine too, for command-style inputs where per-message routing and acks matter more than a replayable log."},
+ coord:{band:"Runtime",tech:"engine",n:"Coordinator",note:"assign · rebalance · commit",d:"Assigns partitions to workers, rebalances when workers join or leave, and tracks checkpoints. It reuses Kafka's consumer-group protocol, so there's no separate master to operate."},
+ worker:{band:"Runtime",tech:"engine",n:"Runtime workers",note:"pull · run graph · maintain state",d:"The executors. Each pulls records from its assigned partitions, runs the processing graph (map, filter, window, aggregate, join), maintains local state, and commits. Scale out by adding workers — partitions rebalance automatically."},
+ state:{band:"Runtime",tech:"redis",n:"State store",note:"Redis or embedded",d:"Keyed state for windows, aggregations, joins and dedup — in Redis for shared/low-latency access, or an embedded store (RocksDB/LMDB) for local speed with durable backup. This is the piece that replaces Spark's state store."},
+ wm:{band:"Runtime",tech:"engine",n:"Watermark & timers",note:"event-time · firing",d:"Tracks event time across partitions, advances the watermark to bound lateness, and fires window closes and user timers — the machinery behind event-time correctness."},
+ ckpt:{band:"Runtime",tech:"engine",n:"Checkpoint store",note:"offsets + state, atomic",d:"Commits source offsets and the corresponding state snapshot together, atomically. On restart the worker resumes from the last consistent checkpoint — the heart of exactly-once."},
+ ksink:{band:"Sinks",tech:"kafka",n:"Kafka (transactional)",note:"exactly-once output",d:"Transactional writes so output and offset commit are atomic — the standard exactly-once sink for feeding downstream streams."},
+ rsink:{band:"Sinks",tech:"redis",n:"Redis sink",note:"materialized state",d:"Materialize derived, low-latency state — leaderboards, counters, caches — for applications to read directly."},
+ dbsink:{band:"Sinks",tech:"engine",n:"Database sink",note:"idempotent upserts",d:"Idempotent upserts keyed by event identity, so replays and retries never double-write."},
+ qsink:{band:"Sinks",tech:"rabbit",n:"RabbitMQ sink",note:"reliable side-effects",d:"Where the stream triggers side-effects that must not be lost — notifications, fulfillment, external calls — with per-message acks and a dead-letter queue."},
+};
+const BANDS=["Sources","Runtime","Sinks"];
+function openC(k){
+  const c=C[k];document.querySelectorAll("[data-c]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-c")===k));
+  document.getElementById("detail").innerHTML=`<div class="dh"><span class="tb" style="background:${TECHC[c.tech]}">${TECHN[c.tech]}</span><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function tileHTML(k){const c=C[k];return `<div class="tile" data-c="${k}" style="border-left-color:${TECHC[c.tech]}"><span class="tech" style="background:${TECHC[c.tech]}">${TECHN[c.tech]}</span><div class="tn">${c.n}</div><div class="tnote">${c.note}</div></div>`;}
+function renderEngine(){
+  let s=`<div class="card stack">`;
+  BANDS.forEach((b,i)=>{
+    const keys=Object.keys(C).filter(k=>C[k].band===b);
+    s+=`<div class="band"><div class="bl">${b}</div>`;
+    if(b==="Runtime"){ s+=`<div class="runtime-band"><span class="rt">the engine · one binary, many workers</span><div class="tiles">${keys.map(tileHTML).join("")}</div></div>`; }
+    else { s+=`<div class="tiles">${keys.map(tileHTML).join("")}</div>`; }
+    s+=`</div>`;
+    if(i<BANDS.length-1) s+=`<div class="flowdown">↓</div>`;
+  });
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Sources → runtime → sinks</div>
+   <p class="intro">The engine is the middle band — a set of identical worker processes coordinated over Kafka's group protocol, with a pluggable state store and a checkpoint mechanism. Sources and sinks are the commodity systems you already run. Click any component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="detail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>The runtime band is the open-source part; everything else is Kafka, Redis or RabbitMQ.<br><br>Exactly-once lives in the checkpoint store — offsets and state committed together — and in idempotent/transactional sinks.</div></div></div></div>`;
+  document.querySelectorAll("[data-c]").forEach(el=>el.addEventListener("click",()=>openC(el.getAttribute("data-c"))));
+}
+
+/* parity */
+const PAR=[
+ ["Streaming DataFrame / Dataset API","Declarative pipeline API: source → ops → sink"],
+ ["Micro-batch &amp; continuous modes","Pull-based micro-batch, or per-record continuous"],
+ ["Sources (Kafka, files, socket)","Kafka topics · Redis Streams · RabbitMQ queues"],
+ ["Idempotent sinks","Transactional Kafka · idempotent Redis / DB writers"],
+ ["Checkpointing (offsets + state)","Atomic commit of offsets + state snapshot"],
+ ["Event-time watermarks","Watermark service bounding lateness"],
+ ["Windowed aggregations","Windowed state ops on the state store"],
+ ["Stream–stream joins","Watermark-bounded keyed-state joins"],
+ ["mapGroupsWithState / timers","Keyed state + timer service"],
+ ["dropDuplicates","State-backed dedup on idempotency keys"],
+ ["Exactly-once guarantee","Idempotent producer + transactional offset commit"],
+ ["Cluster manager (YARN / K8s)","Plain worker processes; Kafka group rebalance"],
+];
+function renderParity(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Feature-for-feature parity</div>
+   <p class="intro">Everything Structured Streaming gives you has a direct mechanism here — the difference is what runs underneath.</p>
+   <table><thead><tr><th class="spark">Spark Structured Streaming</th><th class="eng">This engine</th></tr></thead><tbody>${
+     PAR.map(r=>`<tr><td><span class="sp">${r[0]}</span></td><td><span class="eng2">${r[1]}</span></td></tr>`).join("")
+   }</tbody></table>
+   <div class="section-h">The programming model</div>
+   <p class="intro">A declarative pipeline reads like Structured Streaming's — define the source, event-time and watermark, the keyed windowed aggregation, and an idempotent sink. The engine handles offsets, state and recovery.</p>
+   <pre><span class="c">// windowed engagement count, exactly-once</span>
+stream.<span class="k">from</span>(<span class="s">"fan.events"</span>)
+      .<span class="k">withEventTime</span>(<span class="s">"ts"</span>).<span class="k">watermark</span>(<span class="s">"30s"</span>)
+      .<span class="k">keyBy</span>(<span class="s">"fanId"</span>)
+      .<span class="k">window</span>(<span class="k">tumbling</span>(<span class="s">"1m"</span>))
+      .<span class="k">aggregate</span>(<span class="k">count</span>())
+      .<span class="k">to</span>(<span class="k">sink</span>.<span class="k">kafka</span>(<span class="s">"engagement.1m"</span>))   <span class="c">// transactional</span>
+      .<span class="k">checkpoint</span>(<span class="s">"redis://checkpoints/engagement"</span>)</pre>
+   <div class="note"><b>What you give up, and what you don't:</b> you give up Spark's mature SQL optimizer and its huge connector ecosystem. You keep exactly-once, event-time correctness, and horizontal scale — with far less to operate, in whatever language your workers are written in.</div>`;
+}
+
+/* internals */
+function renderInternals(){
+  const cards=[
+   {n:"Exactly-once",p:"An idempotent producer plus a transactional commit of <b>offsets and state together</b> means each record affects state and output exactly once, even across crashes and restarts."},
+   {n:"Event-time & watermarks",p:"Records are processed by <b>when they happened</b>, not when they arrived. The watermark advances as event time progresses, bounding how long to wait for late data before closing a window."},
+   {n:"Windowing & state",p:"Tumbling, sliding and session windows are aggregations over <b>keyed state</b> in the store, partitioned for locality so each worker owns its keys."},
+   {n:"Stateful joins & dedup",p:"Stream–stream joins buffer both sides in <b>watermark-bounded state</b>; deduplication is state-backed on idempotency keys, so retries can't double-count."},
+   {n:"Backpressure",p:"Consumption is <b>pull-based</b> and lag-aware — a slow sink slows intake rather than piling up memory. No stage can overwhelm the next."},
+   {n:"Fault tolerance & rebalance",p:"When a worker dies, its partitions <b>rebalance</b> to others, which resume from the last checkpoint. Replay from offsets rebuilds any state after a bug fix."},
+   {n:"Scaling",p:"Parallelism equals partitions. <b>Add workers</b> to scale out; there's no central bottleneck and no cluster manager to run."},
+   {n:"Delivery modes",p:"Choose <b>exactly-once</b> (transactional, slightly higher latency) or <b>at-least-once</b> (faster) per pipeline, matching the guarantee to the workload."},
+  ];
+  document.getElementById("view").innerHTML=`<div class="section-h">How the guarantees are made</div>
+   <p class="intro">These are the internals that make the engine correct, not just fast — the same properties Structured Streaming provides, implemented over Kafka, Redis and worker processes.</p>
+   <div class="cards">${cards.map(c=>`<div class="card cc"><h4>${c.n}</h4><p>${c.p}</p></div>`).join("")}</div>`;
+}
+
+/* reference app: Score */
+const WALK=[
+ {l:"Source · Kafka",tech:"kafka",a:"MOTM vote consumed",w:"A fan's matchday Man-of-the-Match vote lands on the fan.events topic. A worker pulls it from its assigned partition — replayable and ordered.",feat:"source + offsets"},
+ {l:"Event-time",tech:"engine",a:"windowed by when it happened",w:"The worker places the event in a tumbling engagement window by its event timestamp, advancing the watermark as time moves — late votes are still counted, within the bound.",feat:"watermark"},
+ {l:"Keyed state",tech:"redis",a:"earn rule + running count",w:"Keyed by fan, the worker applies the MOTM earn rule and updates the running engagement aggregate in the state store.",feat:"stateful op"},
+ {l:"Checkpoint",tech:"engine",a:"offsets + state committed",w:"The new offset and the updated state are committed together, atomically — if the worker crashes now, it resumes here with no double-count.",feat:"exactly-once"},
+ {l:"Redis sink",tech:"redis",a:"balance + leaderboard",w:"Derived state is materialized to Redis: the fan's points balance and their leaderboard position, ready for the app to read in sub-milliseconds.",feat:"idempotent sink"},
+ {l:"Kafka sink",tech:"kafka",a:"loyalty.earn emitted",w:"A loyalty.earn event is written transactionally to Kafka, so other pipelines (the ledger, analytics) consume it exactly once.",feat:"transactional"},
+ {l:"RabbitMQ sink",tech:"rabbit",a:"badge → notify (async)",w:"If a badge was earned, a fulfillment and notification job is emitted to RabbitMQ with an ack and dead-letter fallback — the reliable side-effect path.",feat:"side-effect"},
+ {l:"Live read",tech:"redis",a:"app sees it move",w:"The fan's app reads the materialized Redis state and updates live. The engine did the hard part — correctness — off the hot path.",feat:"materialized"},
+];
+let wTimer=null;
+function renderRef(){
+  if(wTimer){clearInterval(wTimer);wTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">Reference app · Score engagement pipeline</div>
+   <p class="intro">Score Anything runs its real-time loyalty on this engine. Here's one matchday vote flowing through a pipeline defined with the API on the previous tab — showing the engine's features doing real work. Walk it, or step through.</p>
+   <div class="flow-grid"><div class="card flow" id="flowBox"></div><div class="card gsum" id="gsum"></div></div>`;
+  function draw(){
+    document.getElementById("flowBox").innerHTML=WALK.map((s,i)=>`<div class="fs ${i===hl?'active':''}">
+      <div class="lchip" style="background:${TECHC[s.tech]}">${s.l.toUpperCase()}</div>
+      <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div><span class="feat">${s.feat}</span></div></div>`).join("");
+    document.getElementById("gsum").innerHTML=`<p>The application is thin: it defines a pipeline and reads materialized Redis state. The engine owns event-time, state, checkpointing and recovery — exactly what you'd otherwise stand up a Spark cluster for.</p>
+      <div class="gbtns"><button class="gbtn primary" id="wPlay">▶ Walk</button><button class="gbtn" id="wStep">⏭ Step</button><button class="gbtn" id="wReset">↺</button></div>`;
+    document.getElementById("wPlay").onclick=play;document.getElementById("wStep").onclick=()=>{stop();step();};document.getElementById("wReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<WALK.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=WALK.length-1)hl=-1;wTimer=setInterval(()=>{if(hl<WALK.length-1){hl++;draw();}else stop();},1050);}
+  function stop(){if(wTimer){clearInterval(wTimer);wTimer=null;}}
+  draw();
+}
+
+/* shell */
+let CUR="engine";
+function renderTab(name){
+  CUR=name; if(wTimer){clearInterval(wTimer);wTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="engine") renderEngine();
+  else if(name==="parity") renderParity();
+  else if(name==="internals") renderInternals();
+  else renderRef();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("engine");
+</script>
+</body>
+</html>
