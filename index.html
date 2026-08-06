@@ -117,6 +117,26 @@
         <div class="fname">ai-architecture-decisions.html</div>
       </a>
     </div>
+
+    <div class="section-h">AI patterns · schematic views</div>
+    <div class="grid">
+      <a class="card" href="rag-pipeline.html" style="--accent:var(--accent)">
+        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Schematic<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
+        <h3>RAG Reference Pipeline</h3>
+        <div class="sub">node-graph · dark schematic style</div>
+        <p>A production retrieval-augmented-generation pipeline drawn as a schematic node-graph: the offline indexing chain (sources → chunk → embed → governed vector index) and the online query chain (query → guardrail → embed → retrieve → rerank → assemble → generate), meeting at retrieval where access controls filter what can be pulled, with an evaluation loop closing back on the index. Filter by path; tap any node.</p>
+        <div class="tags"><span class="tag">RAG</span><span class="tag">Governed retrieval</span><span class="tag">SVG schematic</span></div>
+        <div class="fname">rag-pipeline.html</div>
+      </a>
+      <a class="card" href="sequence-agent.html" style="--accent:var(--accent)">
+        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Sequence<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
+        <h3>Agentic Request — Sequence</h3>
+        <div class="sub">UML-style sequence · dark schematic style</div>
+        <p>One governed agent request as a sequence diagram across six lifelines (user, gateway, agent, retrieval, tools, LLM): identity in at the top, a reason–act loop in the middle where the model calls tools and reads observations, a guarded and cited answer out the bottom, and every message on the immutable audit log. Play it, step it, or tap any message.</p>
+        <div class="tags"><span class="tag">Agent runtime</span><span class="tag">Reason–act loop</span><span class="tag">Sequence diagram</span></div>
+        <div class="fname">sequence-agent.html</div>
+      </a>
+    </div>
   </div>
 
   <!-- ===================== TRACK 1 · SCORE ===================== -->
@@ -225,222 +245,4 @@
         <div class="ctop"><span class="role-badge" style="color:var(--amber);background:rgba(169,118,10,.10)">Unit economics</span><span class="open">Open ↗</span></div>
         <h3>Season Issuance Model</h3>
         <div class="sub">how many points to mint, and what they cost</div>
-        <p>The economics beneath the loyalty loop: set a season budget ceiling, tune base earn rates and per-action levers (fixed and spend-based), and watch the earn schedule that results. Then trace where the points land as liability, float, redemption and breakage, so issuance stays inside the budget. Exports to CSV.</p>
-        <div class="tags"><span class="tag">Budget → issuance</span><span class="tag">Earn-rate levers</span><span class="tag">Liability &amp; breakage</span></div>
-        <div class="fname">score-points-issuance-model.html</div>
-      </a>
-
-      <a class="card" href="loyalty-ledger.html">
-        <div class="ctop"><span class="role-badge" style="color:var(--green);background:rgba(26,143,69,.10)">Integrity</span><span class="open">Open ↗</span></div>
-        <h3>Loyalty Ledger &amp; Reconciliation</h3>
-        <div class="sub">points as a liability on the books</div>
-        <p>The integrity layer beneath the engine: an append-only, double-entry, idempotent and reversible ledger that finance can reconcile and audit. Post entries, watch the books stay balanced, try a duplicate and see exactly-once reject it, then break and rebuild the reconciliation.</p>
-        <div class="tags"><span class="tag">Executive + Developer</span><span class="tag">Double-entry + hash chain</span><span class="tag">Reconciliation demo</span></div>
-        <div class="fname">loyalty-ledger.html</div>
-      </a>
-
-    </div>
-
-    <div class="section-h">AI governance &amp; security</div>
-    <div class="grid">
-
-      <a class="card" href="score-ai-guardrails.html">
-        <div class="ctop"><span class="role-badge" style="color:var(--red);background:rgba(214,47,38,.10)">Guardrails<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Score AI Guardrails Architecture</h3>
-        <div class="sub">MCP · least-privilege access · no public leakage</div>
-        <p>Defense-in-depth for Score AI as an MCP server, seen through three lenses (Security, Privacy, Executive). A request-trace simulator walks a request through all eight guardrail layers, an access evaluator and an egress simulator block over-reach and leakage, plus a threat model (OWASP LLM / MCP / ATLAS) and a conformance matrix to ISO 42001 / 27001 / 27701, SOC 2, GDPR and the EU AI Act.</p>
-        <div class="tags"><span class="tag">Tri-lens (Sec / Privacy / Exec)</span><span class="tag">Request-trace + simulators</span><span class="tag">ISO · SOC 2 · GDPR mapped</span></div>
-        <div class="fname">score-ai-guardrails.html</div>
-      </a>
-
-      <a class="card" href="score-predictor-agents.html">
-        <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">Multi-agent<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Predictor Agents — multi-agent framework</h3>
-        <div class="sub">supervisor · specialists · ensemble · market</div>
-        <p>The prediction service behind the loyalty markets, seen as executive or engineer. A supervisor orchestrates specialist predictor agents; an ensemble/critic/risk chain blends, calibrates and guards them; a market-maker prices the result; and a closed learning loop grades every outcome. Sits on the data platform, governed by the AI guardrails, exposed via the Score AI MCP.</p>
-        <div class="tags"><span class="tag">Executive + Engineer</span><span class="tag">Topology + lifecycle walk</span><span class="tag">Ensemble · calibration · learning loop</span></div>
-        <div class="fname">score-predictor-agents.html</div>
-      </a>
-
-      <a class="card" href="score-soc2-compliance.html">
-        <div class="ctop"><span class="role-badge" style="color:var(--green);background:rgba(26,143,69,.10)">Compliance</span><span class="open">Open ↗</span></div>
-        <h3>What SOC 2 Needs</h3>
-        <div class="sub">Trust criteria · controls · journey · checklist</div>
-        <p>What Score has to put in place for a SOC 2, mapped to its actual stack. The five Trust Services Criteria with a scope selector, the nine Common Criteria (CC1–CC9) and the controls that satisfy them, the practical control domains, the road from gap assessment to a Type II report, and a 36-item readiness checklist.</p>
-        <div class="tags"><span class="tag">Trust criteria + CC1–CC9</span><span class="tag">Stack-mapped controls</span><span class="tag">Readiness checklist</span></div>
-        <div class="fname">score-soc2-compliance.html</div>
-      </a>
-
-    </div>
-
-    <div class="section-h">ScoreMotion · markerless biomechanics</div>
-    <div class="grid">
-
-      <a class="card" href="scoremotion-biomechanics.html" style="--accent:var(--teal)">
-        <div class="ctop"><span class="role-badge" style="color:var(--teal);background:rgba(14,138,130,.10)">CV + physics<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>ScoreMotion — Biomechanics Pipeline</h3>
-        <div class="sub">video → pose → inverse dynamics → comparison</div>
-        <p>The markerless pipeline in nine clickable stages: MoveNet pose estimation, camera-view classification and normalization, Newton-Euler inverse dynamics for forces and joint torques, bounds validation, and elite comparison — plus the physics table, the running metrics and injury-risk indicators, and the lab/simulation/reliability validation.</p>
-        <div class="tags"><span class="tag">Pose estimation</span><span class="tag">Inverse dynamics</span><span class="tag">View-invariant</span></div>
-        <div class="fname">scoremotion-biomechanics.html</div>
-      </a>
-
-      <a class="card" href="scoremotion-fusion.html" style="--accent:var(--violet)">
-        <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">AI · estimation<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>ScoreMotion — Multi-Sensor Fusion</h3>
-        <div class="sub">pose + IMU · Extended Kalman Filter</div>
-        <p>A different class of AI architecture: probabilistic state estimation, not language models. The complementary pose/IMU sources, a cyclable Extended Kalman Filter predict/update loop, and the synchronization (cross-correlation + confidence weighting) and graceful degradation that keep it robust when a sensor drops out.</p>
-        <div class="tags"><span class="tag">EKF predict/update loop</span><span class="tag">Sync confidence</span><span class="tag">Graceful degradation</span></div>
-        <div class="fname">scoremotion-fusion.html</div>
-      </a>
-
-    </div>
-
-    <div class="section-h">Delivery &amp; promotion</div>
-    <div class="grid">
-      <a class="card" href="urc-promotion-pipeline.html" style="--accent:var(--accent)">
-        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">CI/CD gate<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Code Promotion to URC — Gitea Actions</h3>
-        <div class="sub">3HL-hosted gate · publish to URC repo · deploy to URC or 3HL</div>
-        <p>A Gitea Actions pipeline that gates code into the URC repository — the same for 3 Halves Labs (via their own repo), other agencies, or URC itself, with URC hosting none of the gate and 3HL running it. Nine stages with an embedded workflow, a full check table (SBOM and supply-chain analysis of every library, SAST, secret and IaC scanning, tests and provenance), AI-assisted triage that can escalate but never wave a build through, deterministic fallbacks as the floor, and a signed, attested publish and deploy to a runtime hosted by URC or 3HL, with rollback.</p>
-        <div class="tags"><span class="tag">Gitea Actions</span><span class="tag">SBOM + SAST + secrets</span><span class="tag">AI with fallbacks</span></div>
-        <div class="fname">urc-promotion-pipeline.html</div>
-      </a>
-    </div>
-  </div>
-
-  <!-- ===================== TRACK 2 · SEPULCHRE ===================== -->
-  <div class="track" id="independent">
-    <div class="track-h" style="border-color:var(--violet)">
-      <span class="tk">Independent &amp; open source</span>
-      <span class="tktag" style="color:var(--violet);background:rgba(116,55,201,.10)">my own projects · in the open</span>
-    </div>
-    <p class="track-desc">Projects I build and govern in the open, outside 3HL: a zero-knowledge credential broker, an open scheduling standard, an ISO 20022 MCP server, and an AI architecture-review tool.</p>
-
-    <div class="section-h">Sepulchre · zero-knowledge credential broker</div>
-    <p class="track-desc" style="margin-top:-4px">Built on Vault and vendor-neutral by design, where the operator's inability to read tenant secrets is enforced by policy and provable from the audit log — with an on-box AI substrate so its AI features never ship data to a third party.</p>
-    <div class="grid">
-
-      <a class="card" href="sepulchre-system-architecture.html" style="--accent:var(--accent)">
-        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">System</span><span class="open">Open ↗</span></div>
-        <h3>Sepulchre — System Architecture (v2)</h3>
-        <div class="sub">credential broker on Vault · vendor-neutral</div>
-        <p>The v2 architecture: a stateless broker over a Vault cryptographic core, Postgres for metadata only, a signed audit pipeline, and pluggable roots of trust. Five actors, pooled and siloed tenancy from one binary, the two canonical data flows, and the deployment topologies with a bounded-blast-radius failure model.</p>
-        <div class="tags"><span class="tag">Vault core</span><span class="tag">Pooled + siloed</span><span class="tag">Data flows + failure modes</span></div>
-        <div class="fname">sepulchre-system-architecture.html</div>
-      </a>
-
-      <a class="card" href="sepulchre-zero-knowledge.html" style="--accent:var(--red)">
-        <div class="ctop"><span class="role-badge" style="color:var(--red);background:rgba(214,47,38,.10)">Zero-knowledge</span><span class="open">Open ↗</span></div>
-        <h3>Sepulchre — The Zero-Knowledge Guarantee</h3>
-        <div class="sub">by policy, not by promise</div>
-        <p>How the operator's inability to read tenant secrets is enforced and proven. Walk an attempted operator read through the policy, code, CI and operational layers that each stop it independently, then the per-tenant key hierarchy, the signed hash-chained audit event and the continuous attestation that makes the empty human-read list provable. BYOK for the strongest form.</p>
-        <div class="tags"><span class="tag">Defense-in-depth walk</span><span class="tag">Hash-chain attestation</span><span class="tag">BYOK</span></div>
-        <div class="fname">sepulchre-zero-knowledge.html</div>
-      </a>
-
-      <a class="card" href="sepulchre-ai-substrate.html" style="--accent:var(--violet)">
-        <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">AI substrate<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Sepulchre — Embedded AI Substrate</h3>
-        <div class="sub">on-box SLM · grammar-constrained decoding</div>
-        <p>Audit Q&amp;A and compliance narratives without a hosted API: an in-process small language model (Qwen2.5-1.5B via node-llama-cpp) that never sees plaintext, runs in a credential-less worker, and is grammar-constrained (GBNF) to emit only a whitelisted audit-query object — never free-form SQL. The architecture, an interactive constrained-decoding walkthrough, the decision record and the benchmark plan.</p>
-        <div class="tags"><span class="tag">On-box SLM</span><span class="tag">GBNF constrained decoding</span><span class="tag">Zero-knowledge</span></div>
-        <div class="fname">sepulchre-ai-substrate.html</div>
-      </a>
-
-    </div>
-
-    <div class="section-h">Open Sports Scheduling Standard</div>
-    <div class="grid">
-      <a class="card" href="osss-architecture.html" style="--accent:var(--blue)">
-        <div class="ctop"><span class="role-badge" style="color:var(--blue);background:rgba(31,99,200,.10)">Open standard</span><span class="open">Open ↗</span></div>
-        <h3>OSSS — Open Sports Scheduling Standard</h3>
-        <div class="sub">vendor-neutral · solver-agnostic · openly governed</div>
-        <p>A machine-readable language for sports scheduling that standardizes the problem, not the solver: the interop model and spec modules, the core data model (teams, venues physical and virtual, fixtures, officials, resources), a 51-constraint registry across 11 categories with six penalty families, and explainable, auditable results with Pareto alternatives, profiles and a conformance suite.</p>
-        <div class="tags"><span class="tag">Interop model</span><span class="tag">51 constraints · 6 penalties</span><span class="tag">Explainable results</span></div>
-        <div class="fname">osss-architecture.html</div>
-      </a>
-    </div>
-
-    <div class="section-h">Open Banking · ISO 20022 MCP</div>
-    <div class="grid">
-      <a class="card" href="mcp-iso20022.html" style="--accent:var(--green)">
-        <div class="ctop"><span class="role-badge" style="color:var(--green);background:rgba(26,143,69,.10)">MCP server<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Open Banking MCP — ISO 20022</h3>
-        <div class="sub">governed payment operations for Odoo · over MCP</div>
-        <p>A governed MCP server exposing ISO 20022 payment capabilities as tools any AI agent can call — six tools across three permission tiers, a three-layer governance chain (identity, immutable audit, PII sanitisation), and a two-step human-in-the-loop so no single agent action can move money. Staged pain.001 messages execute against Odoo, with a write-once Postgres audit trail.</p>
-        <div class="tags"><span class="tag">Governed agent</span><span class="tag">6 tools · 3 tiers</span><span class="tag">Human-in-the-loop</span></div>
-        <div class="fname">mcp-iso20022.html</div>
-      </a>
-    </div>
-
-    <div class="section-h">AI tools</div>
-    <div class="grid">
-      <a class="card" href="aws-architecture.html" style="--accent:var(--violet)">
-        <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">Bedrock agents<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>AI Enterprise Architecture Review Board</h3>
-        <div class="sub">orchestrator + five specialist perspectives · Bedrock</div>
-        <p>Upload an architecture, ask a question, get a board-level review with evidence. One orchestrator coordinates five specialist perspectives the way a real review board works, built across four CDK stacks (Foundation · Data · Agent · Api): a React SPA through API Gateway and Lambda to Amazon Bedrock.</p>
-        <div class="tags"><span class="tag">Multi-agent</span><span class="tag">Amazon Bedrock</span><span class="tag">4 CDK stacks</span></div>
-        <div class="fname">aws-architecture.html</div>
-      </a>
-    </div>
-  </div>
-
-  <!-- ===================== TRACK 3 · REFERENCE ===================== -->
-  <div class="track" id="reference">
-    <div class="track-h" style="border-color:var(--orange)">
-      <span class="tk">Reference &amp; studies</span>
-      <span class="tktag" style="color:var(--orange);background:rgba(191,79,23,.10)">study · not my product</span>
-    </div>
-    <p class="track-desc">Reference and solution architectures, plus interactive tools — some designed from scratch for a platform or a role, some built to study a published design.</p>
-
-    <div class="grid" style="margin-top:16px">
-
-      <a class="card" href="databricks-secure-ai.html" style="--accent:var(--accent)">
-        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Solution architecture<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
-        <h3>Secure AI on Azure Databricks</h3>
-        <div class="sub">conversational + agentic AI on the Lakehouse</div>
-        <p>A reference architecture for conversational and autonomous-agent AI on the Azure Databricks Lakehouse: ingestion → medallion → Unity Catalog governance → serving, the chat/voice/agent layer with governed retrieval and tools (plus Vertex AI / Gemini as a multi-cloud model option), six security pillars (Entra ID, Unity Catalog row/column security, Private Link, customer-managed keys, Mosaic AI Gateway guardrails, audit), a quality layer (data-quality tests, agent evaluation, a CI gate, and Lakehouse Monitoring for data and model drift), and a governed request walk. The through-line: the AI inherits the platform's access controls, so it can never surface data the user isn't entitled to.</p>
-        <div class="tags"><span class="tag">Databricks + Unity Catalog</span><span class="tag">Row/column security into RAG</span><span class="tag">CMK · Private Link · Gateway</span><span class="tag">Eval + drift monitoring</span></div>
-        <div class="fname">databricks-secure-ai.html</div>
-      </a>
-
-      <a class="card" href="databricks-deployment-scaling.html" style="--accent:var(--accent)">
-        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Deployment · scaling</span><span class="open">Open ↗</span></div>
-        <h3>Azure Databricks — Landing Zone, Compute &amp; Cost</h3>
-        <div class="sub">deploy · scale · cost the secure-AI platform</div>
-        <p>The deployment and scaling companion to the secure-AI architecture: the Azure landing zone (control-plane vs data-plane split, injected VNet with host/container subnets, front-end and back-end Private Link, ADLS and Key Vault behind private endpoints, controlled egress), compute scaling (serverless vs classic per workload, model-serving concurrency, Vector Search sizing), and a cost model showing what each component's bill is proportional to and which lever bends it — including the monitoring and evaluation costs that scale with traffic.</p>
-        <div class="tags"><span class="tag">Control / data plane</span><span class="tag">Serverless vs classic</span><span class="tag">Cost &amp; attribution</span></div>
-        <div class="fname">databricks-deployment-scaling.html</div>
-      </a>
-
-      <a class="card" href="open-banking-aws.html" style="--accent:var(--orange)">
-        <div class="ctop"><span class="role-badge" style="color:var(--orange);background:rgba(191,79,23,.10)">Reference arch</span><span class="open">Open ↗</span></div>
-        <h3>Open Banking on AWS</h3>
-        <div class="sub">AWS reference architecture · rebuilt</div>
-        <p>A clean, interactive rebuild of AWS's "Open Banking on AWS" reference architecture: nine zones from consumer through edge, API Gateway (mTLS + OAuth 2.0 + TSP), ECS/Fargate microservices and the hybrid path to the bank core, all 18 numbered components clickable, plus Account-Information and Payment request-flow walkthroughs. Architecture and service names © Amazon Web Services.</p>
-        <div class="tags"><span class="tag">9 zones · 18 components</span><span class="tag">Request-flow walks</span><span class="tag">AWS reference</span></div>
-        <div class="fname">open-banking-aws.html</div>
-      </a>
-
-      <a class="card" href="frontend-caching-playground.html" style="--accent:var(--blue)">
-        <div class="ctop"><span class="role-badge" style="color:var(--blue);background:rgba(31,99,200,.10)">Reference</span><span class="open">Open ↗</span></div>
-        <h3>Front-End Data Caching — Playground</h3>
-        <div class="sub">cache-first · network-first · stale-while-revalidate · …</div>
-        <p>Pick a caching strategy, fire a read, and watch data move between the component, the client cache and the origin — with freshness, latency and offline outcomes. Includes a comparison matrix and a mapping to Cache-Control, TanStack Query, SWR, Apollo and Workbox.</p>
-        <div class="tags"><span class="tag">Interactive simulator</span><span class="tag">Strategy comparison</span><span class="tag">API mapping</span></div>
-        <div class="fname">frontend-caching-playground.html</div>
-      </a>
-
-    </div>
-  </div>
-
-  <div class="foot">
-    Architecture collection by Blake Medulan &nbsp;·&nbsp; Score Anything (3 Halves Labs), independent open-source projects (Sepulchre, OSSS), and reference studies<br>
-    <span class="ai-dot" style="margin:0 5px 0 0"></span>marks an AI architecture &nbsp;·&nbsp; dashed cards are in progress &nbsp;·&nbsp; contact <a href="mailto:blake@3halves-labs.com">blake@3halves-labs.com</a>
-  </div>
-
-</div>
-</body>
-</html>
+        <p>The economics beneath the loyalty loop: set a season budget ceiling, tune base earn rates and per-action levers (fixed an
