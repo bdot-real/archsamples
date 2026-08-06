@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Request · sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1524; --panel:#151d30; --panel2:#111827;
+    --node:#1a2540; --node2:#202c4a; --line:#2b3860; --line2:#3a4a76;
+    --ink:#e6ecf7; --dim:#93a1c2; --faint:#6b789c;
+    --accent:#3fb6e6; --green:#3fce86; --amber:#e0b23f; --violet:#b389f0; --orange:#f0894f; --red:#ef5f57;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1100px 600px at 12% -10%,rgba(63,182,230,.10),transparent 60%),radial-gradient(800px 500px at 100% 0,rgba(63,206,134,.07),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 22px 56px}
+
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:6px 0 6px;font-size:23px;font-weight:700;letter-spacing:-.01em}
+  .lead{color:var(--dim);font-size:13.5px;max-width:800px}
+  .lead b{color:var(--ink)}
+
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 12px}
+  .btns{display:flex;gap:7px}
+  .btn{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer;background:var(--panel2);color:var(--ink)}
+  .btn:hover{border-color:var(--accent)} .btn.primary{background:var(--accent);color:#08131f;border-color:var(--accent);font-weight:600}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:16px;height:0;border-top-width:2px;display:inline-block}
+
+  .canvas{background:linear-gradient(180deg,#121a2c,#0f1626);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:0 20px 50px rgba(0,0,0,.35);position:relative;overflow:hidden}
+  .canvas::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(63,182,230,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,182,230,.05) 1px,transparent 1px);background-size:34px 34px;pointer-events:none}
+  svg{width:100%;height:auto;display:block;position:relative}
+  .actor rect{fill:var(--node2);stroke:var(--line2);stroke-width:1.3}
+  .actor .al{fill:var(--ink);font-family:var(--mono);font-size:12.5px;font-weight:600}
+  .actor .as{fill:var(--faint);font-family:var(--mono);font-size:9px}
+  .lifeline{stroke:var(--line);stroke-width:1.3;stroke-dasharray:3 5}
+  .actbar{fill:rgba(63,182,230,.10);stroke:var(--line2);stroke-width:1}
+  .loopbox{fill:rgba(179,137,240,.05);stroke:var(--violet);stroke-width:1.2;stroke-dasharray:5 4}
+  .looptab{fill:var(--violet)} .looptab-t{fill:#0e1524;font-family:var(--mono);font-size:9px;font-weight:700}
+  .msg{cursor:pointer}
+  .msg .ln{stroke:var(--accent);stroke-width:1.8;transition:.15s}
+  .msg .ln.ret{stroke:var(--green);stroke-dasharray:6 4}
+  .msg .ml{fill:var(--dim);font-family:var(--mono);font-size:10px;transition:.15s}
+  .msg .hit{stroke:transparent;stroke-width:16}
+  .msg.dim{opacity:.28} .msg.on .ln{stroke-width:3;filter:drop-shadow(0 0 5px rgba(63,182,230,.5))} .msg.on .ml{fill:var(--ink);font-weight:600}
+  .msg.done{opacity:1}
+  .seqnum{fill:var(--faint);font-family:var(--mono);font-size:9px}
+  .note rect{fill:rgba(224,178,63,.12);stroke:var(--amber);stroke-width:1}
+  .note text{fill:var(--amber);font-family:var(--mono);font-size:9px;font-weight:600}
+  .auditnote{fill:var(--faint);font-family:var(--mono);font-size:10px}
+
+  .info{margin-top:14px;border:1px solid var(--line);background:var(--panel);border-radius:14px;min-height:88px;padding:14px 16px}
+  .info .it{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  .info h3{margin:5px 0 5px;font-size:15px}
+  .info p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.55;max-width:820px}
+  .info .empty{font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.7}
+  .info .empty b{color:var(--dim)}
+
+  .foot{margin-top:24px;font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Schematic · agent runtime</div>
+  <h1>Agentic Request — Sequence</h1>
+  <p class="lead">One governed agent request as a sequence diagram: identity in at the top, a <b>reason–act loop</b> in the middle where the model calls tools and reads observations, and a guarded, cited answer out the bottom — every message on the immutable audit log. Step through it, or tap any message.</p>
+
+  <div class="bar">
+    <div class="btns"><button class="btn primary" id="play">▶ Play</button><button class="btn" id="step">⏭ Step</button><button class="btn" id="reset">↺</button></div>
+    <div class="legend">
+      <span><i style="border-color:var(--accent)"></i>call</span>
+      <span><i style="border-color:var(--green);border-top-style:dashed"></i>return</span>
+      <span><i style="border-color:var(--violet);border-top-style:dashed"></i>loop</span>
+    </div>
+  </div>
+
+  <div class="canvas"><div id="svghost"></div></div>
+  <div class="info" id="info"><div class="empty"><b>TAP A MESSAGE</b> — or press Play to walk the exchange. The two messages that matter most for security are the governed fetch (retrieval under the user's access controls) and the tool invoke (least-privilege, with human approval for writes).</div></div>
+
+  <div class="foot"><b>Agentic Request</b> · governed reason–act loop · schematic view<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const A=[
+ {id:"user",x:80,l:"User",s:"chat · voice"},
+ {id:"gw",x:280,l:"Gateway",s:"auth · guard · audit"},
+ {id:"agent",x:490,l:"Agent",s:"plan · orchestrate"},
+ {id:"ret",x:690,l:"Retrieval",s:"governed RAG + SQL"},
+ {id:"tools",x:880,l:"Tools",s:"MCP · functions"},
+ {id:"llm",x:1060,l:"LLM",s:"reason · generate"},
+];
+const AX={}; A.forEach(a=>AX[a.id]=a.x);
+const M=[
+ {f:"user",t:"gw",k:"call",l:"query + Entra ID",info:"The user's question enters with their verified Entra ID identity and MFA context — no anonymous or shared-account access reaches the agent."},
+ {f:"gw",t:"agent",k:"call",l:"authorized · input guard",info:"The Gateway authenticates, rate-limits, and screens the input for prompt-injection and PII, then hands a scoped request to the agent."},
+ {f:"agent",t:"ret",k:"call",l:"governed fetch (user ACL)",info:"The agent retrieves under the user's own entitlements — row and column access controls apply during retrieval, so nothing out of scope is ever pulled."},
+ {f:"ret",t:"agent",k:"ret",l:"context · row/col filtered",info:"Only permitted, relevant context returns — already filtered to what this user is allowed to see."},
+ {f:"agent",t:"llm",k:"call",l:"plan + grounded prompt",loop:true,info:"The agent sends the grounded context and asks the model to plan the next step. This begins the reason–act loop."},
+ {f:"llm",t:"agent",k:"ret",l:"tool call",loop:true,info:"The model responds with a tool call rather than a final answer — the reasoning step choosing an action."},
+ {f:"agent",t:"tools",k:"call",l:"invoke · least-privilege",loop:true,note:"write → human approval",info:"The agent invokes only tools it is granted. A write or consequential action routes through human approval before it runs."},
+ {f:"tools",t:"agent",k:"ret",l:"result",loop:true,info:"The tool returns its result, which becomes the next observation for the model."},
+ {f:"agent",t:"llm",k:"call",l:"observation + continue",loop:true,info:"The observation is fed back and the loop repeats — plan, act, observe — until the model has enough to answer."},
+ {f:"llm",t:"agent",k:"ret",l:"final answer",info:"The model produces the grounded final answer, drawing only on retrieved context and tool results."},
+ {f:"agent",t:"gw",k:"call",l:"response + citations",info:"The agent returns the answer with citations back to its sources for the Gateway to check."},
+ {f:"gw",t:"user",k:"ret",l:"answer · output guard",info:"Output guardrails scan the response, the answer is delivered, and the whole exchange is written to the immutable audit log."},
+];
+const VW=1150, Y0=112, STEP=36, TOP=64, BOT=Y0+M.length*STEP+8;
+const VH=BOT+52;
+function build(){
+ let s=`<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+   <marker id="ac" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#3fb6e6"/></marker>
+   <marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#3fce86"/></marker>
+  </defs>`;
+ // lifelines + activation on agent
+ A.forEach(a=>{ s+=`<line class="lifeline" x1="${a.x}" y1="${TOP}" x2="${a.x}" y2="${BOT}"></line>`; });
+ s+=`<rect class="actbar" x="${AX.agent-5}" y="${Y0+STEP-18}" width="10" height="${STEP*10+8}" rx="3"></rect>`;
+ // loop box (messages 5..9 => indices 4..8)
+ const ly1=Y0+4*STEP-24, ly2=Y0+8*STEP+14;
+ s+=`<rect class="loopbox" x="${AX.agent-40}" y="${ly1}" width="${AX.llm-AX.agent+80}" height="${ly2-ly1}" rx="8"></rect>
+     <path class="looptab" d="M${AX.agent-40},${ly1} h58 v15 h-48 l-10,-10 z"></path>
+     <text class="looptab-t" x="${AX.agent-33}" y="${ly1+11}">loop</text>
+     <text class="elabel" x="${AX.agent-40}" y="${ly2-6}" style="fill:var(--violet);font-family:var(--mono);font-size:9px">reason–act · until the model can answer</text>`;
+ // actor headers
+ A.forEach(a=>{ const w=132; s+=`<g class="actor"><rect x="${a.x-w/2}" y="18" width="${w}" height="44" rx="9"></rect><text class="al" x="${a.x}" y="38" text-anchor="middle">${a.l}</text><text class="as" x="${a.x}" y="52" text-anchor="middle">${a.s}</text></g>`; });
+ // messages
+ M.forEach((m,i)=>{
+   const y=Y0+i*STEP, x1=AX[m.f], x2=AX[m.t], mid=(x1+x2)/2, mk=m.k==="ret"?"ar":"ac";
+   s+=`<g class="msg" data-i="${i}">
+     <text class="seqnum" x="${Math.min(x1,x2)-14}" y="${y+3}">${i+1}</text>
+     <line class="ln ${m.k==='ret'?'ret':''}" x1="${x1}" y1="${y}" x2="${x2>x1?x2-3:x2+3}" y2="${y}" marker-end="url(#${mk})"></line>
+     <text class="ml" x="${mid}" y="${y-6}" text-anchor="middle">${m.l}</text>
+     <line class="hit" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"></line>`;
+   if(m.note){ const nx=x2>x1?x2+8:x2-8; s+=`<g class="note"><rect x="${AX.tools+18}" y="${y-11}" width="150" height="22" rx="5"></rect><text x="${AX.tools+24}" y="${y+3}">${m.note}</text></g>`; }
+   s+=`</g>`;
+ });
+ // audit note
+ s+=`<text class="auditnote" x="${AX.user-30}" y="${BOT+30}">▪ every message → immutable audit log (Gateway + Unity Catalog)</text>`;
+ s+=`</svg>`;
+ document.getElementById("svghost").innerHTML=s;
+ document.querySelectorAll(".msg").forEach(g=>g.addEventListener("click",()=>{stop();select(+g.getAttribute("data-i"));}));
+}
+let cur=-1, timer=null;
+function select(i){
+ cur=i; const m=M[i];
+ document.querySelectorAll(".msg").forEach(g=>{const gi=+g.getAttribute("data-i");g.classList.toggle("on",gi===i);g.classList.toggle("done",gi<i);g.classList.remove("dim");});
+ const dir=m.k==="ret"?"return":"call";
+ document.getElementById("info").innerHTML=`<div class="it">step ${i+1} / ${M.length} · ${dir}${m.loop?" · loop":""}</div><h3>${A.find(a=>a.id===m.f).l} → ${A.find(a=>a.id===m.t).l}</h3><p>${m.info}</p>`;
+}
+function step(){ if(cur<M.length-1){select(cur+1);} }
+function play(){ stop(); if(cur>=M.length-1)cur=-1; timer=setInterval(()=>{ if(cur<M.length-1){select(cur+1);} else stop(); },1000); }
+function stop(){ if(timer){clearInterval(timer);timer=null;} }
+document.getElementById("play").onclick=play;
+document.getElementById("step").onclick=()=>{stop();step();};
+document.getElementById("reset").onclick=()=>{stop();cur=-1;document.querySelectorAll(".msg").forEach(g=>g.classList.remove("on","done","dim"));document.getElementById("info").innerHTML='<div class="empty"><b>TAP A MESSAGE</b> — or press Play to walk the exchange. The two messages that matter most for security are the governed fetch (retrieval filtered to what the user may see) and the tool invoke (least-privilege, with human approval for writes).</div>';};
+build();
+</script>
+</body>
+</html>
