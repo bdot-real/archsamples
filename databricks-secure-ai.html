@@ -229,4 +229,165 @@ function renderLake(){
 /* ---------- AI ---------- */
 const AC={
  chat:{z:"Front-ends",n:"Chatbot",note:"web · Teams · Slack",d:"The conversational surface — a Databricks App or embedded widget in web, Microsoft Teams or Slack. It holds no credentials of its own; it acts as the signed-in user."},
- voice:{z:"
+ voice:{z:"Front-ends",n:"Voice assistant",note:"STT ↔ TTS",d:"Speech-to-text and text-to-speech (Azure AI Speech or Google STT/TTS) wrap the same agent, so voice and chat share one governed brain."},
+ orch:{z:"Orchestration",n:"Agent Framework",note:"Mosaic AI / LangGraph",d:"A planner-plus-tools orchestrator (Mosaic AI Agent Framework or LangGraph) that decomposes the request, calls tools, and composes the answer — every step traced in MLflow."},
+ eval:{z:"Orchestration",n:"Agent Evaluation",note:"MLflow · tracing",d:"Offline and online evaluation of agent quality and safety, with full tracing of prompts, tool calls and retrievals for debugging and audit."},
+ memory:{z:"Orchestration",n:"State & memory",note:"conversation · agent",d:"Short-term conversation state and longer-term agent memory, scoped per user and stored in governed tables."},
+ vs:{z:"Grounding & tools",n:"Vector Search (RAG)",note:"governed retrieval",d:"Retrieval-augmented grounding over the Gold layer. Crucially, retrieval runs under the user's Unity Catalog entitlements, so results already exclude anything they can't see."},
+ ucf:{z:"Grounding & tools",n:"Unity Catalog functions",note:"governed tools",d:"Agent tools are registered UC functions — governed, versioned and permissioned like any other object, so tool access is least-privilege by construction."},
+ sql:{z:"Grounding & tools",n:"SQL / Genie",note:"NL → governed SQL",d:"The agent answers quantitative questions by generating governed SQL over SQL Warehouses (or via Genie), bound by the user's grants and row filters."},
+ mcp:{z:"Grounding & tools",n:"External actions (MCP)",note:"least-privilege",d:"Actions on external systems go through MCP tools with scoped credentials and, for anything consequential, human approval."},
+ gw:{z:"Models · via Gateway",n:"Mosaic AI Gateway",note:"guardrails · rate · audit",d:"Every model call passes the AI Gateway: rate limiting, PII detection, safety and prompt-injection guardrails, model access control, and payload logging for audit."},
+ fm:{z:"Models · via Gateway",n:"Foundation Model APIs",note:"Databricks-hosted",d:"Databricks-hosted LLMs and embedding models (Llama, DBRX and others) served inside the perimeter — no data leaves the tenant."},
+ vertex:{z:"Models · via Gateway",n:"Vertex AI · Gemini",note:"multi-cloud option",d:"GCP Vertex AI and Gemini as an alternative or complementary provider, reached through the same Gateway so governance and guardrails are identical."},
+};
+const AZONES=[
+ {n:"Front-ends",s:"chat & voice · no standalone credentials",keys:["chat","voice"]},
+ {n:"Orchestration",s:"plan · trace · evaluate",keys:["orch","eval","memory"]},
+ {n:"Grounding & tools",s:"governed retrieval and actions",keys:["vs","ucf","sql","mcp"]},
+ {n:"Models · via Gateway",s:"one guarded path to any model",keys:["gw","fm","vertex"]},
+];
+function openAC(k){
+  const c=AC[k];document.querySelectorAll("[data-ac]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-ac")===k));
+  document.getElementById("adetail").innerHTML=`<div class="dh"><div class="dt">${c.z}</div><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function renderAI(){
+  let s=`<div class="card stack">`;
+  AZONES.forEach((z,i)=>{
+    s+=`<div class="layer"><div class="lh"><span class="ln">${z.n}</span><span class="ls">${z.s}</span></div><div class="tiles">`+
+       z.keys.map(k=>`<div class="tile ${z.n.startsWith('Models')?'ai':''} ${k==='vs'||k==='ucf'||k==='sql'?'uc':''}" data-ac="${k}"><div class="tn">${AC[k].n}</div><div class="tnote">${AC[k].note}</div></div>`).join("")+`</div></div>`;
+    if(i<AZONES.length-1) s+=`<div class="flowdown">↓</div>`;
+  });
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Conversational &amp; agentic AI · governed end to end</div>
+   <p class="intro">Chat and voice front-ends sit over one orchestrator that grounds on governed retrieval and governed tools, then reaches any model through a single guarded Gateway. Click any component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="adetail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>The violet-edged tools (Vector Search, UC functions, SQL) are the ones bound to the user's Unity Catalog permissions.<br><br>The orange-edged models are reached only through the Gateway, so guardrails and audit are identical for Databricks-hosted and Vertex/Gemini models.</div></div></div></div>
+   <div class="section-h" style="margin-top:20px">Multi-cloud model strategy</div>
+   <div class="mc">
+     <div class="card mcc"><h4>Databricks-native</h4><p>Foundation Model APIs and Mosaic AI keep data and inference inside the Azure tenant — the default for sensitive workloads.</p><div class="chips"><span class="chip">Foundation Model APIs</span><span class="chip">Mosaic AI Agent Framework</span><span class="chip">Vector Search</span></div></div>
+     <div class="card mcc g"><h4>GCP Vertex AI · Gemini</h4><p>Reached through the same Gateway for capability or cost reasons, with identical governance, guardrails and audit — no second security model to maintain.</p><div class="chips"><span class="chip">Vertex AI</span><span class="chip">Gemini</span><span class="chip">Vertex AI Search (grounding)</span></div></div>
+   </div>`;
+  document.querySelectorAll("[data-ac]").forEach(el=>el.addEventListener("click",()=>openAC(el.getAttribute("data-ac"))));
+}
+
+/* ---------- Security ---------- */
+const PILLARS=[
+ {c:"",num:"1",n:"Identity & SSO",sub:"who you are",items:["Microsoft Entra ID SSO across all workspaces","SCIM provisioning of users and groups","Service principals for automation, scoped tightly","MFA and conditional access at the front door","Unified login for chat, voice and notebooks"]},
+ {c:"p2",num:"2",n:"Authorization · Unity Catalog",sub:"what you can touch",items:["RBAC grants on catalog / schema / table","Attribute-based access via tags (ABAC)","Row-level security with row filters","Column-level security with column masks","Dynamic views for fine-grained shaping","Least privilege, ownership and inheritance"]},
+ {c:"p3",num:"3",n:"Network isolation",sub:"where it runs",items:["VNet injection into your own network","Private Link on front-end and back-end","Secure cluster connectivity — no public IP","IP access lists on the workspace","Private endpoints + firewall to ADLS","Controlled, inspectable egress"]},
+ {c:"p4",num:"4",n:"Encryption",sub:"protect the bytes",items:["Customer-managed keys via Azure Key Vault","CMK for managed services and workspace storage","TLS 1.2+ for all data in transit","Secrets in Key Vault / Databricks secret scopes","Optional double encryption at rest"]},
+ {c:"p5",num:"5",n:"AI guardrails · Gateway",sub:"safe model use",items:["Rate limiting and quota per app / user","PII detection and redaction on prompts","Safety and prompt-injection guardrails","Model access control — who can call what","Usage tracking and payload logging","Output filtering before the user sees it"]},
+ {c:"p6",num:"6",n:"Governance & audit",sub:"prove it",items:["Unity Catalog audit logs and system tables","End-to-end data and AI lineage","Data classification and sensitivity tags","Compliance profiles (HIPAA / PCI / FedRAMP)","Delta Sharing governed cross-org","Agent traces retained for review"]},
+];
+function renderSec(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Defense in depth · six pillars</div>
+   <div class="hl"><span class="hi">🔒</span><span class="ht"><b>The AI inherits your access controls.</b> Because retrieval and tools run under the user's Unity Catalog entitlements, row-level security and column masks apply to what a chatbot or agent can ever retrieve — the LLM cannot become a way around the permissions model.</span></div>
+   <p class="intro">Identity establishes who is asking; Unity Catalog decides what they can touch; networking and encryption protect the platform; the Gateway governs the models; and everything is audited. No single layer is load-bearing on its own.</p>
+   <div class="pillars">${PILLARS.map(p=>`<div class="card pil ${p.c}"><h4><span class="pnum">${p.num}</span>${p.n}</h4><div class="psub">${p.sub}</div><ul>${p.items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`).join("")}</div>`;
+}
+
+/* ---------- Walk ---------- */
+const WALK=[
+ {l:"Authenticate",lc:"var(--green)",sec:true,a:"Entra ID SSO",w:"The user signs in through Microsoft Entra ID with MFA and conditional access. The request carries their verified identity into the platform — no shared service account stands in for them."},
+ {l:"Authorize",lc:"var(--green)",sec:true,a:"Unity Catalog binds",w:"The agent runs as the user (or a principal scoped to them). From here on, every data access is evaluated against their Unity Catalog grants, row filters and column masks."},
+ {l:"Plan",lc:"var(--accent)",sec:false,a:"Orchestrator decomposes",w:"The Agent Framework breaks the question into steps and picks tools — only the UC functions and queries the agent is actually granted, so tool access is least-privilege."},
+ {l:"Retrieve",lc:"var(--green)",sec:true,a:"Governed RAG + SQL",w:"Vector Search and SQL run with the user's entitlements. Row-level security and column masks apply during retrieval, so the context assembled for the model already excludes anything they can't see."},
+ {l:"Guardrails",lc:"var(--green)",sec:true,a:"Mosaic AI Gateway",w:"Prompt and context pass the Gateway: PII redaction, prompt-injection and safety checks, rate limiting. The payload is logged for audit before any model is called."},
+ {l:"Generate",lc:"var(--accent)",sec:false,a:"Grounded LLM",w:"A Foundation Model API or Vertex Gemini model answers, grounded only on the governed, permission-filtered context — inside the tenant for sensitive work."},
+ {l:"Filter & respond",lc:"var(--green)",sec:true,a:"Output guardrails",w:"Output guardrails scan the response, citations are attached, and the answer returns. The full trace (MLflow) and access (Unity Catalog) are recorded."},
+ {l:"Act",lc:"var(--amber)",sec:true,a:"Human-in-the-loop",w:"Any write or consequential action is itself a governed, permissioned operation and routes through human approval — the agent cannot act beyond what the user could."},
+];
+let wTimer=null;
+function renderWalk(){
+  if(wTimer){clearInterval(wTimer);wTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">One question, security at every hop</div>
+   <p class="intro">Follow a user's question through the system. The green nodes are the points where a security control is actively enforced — and the two that matter most are authorization and governed retrieval, because that's where the AI inherits the permissions model.</p>
+   <div class="flow-grid"><div class="card flow" id="flowBox"></div><div class="card gsum" id="gsum"></div></div>`;
+  function draw(){
+    document.getElementById("flowBox").innerHTML=WALK.map((s,i)=>`<div class="fs ${s.sec?'sec':''} ${i===hl?'active':''}">
+      <div class="lchip" style="background:${s.lc}">${s.l.toUpperCase()}</div>
+      <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div>${s.sec?'<span class="en">enforced</span>':''}</div></div>`).join("");
+    const done=hl>=WALK.length-1;
+    document.getElementById("gsum").innerHTML=`<p>The agent is never more privileged than the person using it. Identity flows in, Unity Catalog constrains every read, the Gateway guards every model call, and everything is traced.</p>
+      <div class="gbtns"><button class="gbtn primary" id="wPlay">▶ Walk</button><button class="gbtn" id="wStep">⏭ Step</button><button class="gbtn" id="wReset">↺</button></div>
+      <div class="sep ${done?'show':''}"><b>The AI can't exceed the user's entitlements.</b> Because authorization and retrieval are governed by Unity Catalog, there is no path for the chatbot or agent to surface data the user couldn't query themselves.</div>`;
+    document.getElementById("wPlay").onclick=play;document.getElementById("wStep").onclick=step;document.getElementById("wReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){if(hl<WALK.length-1){hl++;draw();}}
+  function play(){stop();if(hl>=WALK.length-1)hl=-1;wTimer=setInterval(()=>{if(hl<WALK.length-1){hl++;draw();}else stop();},1000);}
+  function stop(){if(wTimer){clearInterval(wTimer);wTimer=null;}}
+  draw();
+}
+
+/* ---------- Quality, testing & drift ---------- */
+const TESTS=[
+ {c:"",num:"1",n:"Data quality",sub:"catch drift at ingest",items:["DLT expectations and Delta constraints on every load","Bad or out-of-spec rows quarantined, not silently passed","Schema enforcement stops shape changes early"]},
+ {c:"p3",num:"2",n:"Retrieval quality",sub:"is RAG returning the right context",items:["Recall and precision over a labelled retrieval set","Groundedness — is the answer supported by retrieved chunks","Freshness of the vector index versus source tables"]},
+ {c:"p2",num:"3",n:"Agent & response eval",sub:"Mosaic AI Agent Evaluation",items:["Correctness against curated eval sets","Groundedness / faithfulness — no claims beyond context","Relevance, plus safety and toxicity","LLM-as-judge plus custom domain metrics"]},
+ {c:"p5",num:"4",n:"Safety & adversarial",sub:"red-team the agent",items:["Prompt-injection and jailbreak suites","Guardrail-effectiveness tests on the Gateway","Tool-abuse and over-reach checks"]},
+ {c:"p6",num:"5",n:"Regression & CI gate",sub:"nothing ships unevaluated",items:["Every change — prompt, model, index, tool — reruns the suite","Promotion gated on passing thresholds","Promoted only via MLflow + Unity Catalog model registry"]},
+];
+const DRIFT=[
+ ["Data / feature drift","Input distributions move","Lakehouse Monitoring · profile & drift metrics on source tables","Investigate source; refresh features / retrain"],
+ ["Schema drift","Columns or types change","DLT expectations + Delta schema enforcement","Quarantine, fix the pipeline before it propagates"],
+ ["Prediction / output drift","Model outputs shift over time","Lakehouse Monitoring on inference tables (payload logs)","Evaluate, retrain, or roll back"],
+ ["Retrieval / embedding drift","Index goes stale; embeddings age","Index freshness + retrieval-quality eval + embedding distribution","Re-embed and re-index"],
+ ["Concept drift / decay","Input→output relationship changes; accuracy falls","Continuous eval vs ground truth + user-feedback trend","Retrain, re-ground, or update prompts"],
+ ["Model-version drift","The provider updates the model","Pinned versions; eval on version bump; Gateway logs behaviour change","Re-evaluate, re-pin, or roll back"],
+];
+const LOOP=[
+ {l:"Serve & capture",lc:"var(--accent)",a:"Inference tables + traces + feedback",w:"Every response is served through the Gateway and logged to inference tables; MLflow traces the agent; users leave feedback."},
+ {l:"Monitor",lc:"var(--teal)",a:"Lakehouse Monitoring",w:"Profile and drift metrics are computed over input and inference tables on a schedule, feeding quality dashboards."},
+ {l:"Detect",lc:"var(--amber)",a:"Threshold breached → alert",w:"When a drift or quality metric crosses its threshold an alert fires — no one has to be watching the dashboard."},
+ {l:"Diagnose",lc:"var(--amber)",a:"Which drift?",w:"Pinpoint the cause: feature, schema, retrieval / embedding, concept decay, or a vendor model-version change."},
+ {l:"Remediate",lc:"var(--accent2)",a:"Retrain · re-index · re-guard · roll back",w:"Apply the matching fix — retrain, re-embed and re-index, adjust prompts or guardrails, or roll back to a pinned version."},
+ {l:"Re-evaluate & gate",lc:"var(--green)",a:"Eval suite must pass",w:"The fix reruns the full evaluation suite and is promoted through the MLflow / Unity Catalog registry only if it clears the thresholds."},
+ {l:"Redeploy",lc:"var(--green)",a:"Ship behind the Gateway",w:"The new version deploys behind the Gateway and monitoring resumes — the loop never stops."},
+];
+let qTimer=null;
+function renderQuality(){
+  if(qTimer){clearInterval(qTimer);qTimer=null;}
+  let hl=-1;
+  document.getElementById("view").innerHTML=`<div class="section-h">Testing · from data to agent</div>
+   <p class="intro">Quality is checked at every layer, not just at the model. Data-quality expectations catch problems at ingest, retrieval and agent evaluation catch them in the AI, and a CI gate stops anything unevaluated from shipping.</p>
+   <div class="pillars">${TESTS.map(p=>`<div class="card pil ${p.c}"><h4><span class="pnum">${p.num}</span>${p.n}</h4><div class="psub">${p.sub}</div><ul>${p.items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`).join("")}</div>
+   <div class="section-h" style="margin-top:20px">Drift · what shifts, how it's caught</div>
+   <p class="intro">Drift comes in several forms, and each has a specific detector and response. Databricks Lakehouse Monitoring computes the profile and drift metrics; the pipeline and evaluation layers cover the rest.</p>
+   <table class="qt"><thead><tr><th>Drift type</th><th>What shifts</th><th>How it's detected</th><th>Response</th></tr></thead><tbody>${
+     DRIFT.map(r=>`<tr><td><span class="dt">${r[0]}</span></td><td>${r[1]}</td><td><span class="det">${r[2]}</span></td><td><span class="rsp">${r[3]}</span></td></tr>`).join("")
+   }</tbody></table>
+   <div class="section-h" style="margin-top:20px">The closed loop · monitor → detect → remediate → re-gate</div>
+   <p class="intro">Detection is only useful if it drives action. This is the continuous loop that keeps the system honest over time — and remediation is gated by the same evaluation discipline as the first deploy.</p>
+   <div class="flow-grid"><div class="card flow" id="qflowBox"></div><div class="card gsum" id="qgsum"></div></div>`;
+  function draw(){
+    document.getElementById("qflowBox").innerHTML=LOOP.map((s,i)=>`<div class="fs ${s.lc==='var(--green)'?'sec':''} ${i===hl?'active':''}">
+      <div class="lchip" style="background:${s.lc}">${s.l.toUpperCase()}</div>
+      <div class="mid"><div class="a">${s.a}</div><div class="w">${s.w}</div></div></div>`).join("");
+    document.getElementById("qgsum").innerHTML=`<p>Testing proves it works today; drift monitoring proves it still works next month. Nothing reaches production unevaluated — not the first deploy, and not a remediation.</p>
+      <div class="gbtns"><button class="gbtn primary" id="qPlay">▶ Loop</button><button class="gbtn" id="qStep">⏭ Step</button><button class="gbtn" id="qReset">↺</button></div>`;
+    document.getElementById("qPlay").onclick=play;document.getElementById("qStep").onclick=step;document.getElementById("qReset").onclick=()=>{stop();hl=-1;draw();};
+  }
+  function step(){hl=(hl+1)%LOOP.length;draw();}
+  function play(){stop();qTimer=setInterval(()=>{hl=(hl+1)%LOOP.length;draw();},1050);}
+  function stop(){if(qTimer){clearInterval(qTimer);qTimer=null;}}
+  draw();
+}
+
+/* shell */
+let CUR="lake";
+function renderTab(name){
+  CUR=name; if(wTimer){clearInterval(wTimer);wTimer=null;} if(qTimer){clearInterval(qTimer);qTimer=null;}
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="lake") renderLake();
+  else if(name==="ai") renderAI();
+  else if(name==="sec") renderSec();
+  else if(name==="quality") renderQuality();
+  else renderWalk();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("lake");
+</script>
+</body>
+</html>
