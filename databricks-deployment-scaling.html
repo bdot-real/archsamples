@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Databricks · Deployment &amp; Scaling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8; --accent2:#bf4f17;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82; --gold:#c79a2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(13,110,168,.09),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(191,79,23,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:850px}
+  .lead b{color:var(--ink)}
+  .lead a{color:var(--accent);text-decoration:none}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* landing zone topology */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .zone{border:1.5px solid var(--line2);border-radius:12px;padding:9px 11px 11px;margin:0}
+  .zone.ctrl{border-color:var(--violet);background:rgba(116,55,201,.03)}
+  .zone.cust{border-color:var(--accent);background:rgba(13,110,168,.03)}
+  .zone .zt{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin:0 2px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .zone .zt .owner{font-size:8px;font-weight:600;color:#fff;border-radius:5px;padding:2px 7px}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:132px;border:1px solid var(--line2);border-left:4px solid var(--accent);border-radius:10px;padding:8px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.14)}
+  .tile.pl{border-left-color:var(--green)} .tile.sec{border-left-color:var(--gold)} .tile.ctrlt{border-left-color:var(--violet)}
+  .tile .tn{font-weight:700;font-size:11.5px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:8px;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+  .subnet{border:1px dashed var(--line2);border-radius:9px;padding:7px 9px;margin-top:8px;background:var(--panel2)}
+  .subnet .sl{font-family:var(--mono);font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin:0 2px 6px;display:block}
+  .conn{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 0}
+  .conn .cl{font-family:var(--mono);font-size:8.5px;color:var(--green);background:var(--panel);border:1px dashed var(--green);border-radius:20px;padding:3px 11px}
+  .flowdown{text-align:center;color:var(--line2);font-size:14px;margin:1px 0}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(13,110,168,.05)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:15px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink)}
+
+  /* compute */
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  @media(max-width:820px){.vs{grid-template-columns:1fr}}
+  .vc{padding:14px 16px;border-top:4px solid var(--accent)}
+  .vc.classic{border-top-color:var(--accent2)}
+  .vc h4{margin:0 0 2px;font-size:14px}
+  .vc .tagline{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+  .vc ul{margin:0;padding:0;list-style:none}
+  .vc li{font-size:11.5px;color:var(--ink-dim);line-height:1.4;padding:4px 0 4px 16px;position:relative}
+  .vc li.g::before{content:"+";position:absolute;left:2px;color:var(--green);font-weight:700}
+  .vc li.b::before{content:"–";position:absolute;left:3px;color:var(--amber);font-weight:700}
+  .vc .use{margin-top:9px;border-top:1px solid var(--line);padding-top:8px;font-size:11.5px;color:var(--ink)}
+  .vc .use b{color:var(--accent)} .vc.classic .use b{color:var(--accent2)}
+  .scale2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:820px){.scale2{grid-template-columns:1fr}}
+  .sc{padding:13px 15px;border-left:4px solid var(--teal)}
+  .sc h4{margin:0 0 6px;font-size:13px}
+  .sc p{margin:0 0 8px;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .sc ul{margin:0;padding:0;list-style:none}
+  .sc li{font-size:11.5px;color:var(--ink-dim);line-height:1.4;padding:4px 0 4px 15px;position:relative;border-top:1px solid var(--line)}
+  .sc li:first-child{border-top:0}
+  .sc li::before{content:"›";position:absolute;left:2px;color:var(--teal);font-weight:700}
+  .levers{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .lv{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:8px;padding:6px 11px;background:var(--panel)}
+
+  /* cost */
+  table.ct{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:8px}
+  table.ct th,table.ct td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11.5px;vertical-align:top}
+  table.ct th{font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  table.ct tbody tr:last-child td{border-bottom:0}
+  table.ct tr.grp td{background:var(--panel2);font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  table.ct td .cp{font-weight:700} table.ct td .sc2{font-family:var(--mono);font-size:10px;color:var(--accent2)} table.ct td .lv2{font-family:var(--mono);font-size:10px;color:var(--green)}
+  .callout{border:1px solid rgba(169,118,10,.3);background:rgba(169,118,10,.06);border-radius:12px;padding:12px 15px;margin:6px 0 16px;display:flex;gap:12px;align-items:flex-start}
+  .callout .ci{font-size:18px} .callout .ct2{font-size:12.5px;line-height:1.5;color:var(--ink)} .callout .ct2 b{color:var(--amber)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .chip{font-family:var(--mono);font-size:10px;border:1px solid var(--line2);border-radius:8px;padding:6px 11px;background:var(--panel)}
+  .chip b{color:var(--green)}
+
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Azure Databricks · deployment &amp; scaling</div>
+    <h1>Landing Zone, Compute &amp; Cost</h1>
+    <p class="lead">The deployment and scaling companion to the <a href="databricks-secure-ai.html">secure AI architecture</a>: how it lands in Azure (control-plane / data-plane split, VNet, Private Link, Key Vault), how the compute scales (serverless vs classic, model-serving concurrency, Vector Search sizing), and how the cost behaves as traffic grows — <b>including the monitoring and evaluation costs people forget</b>.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="lz">▦ Landing zone</button>
+    <button class="tab" data-tab="compute">⚙ Compute &amp; scaling</button>
+    <button class="tab" data-tab="cost">$ Cost model</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Azure Databricks — Deployment &amp; Scaling</b> · control/data plane · Private Link · serverless &amp; classic · cost attribution<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["control / data plane","managed vs your VNet"],["Private Link","front-end + back-end"],["serverless or classic","chosen per workload"],["scale-to-zero","no idle spend"],["per-token or provisioned","model serving"],["cost attribution","tags + system tables"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* ---------- Landing zone ---------- */
+const LZ={
+ entra:{z:"Identity",n:"Microsoft Entra ID",note:"SSO · SCIM · conditional access",d:"The identity provider for the whole workspace. Users authenticate here before any private-link path opens; conditional access and MFA are enforced at this edge."},
+ fepl:{z:"Front-end",n:"Front-end Private Link",note:"users → workspace",d:"Users reach the workspace over a private endpoint rather than the public internet. Combined with IP access lists, the front door is never openly exposed."},
+ webapp:{z:"Control plane",n:"Web app & REST API",note:"Databricks-managed",d:"The notebooks UI, REST APIs and workspace services, run in Databricks' own Azure subscription. You configure it but don't operate the servers."},
+ jobs:{z:"Control plane",n:"Job scheduler & cluster manager",note:"Databricks-managed",d:"Orchestrates jobs and provisions compute into your data plane. It issues instructions; it never holds your data."},
+ ucsvc:{z:"Control plane",n:"Unity Catalog service",note:"governance metastore",d:"The central metastore and policy engine. Grants, lineage and audit are evaluated here, but the data itself stays in your storage."},
+ bepl:{z:"Back-end",n:"Back-end Private Link",note:"compute → control plane",d:"Clusters talk to the control plane over a private endpoint (secure cluster connectivity). Compute nodes have no public IP and open no inbound ports."},
+ vnet:{z:"Data plane · your VNet",n:"Injected VNet",note:"host + container subnets",d:"Classic compute runs in a VNet you own, injected with two delegated subnets (host and container) and locked down with NSGs. You control routing and peering."},
+ classic:{z:"Data plane · your VNet",n:"Classic compute",note:"clusters · no public IP",d:"Customer-managed clusters for large or sustained workloads: custom instance types, spot capacity and your own libraries, all inside your network."},
+ serverless:{z:"Data plane · your VNet",n:"Serverless plane",note:"NCC · private endpoints",d:"Databricks-managed serverless compute reached through a Network Connectivity Config with private endpoints to your resources — instant, autoscaling, no cluster to run."},
+ adls:{z:"Storage & keys",n:"ADLS Gen2",note:"storage firewall · private endpoint",d:"The workspace storage and the data lake, fronted by a storage firewall and private endpoints so only your network reaches it. Reached by Unity Catalog through an access connector (managed identity)."},
+ kv:{z:"Storage & keys",n:"Azure Key Vault",note:"CMK + secrets",d:"Holds the customer-managed keys that encrypt managed services and workspace storage, plus the secrets referenced by secret scopes."},
+ egress:{z:"Egress",n:"Azure Firewall / NAT",note:"allow-listed egress",d:"Outbound traffic (package installs, external model providers like Vertex/Gemini) is routed through a firewall or NAT gateway with an allow-list, so egress is controlled and inspectable."},
+};
+const ZONES=[
+ {id:"Identity",n:"Identity & entry",cls:"",owner:"you",oc:"var(--accent)",keys:["entra","fepl"]},
+ {id:"Control plane",n:"Databricks control plane",cls:"ctrl",owner:"Databricks-managed",oc:"var(--violet)",keys:["webapp","jobs","ucsvc"]},
+ {id:"Data plane",n:"Data plane · your Azure subscription",cls:"cust",owner:"you",oc:"var(--accent)",keys:["vnet","classic","serverless"],store:["adls","kv"],egress:["egress"]},
+];
+function openLZ(k){
+  const c=LZ[k];document.querySelectorAll("[data-lz]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-lz")===k));
+  document.getElementById("lzdetail").innerHTML=`<div class="dh"><div class="dt">${c.z}</div><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function tile(k,cls){return `<div class="tile ${cls||''}" data-lz="${k}"><div class="tn">${LZ[k].n}</div><div class="tnote">${LZ[k].note}</div></div>`;}
+function renderLZ(){
+  let s=`<div class="card stack">`;
+  // identity
+  s+=`<div class="zone"><div class="zt"><span>Identity &amp; entry</span><span class="owner" style="background:var(--accent)">you</span></div><div class="tiles">${tile("entra","ctrlt")}${tile("fepl","pl")}</div></div>`;
+  s+=`<div class="conn"><span class="cl">▼ front-end Private Link</span></div>`;
+  // control plane
+  s+=`<div class="zone ctrl"><div class="zt"><span>Databricks control plane</span><span class="owner" style="background:var(--violet)">Databricks-managed</span></div><div class="tiles">${["webapp","jobs","ucsvc"].map(k=>tile(k,"ctrlt")).join("")}</div></div>`;
+  s+=`<div class="conn"><span class="cl">▲ back-end Private Link · no public IP ▼</span></div>`;
+  // data plane
+  s+=`<div class="zone cust"><div class="zt"><span>Data plane · your Azure subscription</span><span class="owner" style="background:var(--accent)">you</span></div>`;
+  s+=`<div class="subnet"><span class="sl">Injected VNet · host + container subnets · NSGs</span><div class="tiles">${tile("vnet")}${tile("classic")}${tile("serverless")}</div></div>`;
+  s+=`<div class="subnet"><span class="sl">Storage &amp; keys · private endpoints</span><div class="tiles">${tile("adls","sec")}${tile("kv","sec")}${tile("bepl","pl")}</div></div>`;
+  s+=`<div class="subnet"><span class="sl">Controlled egress</span><div class="tiles">${tile("egress","sec")}</div></div>`;
+  s+=`</div>`;
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Azure landing zone · control plane vs data plane</div>
+   <p class="intro">The defining split: the <b>control plane</b> (UI, APIs, scheduler, Unity Catalog service) is Databricks-managed, while the <b>data plane</b> — where compute runs and data lives — is in your own Azure subscription and VNet. Private Link keeps both directions off the public internet. Click any component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="lzdetail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>Violet is Databricks-managed; blue is yours. The two connect only over Private Link — front-end for users, back-end for compute, with no public IPs on the clusters.<br><br>Your data never leaves your storage; the control plane only orchestrates.</div></div></div></div>`;
+  document.querySelectorAll("[data-lz]").forEach(el=>el.addEventListener("click",()=>openLZ(el.getAttribute("data-lz"))));
+}
+
+/* ---------- Compute ---------- */
+function renderCompute(){
+  document.getElementById("view").innerHTML=`<div class="section-h">Serverless vs classic compute</div>
+   <p class="intro">Both run every workload type (SQL, jobs, DLT, notebooks, model serving). The choice is a trade between operational simplicity and control, and it's made per workload — not once for the whole platform.</p>
+   <div class="vs">
+     <div class="card vc"><h4>Serverless</h4><div class="tagline">Databricks-managed pool</div>
+       <ul><li class="g">Starts in seconds, autoscales, scales to zero</li><li class="g">No clusters or VMs to manage or patch</li><li class="g">You pay only for what runs — no idle</li><li class="b">Higher per-unit rate</li><li class="b">Runs in the serverless plane (via NCC / private endpoints)</li></ul>
+       <div class="use"><b>Reach for it:</b> spiky, interactive, or bursty work — the chatbot's SQL, ad-hoc analysis, dev, and low-steady-state model serving.</div></div>
+     <div class="card vc classic"><h4>Classic</h4><div class="tagline">Your VNet, your clusters</div>
+       <ul><li class="g">Full control of instance types and libraries</li><li class="g">Spot instances and Photon for cost efficiency</li><li class="g">Cheaper for large, sustained workloads</li><li class="b">You manage lifecycle, autoscaling and idle</li><li class="b">Provisioning latency on cold start</li></ul>
+       <div class="use"><b>Reach for it:</b> heavy scheduled ETL, big training/embedding jobs, and anything needing custom GPUs or strict network placement.</div></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Scaling the AI serving path</div>
+   <div class="scale2">
+     <div class="card sc"><h4>Model Serving · concurrency</h4><p>Serving endpoints autoscale with request load and can scale to zero for dev. Two cost/latency shapes:</p>
+       <ul><li>Pay-per-token for spiky or low-volume traffic</li><li>Provisioned throughput for steady, latency-sensitive load</li><li>Concurrency and QPS set by endpoint sizing; GPU tiers for custom models</li><li>The AI Gateway rate-limits so a burst can't overrun the endpoint</li></ul></div>
+     <div class="card sc" style="border-left-color:var(--violet)"><h4>Vector Search · sizing</h4><p>Sizing is driven by index size (vectors × dimensions) and query load:</p>
+       <ul><li>Endpoint sized to QPS and latency targets</li><li>Delta-sync indexes stay current with the source tables</li><li>Sync frequency trades freshness against sync compute</li><li>Prune and partition the index to keep it lean</li></ul></div>
+   </div>
+   <div class="section-h" style="margin-top:20px">Scaling levers</div>
+   <div class="levers"><span class="lv">autoscaling</span><span class="lv">scale-to-zero</span><span class="lv">auto-termination</span><span class="lv">spot instances</span><span class="lv">Photon</span><span class="lv">provisioned throughput</span><span class="lv">endpoint right-sizing</span><span class="lv">index pruning</span><span class="lv">Gateway rate limits</span></div>`;
+}
+
+/* ---------- Cost ---------- */
+const COST=[
+ ["grp","Compute"],
+ ["Classic compute","VM + DBU while running","cluster size × uptime","autoscale · spot · auto-terminate"],
+ ["Serverless compute","per-use DBU, scales to zero","actual query / job time","scale-to-zero · right-size for spiky"],
+ ["grp","AI serving"],
+ ["Model Serving","per-token or provisioned throughput","request volume × tokens","per-token for spiky; provisioned for steady; route cheap models via Gateway"],
+ ["Vector Search","endpoint + sync compute","index size × QPS × sync frequency","right-size endpoint · batch sync · prune index"],
+ ["grp","Storage"],
+ ["ADLS / Delta","per GB + operations","data volume + table versions","lifecycle tiering · VACUUM old versions"],
+ ["Inference tables","storage + writes","request volume","retention policy · sample logging"],
+ ["grp","Quality & monitoring — the ones people forget"],
+ ["Lakehouse Monitoring","scheduled job compute","#tables × #columns × frequency","tune granularity &amp; cadence · profile what matters"],
+ ["Agent Evaluation","LLM-judge inference","eval-set size × frequency × judge model","sample traffic · schedule · use a cheaper judge"],
+];
+function renderCost(){
+  document.getElementById("view").innerHTML=`<div class="section-h">How cost scales · by component</div>
+   <p class="intro">The point isn't a price list (rates change) — it's knowing what each component's bill is proportional to, and which lever bends the curve. Green is the control.</p>
+   <table class="ct"><thead><tr><th>Component</th><th>Cost driver</th><th>Scales with</th><th>Lever</th></tr></thead><tbody>${
+     COST.map(r=>r[0]==="grp"?`<tr class="grp"><td colspan="4">${r[1]}</td></tr>`:`<tr><td><span class="cp">${r[0]}</span></td><td>${r[1]}</td><td><span class="sc2">${r[2]}</span></td><td><span class="lv2">${r[3]}</span></td></tr>`).join("")
+   }</tbody></table>
+   <div class="callout"><span class="ci">⚠</span><span class="ct2"><b>Monitoring and eval scale with traffic — plan for it.</b> Lakehouse Monitoring is scheduled compute that grows with how many tables and columns you profile and how often. Agent Evaluation is LLM-judge inference that grows with eval-set size, cadence, and judge-model cost — and if you evaluate a slice of live traffic, it grows with traffic too. The lever is <b>sample and schedule</b>: evaluate a representative sample at a sensible cadence rather than 100% of traffic every minute.</span></div>
+   <div class="section-h">Cost controls &amp; attribution</div>
+   <p class="intro">Two jobs: bend each curve down, and know who owes what. Unity Catalog system tables plus tags make per-tenant and per-team chargeback possible.</p>
+   <div class="chips"><span class="chip"><b>scale-to-zero</b> serverless</span><span class="chip"><b>spot</b> + auto-terminate</span><span class="chip"><b>Photon</b> efficiency</span><span class="chip"><b>budgets</b> &amp; alerts</span><span class="chip"><b>tags</b> → chargeback</span><span class="chip"><b>system tables</b> usage/billing</span><span class="chip"><b>model routing</b> cheap→dear</span><span class="chip"><b>caching</b> &amp; batching</span><span class="chip"><b>retention</b> policies</span><span class="chip"><b>eval sampling</b></span></div>`;
+}
+
+/* shell */
+let CUR="lz";
+function renderTab(name){
+  CUR=name;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="lz") renderLZ();
+  else if(name==="compute") renderCompute();
+  else renderCost();
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>renderTab(t.dataset.tab)));
+renderKPIs(); renderTab("lz");
+</script>
+</body>
+</html>
