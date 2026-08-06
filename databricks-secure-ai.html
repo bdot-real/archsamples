@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure AI on Azure Databricks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --panel:#fff; --panel2:#f5f8fc;
+    --line:#d8e0ec; --line2:#bcc7d8;
+    --ink:#1b2433; --ink-dim:#54607a; --ink-faint:#7e8aa0;
+    --accent:#0d6ea8; --accent2:#bf4f17;
+    --green:#1a8f45; --amber:#a9760a; --orange:#bf4f17; --red:#d62f26;
+    --blue:#1f63c8; --violet:#7437c9; --teal:#0e8a82; --gold:#c79a2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1000px 560px at 6% -8%,rgba(13,110,168,.09),transparent 58%),radial-gradient(760px 500px at 100% 0,rgba(191,79,23,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 22px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(22,42,74,.05),0 10px 28px rgba(22,42,74,.06)}
+
+  header{margin-bottom:6px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:5px 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .lead{color:var(--ink-dim);font-size:13.5px;max-width:850px}
+  .lead b{color:var(--ink)}
+  .thesis{margin-top:12px;border:1px solid rgba(13,110,168,.3);background:rgba(13,110,168,.06);border-radius:11px;padding:11px 14px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:11px;line-height:1.45}
+  .thesis .lk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;white-space:nowrap;border-right:1px solid var(--line2);padding-right:11px}
+  .thesis b{color:var(--accent)}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:16px 0 6px}
+  .kpi{padding:11px 13px}
+  .kpi .kv{font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.2}
+  .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;line-height:1.3}
+
+  .tabs{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin:18px 0 16px;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:none;border:0;padding:9px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(22,42,74,.08);font-weight:600}
+  .section-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .intro{font-size:12.5px;color:var(--ink-dim);margin:0 2px 14px;max-width:920px;line-height:1.55}
+
+  /* topology */
+  .arch-wrap{display:grid;grid-template-columns:1fr 372px;gap:16px;align-items:start}
+  @media(max-width:980px){.arch-wrap{grid-template-columns:1fr}}
+  .stack{padding:10px 12px 14px}
+  .layer{margin:8px 2px 0}
+  .lh{display:flex;align-items:baseline;gap:9px;padding:5px 4px 7px}
+  .lh .ln{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--accent)}
+  .lh .ls{font-size:10.5px;color:var(--ink-dim)}
+  .tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .tile{flex:1;min-width:135px;border:1px solid var(--line2);border-left:4px solid var(--accent);border-radius:10px;padding:8px 11px;cursor:pointer;background:var(--panel);transition:.13s}
+  .tile:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 5px 14px rgba(22,42,74,.08)}
+  .tile.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(13,110,168,.14)}
+  .tile.uc{border-left-color:var(--violet)} .tile.ai{border-left-color:var(--accent2)}
+  .tile .tn{font-weight:700;font-size:11.5px;line-height:1.2}
+  .tile .tnote{font-family:var(--mono);font-size:8px;color:var(--ink-faint);margin-top:3px;line-height:1.3}
+  .medallion{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .med{flex:1;min-width:96px;border-radius:9px;padding:8px 10px;border:1px solid var(--line2);cursor:pointer;background:var(--panel);transition:.13s}
+  .med:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,42,74,.08)}
+  .med.sel{box-shadow:0 0 0 3px rgba(13,110,168,.14)}
+  .med.bronze{border-left:4px solid #b0764a} .med.silver{border-left:4px solid #8a94a6} .med.gold{border-left:4px solid var(--gold)}
+  .med .mn{font-weight:700;font-size:11.5px} .med .md{font-family:var(--mono);font-size:8px;color:var(--ink-faint);margin-top:2px}
+  .medarrow{color:var(--line2);font-size:13px}
+  .flowdown{text-align:center;color:var(--line2);font-size:14px;margin:1px 0}
+  .uc-band{border:1.5px dashed var(--violet);background:rgba(116,55,201,.03);border-radius:11px;padding:8px 10px 10px;margin-top:8px}
+  .uc-band .zt{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);font-weight:600;margin:0 2px 7px;display:block}
+
+  .dp{position:sticky;top:14px;min-height:440px;overflow:hidden}
+  .dp-empty{padding:24px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+  .dp-empty b{color:var(--ink-dim)}
+  .dh{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(13,110,168,.05)}
+  .dh .dt{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .dh h3{margin:4px 0 0;font-size:15px;font-weight:700}
+  .db{padding:14px 16px}
+  .db p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink)}
+
+  /* security pillars */
+  .hl{border:1px solid rgba(26,143,69,.3);background:rgba(26,143,69,.06);border-radius:12px;padding:12px 15px;margin-bottom:16px;display:flex;gap:12px;align-items:center}
+  .hl .hi{font-size:20px}
+  .hl .ht{font-size:13px;line-height:1.5;color:var(--ink)}
+  .hl .ht b{color:var(--green)}
+  .pillars{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .pil{padding:13px 15px;border-top:4px solid var(--accent)}
+  .pil.p2{border-top-color:var(--violet)} .pil.p3{border-top-color:var(--teal)} .pil.p4{border-top-color:var(--gold)} .pil.p5{border-top-color:var(--accent2)} .pil.p6{border-top-color:var(--green)}
+  .pil h4{margin:0 0 3px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .pil .pnum{font-family:var(--mono);font-size:9px;color:#fff;background:var(--accent);border-radius:5px;padding:2px 6px}
+  .pil.p2 .pnum{background:var(--violet)} .pil.p3 .pnum{background:var(--teal)} .pil.p4 .pnum{background:var(--gold)} .pil.p5 .pnum{background:var(--accent2)} .pil.p6 .pnum{background:var(--green)}
+  .pil .psub{font-family:var(--mono);font-size:8.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .pil ul{margin:0;padding:0;list-style:none}
+  .pil li{font-size:11.5px;color:var(--ink-dim);line-height:1.4;padding:4px 0 4px 15px;position:relative;border-top:1px solid var(--line)}
+  .pil li:first-child{border-top:0}
+  .pil li::before{content:"›";position:absolute;left:2px;color:var(--accent);font-weight:700}
+
+  /* walk */
+  .flow-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:980px){.flow-grid{grid-template-columns:1fr}}
+  .flow{padding:8px 10px 12px}
+  .fs{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:11px 8px;border-radius:10px;position:relative;transition:.16s}
+  .fs::before{content:"";position:absolute;left:137px;top:0;bottom:0;width:2px;background:var(--line);z-index:0}
+  .fs:first-child::before{top:50%}.fs:last-child::before{bottom:50%}
+  .fs.active{background:rgba(13,110,168,.06)}
+  .lchip{justify-self:start;font-family:var(--mono);font-size:8px;font-weight:600;color:#fff;border-radius:6px;padding:3px 7px;white-space:nowrap;margin-top:1px;text-align:center;line-height:1.3}
+  .fs .mid{position:relative;padding-left:16px}
+  .fs .mid::before{content:"";position:absolute;left:-1px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);z-index:1}
+  .fs.sec .mid::before{border-color:var(--green);background:var(--green)}
+  .fs .a{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .fs .w{font-size:12px;color:var(--ink-dim);margin-top:2px;line-height:1.45}
+  .fs .en{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--green);border:1px solid var(--green);border-radius:5px;padding:2px 6px;margin-top:6px}
+  .gsum{padding:15px 16px;position:sticky;top:14px}
+  .gsum p{font-size:12px;color:var(--ink-dim);line-height:1.5;margin:0 0 12px}
+  .gbtns{display:flex;gap:7px}
+  .gbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;background:var(--panel);color:var(--ink)}
+  .gbtn:hover{border-color:var(--accent)} .gbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sep{margin-top:12px;border:1px solid rgba(26,143,69,.3);background:rgba(26,143,69,.05);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink);line-height:1.45;display:none}
+  .sep.show{display:block} .sep b{color:var(--green)}
+
+  /* multicloud note */
+  .mc{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media(max-width:820px){.mc{grid-template-columns:1fr}}
+  .mcc{padding:12px 14px;border-left:4px solid var(--accent)}
+  .mcc.g{border-left-color:var(--accent2)}
+  .mcc h4{margin:0 0 5px;font-size:12.5px}
+  .mcc p{margin:0;font-size:11.5px;color:var(--ink-dim);line-height:1.45}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{font-family:var(--mono);font-size:9.5px;border:1px solid var(--line2);border-radius:6px;padding:3px 8px;background:var(--panel2)}
+
+  table.qt{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  table.qt th,table.qt td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11.5px;vertical-align:top}
+  table.qt th{font-family:var(--mono);font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--panel2)}
+  table.qt tbody tr:last-child td{border-bottom:0}
+  table.qt td .dt{font-weight:700}
+  table.qt td .det{font-family:var(--mono);font-size:10px;color:var(--accent)}
+  table.qt td .rsp{color:var(--ink-dim)}
+  .foot{margin-top:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--ink-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Reference architecture · Azure Databricks · Mosaic AI</div>
+    <h1>Secure Conversational &amp; Agentic AI on the Lakehouse</h1>
+    <p class="lead">A reference architecture for <b>conversational and autonomous-agent AI</b> built on the Azure Databricks Lakehouse — from data ingestion and processing to consumption and governance — with <b>Unity Catalog</b> as the single access-control and audit plane, customer-managed encryption, private networking, and Mosaic AI Gateway guardrails. Vertex AI and Gemini plug in as a multi-cloud model option, and every layer is continuously tested, evaluated, and monitored for data and model drift.</p>
+    <div class="thesis"><span class="lk">The core idea</span><span>The AI <b>inherits the platform's access controls</b>. Retrieval and tools run under the user's Unity Catalog entitlements — row filters and column masks included — so a chatbot or agent can never surface data the user isn't allowed to see.</span></div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="lake">▦ Lakehouse platform</button>
+    <button class="tab" data-tab="ai">◐ Conversational &amp; agentic AI</button>
+    <button class="tab" data-tab="sec">🛡 Security &amp; access</button>
+    <button class="tab" data-tab="quality">⟳ Quality, testing &amp; drift</button>
+    <button class="tab" data-tab="walk">⇶ Governed request walk</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="foot"><b>Secure AI on Azure Databricks</b> — Lakehouse · Unity Catalog · Mosaic AI · Vertex/Gemini optional<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const KPIS=[["Azure Databricks","Lakehouse + Mosaic AI"],["Unity Catalog","one governance plane"],["row + column security","enforced into RAG"],["CMK + Private Link","encrypted, isolated"],["Mosaic AI Gateway","guardrails + audit"],["multi-cloud AI","Databricks + Vertex / Gemini"]];
+function renderKPIs(){document.getElementById("kpis").innerHTML=KPIS.map(x=>`<div class="card kpi"><div class="kv" style="color:var(--accent)">${x[0]}</div><div class="kl">${x[1]}</div></div>`).join("");}
+
+/* ---------- Lakehouse ---------- */
+const LC={
+ sources:{z:"Sources",n:"Sources",note:"apps · streaming · files · DBs · SaaS",d:"Operational apps, IoT and clickstream, files in cloud storage, operational databases, and SaaS systems. Nothing is trusted until it lands in a governed table."},
+ autoloader:{z:"Ingestion",n:"Auto Loader",note:"cloudFiles · incremental",d:"Incrementally and idempotently ingests new files from ADLS as they arrive, inferring and evolving schema — the workhorse for file-based ingestion into Bronze."},
+ dlt:{z:"Ingestion",n:"Delta Live Tables",note:"declarative pipelines",d:"Declarative ETL with built-in data-quality expectations, incremental processing, and automatic lineage — used to build and maintain the medallion pipelines."},
+ streaming:{z:"Ingestion",n:"Structured Streaming",note:"Kafka · Event Hubs",d:"Exactly-once streaming ingestion from Kafka or Azure Event Hubs for real-time signals feeding conversational and agent context."},
+ federation:{z:"Ingestion",n:"Lakehouse Federation",note:"query in place",d:"Queries external databases and warehouses in place through Unity Catalog, without copying — governed foreign catalogs."},
+ bronze:{z:"Processing",n:"Bronze",note:"raw · immutable",d:"Raw ingested data landed as Delta tables, append-only and immutable — the system of record you can always reprocess from."},
+ silver:{z:"Processing",n:"Silver",note:"cleaned · conformed",d:"Cleansed, deduplicated and conformed data with enforced quality expectations — the trustworthy, queryable core."},
+ gold:{z:"Processing",n:"Gold",note:"curated · aggregated",d:"Business-level aggregates, features and curated datasets — the layer the AI grounds on and BI consumes."},
+ delta:{z:"Storage",n:"Delta Lake on ADLS",note:"open · ACID",d:"All layers are Delta tables on ADLS Gen2 — an open, ACID-compliant format with time travel, versioning and Photon-accelerated reads."},
+ uc:{z:"Governance",n:"Unity Catalog",note:"catalog.schema.table",d:"The single governance plane across every workspace: a three-level namespace, fine-grained grants, row/column security, tags and classification, lineage, audit, and Delta Sharing — the control point everything else inherits."},
+ sqlw:{z:"Consumption",n:"SQL Warehouses",note:"BI · ad-hoc SQL",d:"Serverless SQL compute for dashboards, ad-hoc analysis, and the SQL tools the agent calls — all governed by Unity Catalog."},
+ genie:{z:"Consumption",n:"Genie",note:"NL → SQL analytics",d:"Natural-language analytics over governed tables: users ask questions, Genie generates governed SQL and returns answers within their entitlements."},
+ vs:{z:"Consumption",n:"Vector Search",note:"RAG index",d:"A managed vector index built from Gold data for retrieval-augmented generation — kept in sync with the source tables and governed by Unity Catalog."},
+ serving:{z:"Consumption",n:"Model Serving + Apps",note:"endpoints · Databricks Apps",d:"Serving endpoints for models and agents, plus Databricks Apps that host the conversational front-ends — all inside the governed perimeter."},
+};
+const LLAYERS=[
+ {n:"Sources",s:"untrusted until governed",keys:["sources"]},
+ {n:"Ingestion",s:"incremental · declarative · streaming",keys:["autoloader","dlt","streaming","federation"]},
+ {n:"Processing · medallion",s:"Delta Lake · DLT · Photon · Workflows",medallion:true},
+ {n:"Storage",s:"open format",keys:["delta"]},
+];
+function openLC(k){
+  const c=LC[k];document.querySelectorAll("[data-lc]").forEach(e=>e.classList.toggle("sel",e.getAttribute("data-lc")===k));
+  document.getElementById("ldetail").innerHTML=`<div class="dh"><div class="dt">${c.z}</div><h3>${c.n}</h3></div><div class="db"><p>${c.d}</p></div>`;
+}
+function renderLake(){
+  let s=`<div class="card stack">`;
+  LLAYERS.forEach((L)=>{
+    s+=`<div class="layer"><div class="lh"><span class="ln">${L.n}</span><span class="ls">${L.s}</span></div>`;
+    if(L.medallion){
+      s+=`<div class="medallion">
+        <div class="med bronze" data-lc="bronze"><div class="mn">Bronze</div><div class="md">raw · immutable</div></div><span class="medarrow">→</span>
+        <div class="med silver" data-lc="silver"><div class="mn">Silver</div><div class="md">cleaned · conformed</div></div><span class="medarrow">→</span>
+        <div class="med gold" data-lc="gold"><div class="mn">Gold</div><div class="md">curated · aggregated</div></div></div>`;
+    } else {
+      s+=`<div class="tiles">`+L.keys.map(k=>`<div class="tile" data-lc="${k}"><div class="tn">${LC[k].n}</div><div class="tnote">${LC[k].note}</div></div>`).join("")+`</div>`;
+    }
+    s+=`</div><div class="flowdown">↓</div>`;
+  });
+  // governance band (cross-cutting)
+  s+=`<div class="uc-band"><span class="zt">Governance · spans every layer</span><div class="tiles"><div class="tile uc" data-lc="uc" style="min-width:100%"><div class="tn">Unity Catalog</div><div class="tnote">access · row/column security · lineage · audit · Delta Sharing</div></div></div></div>`;
+  s+=`<div class="flowdown">↓</div>`;
+  // consumption
+  s+=`<div class="layer"><div class="lh"><span class="ln">Consumption &amp; AI</span><span class="ls">governed serving</span></div><div class="tiles">`+
+     ["sqlw","genie","vs","serving"].map(k=>`<div class="tile ai" data-lc="${k}"><div class="tn">${LC[k].n}</div><div class="tnote">${LC[k].note}</div></div>`).join("")+`</div></div>`;
+  s+=`</div>`;
+  document.getElementById("view").innerHTML=`<div class="section-h">Lakehouse · ingest → process → govern → serve</div>
+   <p class="intro">One platform from raw data to AI consumption. Data flows through the medallion layers into Delta Lake, and <b>Unity Catalog governs all of it</b> — the same permissions the SQL user gets are the permissions the AI gets. Click any component.</p>
+   <div class="arch-wrap"><div>${s}</div>
+   <div class="card dp"><div id="ldetail"><div class="dp-empty"><b>SELECT A COMPONENT</b><br><br>The medallion layers (Bronze→Silver→Gold) live as Delta tables; Unity Catalog is the dashed band because it spans everything.<br><br>Consumption — SQL, Genie, Vector Search, serving — is where the AI meets the data, always through the governance plane.</div></div></div></div>`;
+  document.querySelectorAll("[data-lc]").forEach(el=>el.addEventListener("click",()=>openLC(el.getAttribute("data-lc"))));
+}
+
+/* ---------- AI ---------- */
+const AC={
+ chat:{z:"Front-ends",n:"Chatbot",note:"web · Teams · Slack",d:"The conversational surface — a Databricks App or embedded widget in web, Microsoft Teams or Slack. It holds no credentials of its own; it acts as the signed-in user."},
+ voice:{z:"
