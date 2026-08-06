@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent Orchestration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2efe4; --card:#fbfaf3; --ink:#17160f; --dim:#4b4a3f;
+    --blue:#2f5bff; --coral:#ff5a3c; --lime:#a6e22e; --yellow:#ffcf1a; --violet:#8b5cf6; --cyan:#19c6dd; --green:#1f9d55; --red:#e23b2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --sh:5px 5px 0 var(--ink); --sh-sm:3px 3px 0 var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(var(--ink) 1px,transparent 1px);background-size:26px 26px;background-position:-13px -13px}
+  .wrap{max-width:1160px;margin:0 auto;padding:24px 22px 60px}
+
+  .eyebrow{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:var(--ink);color:var(--violet);padding:5px 10px;border:2.5px solid var(--ink)}
+  h1{margin:12px 0 8px;font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.02;text-transform:uppercase}
+  .lead{color:var(--dim);font-size:13.5px;max-width:840px;font-weight:500}
+  .lead b{color:var(--ink)}
+
+  .patterns{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px}
+  .pt{background:var(--card);border:2.5px solid var(--ink);box-shadow:var(--sh-sm);padding:8px 11px;font-size:11px;font-weight:500;color:var(--dim)}
+  .pt b{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink);display:block;margin-bottom:2px}
+  .pt.on{background:var(--violet);color:#fff}.pt.on b{color:#fff}
+
+  .stage-wrap{background:var(--card);border:2.5px solid var(--ink);box-shadow:var(--sh);padding:8px;margin-top:12px}
+  svg{width:100%;height:auto;display:block}
+  .nd{cursor:pointer}
+  .nd .sh{fill:var(--ink)}
+  .nd .box{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
+  .nd.sel .box{fill:var(--yellow)}
+  .nd .stripe{stroke:var(--ink);stroke-width:2.5}
+  .nd .nl{fill:var(--ink);font-family:var(--sans);font-size:13px;font-weight:700;text-transform:uppercase}
+  .nd .ns{fill:var(--dim);font-family:var(--mono);font-size:8.5px;font-weight:600}
+  .edge{fill:none;stroke:var(--ink);stroke-width:2.5}
+  .edge.dash{stroke-dasharray:5 4}
+  .elabel{fill:var(--dim);font-family:var(--mono);font-size:8.5px;font-weight:600}
+  .frame{fill:none;stroke:var(--coral);stroke-width:2.5;stroke-dasharray:7 5}
+  .frame-t{fill:var(--coral);font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em}
+  .bus{stroke:var(--ink);stroke-width:3}
+  .bustag{fill:var(--ink);font-family:var(--mono);font-size:8.5px;font-weight:700}
+  .note{fill:var(--dim);font-family:var(--mono);font-size:9px;font-weight:600}
+
+  .detail{background:var(--card);border:2.5px solid var(--ink);box-shadow:var(--sh);margin-top:16px;min-height:120px}
+  .detail .dh{padding:12px 15px;display:flex;align-items:center;gap:11px;border-bottom:2.5px solid var(--ink)}
+  .detail .dh .tag{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;color:#fff;padding:3px 8px;border:2px solid var(--ink)}
+  .detail .dh h3{margin:0;font-size:15px;text-transform:uppercase}
+  .detail .db{padding:14px 15px}
+  .detail .db p{margin:0;font-size:12.5px;line-height:1.55;font-weight:500}
+  .detail .empty{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.7;font-weight:500}
+  .detail .empty b{color:var(--ink)}
+
+  .foot{margin-top:30px;font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.7;font-weight:600}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Hierarchy · multi-agent</div>
+  <h1>Multi-Agent Orchestration</h1>
+  <p class="lead">A supervisor pattern as a hierarchy: one <b>orchestrator</b> owns the task and routes sub-tasks to <b>specialist agents</b>, who all draw on the same <b>governed capability bus</b> — tools, retrieval, memory and models. Guardrails wrap every model and tool call; a human approves the risky ones. Tap any node.</p>
+
+  <div class="patterns">
+    <div class="pt on"><b>Supervisor</b>one planner routes to specialists (shown)</div>
+    <div class="pt"><b>Handoff / peer</b>agents pass control directly to each other</div>
+    <div class="pt"><b>Reflection</b>a critic loops on a generator until it's good</div>
+  </div>
+
+  <div class="stage-wrap"><div id="svghost"></div></div>
+  <div class="detail" id="detail"><div class="db"><div class="empty"><b>TAP A NODE</b> — the violet supervisor plans and routes; the four specialist agents do the work; the cyan capability bus is shared and governed, so every agent inherits the same guardrails, retrieval scope and model gateway.</div></div></div>
+
+  <div class="foot"><b>Multi-Agent Orchestration</b> — supervisor · specialist agents · governed capability bus · human-in-the-loop<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const N={
+ sup:{x:355,y:30,w:250,h:64,c:"var(--violet)",t:"Orchestrator",s:"plan · route · aggregate",tag:"supervisor",
+   d:"Owns the task end to end. It decomposes the goal, routes each sub-task to the right specialist, aggregates what comes back, and decides when the job is done. The supervisor holds the plan; the agents do the work."},
+ hil:{x:760,y:35,w:200,h:54,c:"var(--coral)",t:"Human-in-loop",s:"approval gate",tag:"human",
+   d:"High-risk or irreversible actions pause here. The supervisor cannot let an agent commit a consequential action until a human approves it — the escape hatch that keeps autonomy safe."},
+ a0:{x:40,y:196,w:184,h:62,c:"var(--blue)",t:"Researcher",s:"gather · retrieve · summarize",tag:"agent",
+   d:"Finds and synthesizes information through retrieval and search. Returns grounded, cited findings rather than raw dumps."},
+ a1:{x:274,y:196,w:184,h:62,c:"var(--blue)",t:"Analyst",s:"reason · compute · verify",tag:"agent",
+   d:"Does the quantitative work — queries data, runs calculations, and checks claims against sources before they're trusted."},
+ a2:{x:508,y:196,w:184,h:62,c:"var(--blue)",t:"Coder",s:"write · run · test",tag:"agent",
+   d:"Generates and executes code in a sandbox, iterating on the results and returning working, tested artifacts."},
+ a3:{x:742,y:196,w:184,h:62,c:"var(--blue)",t:"Writer / Critic",s:"draft · critique · revise",tag:"agent",
+   d:"Composes the final output and critiques it against the goal, looping until it clears the bar — a reflection pattern inside the team."},
+ c0:{x:40,y:388,w:184,h:60,c:"var(--cyan)",t:"Tools",s:"MCP · functions",tag:"capability",
+   d:"Governed tools any agent may call — each least-privilege and permissioned. Writes and consequential actions require approval."},
+ c1:{x:274,y:388,w:184,h:60,c:"var(--cyan)",t:"Retrieval",s:"governed RAG",tag:"capability",
+   d:"Shared retrieval over the knowledge base, scoped to the user's entitlements so no agent can surface data the user can't see."},
+ c2:{x:508,y:388,w:184,h:60,c:"var(--cyan)",t:"Memory / State",s:"conversation · task",tag:"capability",
+   d:"Shared short-term conversation and task state plus longer-term memory, scoped per user and per task."},
+ c3:{x:742,y:388,w:184,h:60,c:"var(--cyan)",t:"Models",s:"via Gateway",tag:"capability",
+   d:"Every model call routes through one gateway — rate limits, guardrails, logging — whether the model is Databricks-hosted or Vertex/Gemini."},
+};
+const AGENTS=["a0","a1","a2","a3"], CAPS=["c0","c1","c2","c3"];
+const VW=966, VH=520, BUS=330;
+function cxOf(n){return n.x+n.w/2;}
+function build(){
+ let s=`<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="mar" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#17160f"/></marker></defs>`;
+ // guardrail frame around agents + bus + capabilities
+ s+=`<rect class="frame" x="20" y="176" width="926" height="290"></rect><text class="frame-t" x="30" y="192">GUARDRAILS · EVERY MODEL + TOOL CALL</text>`;
+ // supervisor -> agents
+ AGENTS.forEach(id=>{ const a=N[id]; s+=`<path class="edge" d="M${cxOf(N.sup)},${N.sup.y+N.sup.h} L${cxOf(a)},${a.y}" marker-end="url(#mar)"></path>`; });
+ // supervisor -> human in loop (dashed)
+ s+=`<path class="edge dash" d="M${N.sup.x+N.sup.w},${N.sup.y+N.sup.h/2} L${N.hil.x},${N.hil.y+N.hil.h/2}" marker-end="url(#mar)"></path><text class="elabel" x="${(N.sup.x+N.sup.w+18)}" y="${N.sup.y+N.sup.h/2-6}">approval</text>`;
+ // agents -> bus
+ AGENTS.forEach(id=>{ const a=N[id]; s+=`<path class="edge" d="M${cxOf(a)},${a.y+a.h} L${cxOf(a)},${BUS}"></path>`; });
+ // bus line
+ s+=`<line class="bus" x1="80" y1="${BUS}" x2="886" y2="${BUS}"></line><text class="bustag" x="80" y="${BUS-8}">SHARED, GOVERNED CAPABILITY BUS</text>`;
+ // bus -> capabilities
+ CAPS.forEach(id=>{ const c=N[id]; s+=`<path class="edge" d="M${cxOf(c)},${BUS} L${cxOf(c)},${c.y}" marker-end="url(#mar)"></path>`; });
+ // note: results flow up
+ s+=`<text class="note" x="${cxOf(N.sup)}" y="170" text-anchor="middle">▲ agents return results to the orchestrator, which aggregates and decides</text>`;
+ // nodes
+ Object.entries(N).forEach(([id,n])=>{
+   s+=`<g class="nd" data-id="${id}">
+     <rect class="sh" x="${n.x+4}" y="${n.y+4}" width="${n.w}" height="${n.h}"></rect>
+     <rect class="box" x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}"></rect>
+     <rect class="stripe" x="${n.x}" y="${n.y}" width="8" height="${n.h}" fill="${n.c}"></rect>
+     <text class="nl" x="${n.x+20}" y="${n.y+ (n.s?26:34)}">${n.t}</text>
+     <text class="ns" x="${n.x+20}" y="${n.y+44}">${n.s}</text>
+   </g>`;
+ });
+ s+=`</svg>`;
+ document.getElementById("svghost").innerHTML=s;
+ document.querySelectorAll(".nd").forEach(g=>g.addEventListener("click",()=>select(g.getAttribute("data-id"))));
+}
+function select(id){
+ const n=N[id];
+ document.querySelectorAll(".nd").forEach(g=>g.classList.toggle("sel",g.getAttribute("data-id")===id));
+ document.getElementById("detail").innerHTML=`<div class="dh"><span class="tag" style="background:${n.c}">${n.tag}</span><h3>${n.t}</h3></div><div class="db"><p>${n.d}</p></div>`;
+}
+build();
+</script>
+</body>
+</html>
