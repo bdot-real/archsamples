@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Reference Pipeline · schematic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1524; --panel:#151d30; --panel2:#111827;
+    --node:#1a2540; --node2:#202c4a; --line:#2b3860; --line2:#3a4a76;
+    --ink:#e6ecf7; --dim:#93a1c2; --faint:#6b789c;
+    --accent:#3fb6e6; --green:#3fce86; --amber:#e0b23f; --violet:#b389f0; --orange:#f0894f; --red:#ef5f57;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:radial-gradient(1100px 600px at 12% -10%,rgba(63,182,230,.10),transparent 60%),radial-gradient(800px 500px at 100% 0,rgba(179,137,240,.08),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 22px 56px}
+
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{margin:6px 0 6px;font-size:23px;font-weight:700;letter-spacing:-.01em}
+  .lead{color:var(--dim);font-size:13.5px;max-width:800px}
+  .lead b{color:var(--ink)}
+
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 12px}
+  .toggle{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .tg{font-family:var(--mono);font-size:11px;color:var(--dim);background:none;border:0;padding:7px 13px;border-radius:6px;cursor:pointer}
+  .tg.on{background:var(--node2);color:var(--ink);box-shadow:0 0 0 1px var(--line2)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:16px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+
+  .canvas{background:linear-gradient(180deg,#121a2c,#0f1626);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:0 20px 50px rgba(0,0,0,.35);position:relative;overflow:hidden}
+  .canvas::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(63,182,230,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,182,230,.05) 1px,transparent 1px);background-size:34px 34px;pointer-events:none}
+  svg{width:100%;height:auto;display:block;position:relative}
+  .node rect{fill:var(--node);stroke:var(--line2);stroke-width:1.3;rx:11;transition:.15s;cursor:pointer}
+  .node:hover rect{stroke:var(--accent)}
+  .node.sel rect{stroke:var(--accent);stroke-width:2;filter:drop-shadow(0 0 7px rgba(63,182,230,.5))}
+  .node.dim{opacity:.24}
+  .node .nl{fill:var(--ink);font-family:var(--mono);font-size:13px;font-weight:600;pointer-events:none}
+  .node .ns{fill:var(--faint);font-family:var(--mono);font-size:10px;pointer-events:none}
+  .node .tag{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.04em}
+  .edge{fill:none;stroke:var(--line2);stroke-width:1.6;transition:.15s}
+  .edge.idx{stroke:var(--violet)} .edge.qry{stroke:var(--accent)} .edge.loop{stroke:var(--amber);stroke-dasharray:6 5}
+  .edge.dim{opacity:.14}
+  .elabel{fill:var(--faint);font-family:var(--mono);font-size:9.5px}
+  .lane-label{fill:var(--faint);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+
+  .info{margin-top:14px;border:1px solid var(--line);background:var(--panel);border-radius:14px;min-height:92px;padding:14px 16px}
+  .info .it{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  .info h3{margin:5px 0 5px;font-size:15px}
+  .info p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.55;max-width:820px}
+  .info .empty{font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.7}
+  .info .empty b{color:var(--dim)}
+
+  .foot{margin-top:24px;font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center;line-height:1.7}
+  .foot b{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Schematic · retrieval-augmented generation</div>
+  <h1>RAG Reference Pipeline</h1>
+  <p class="lead">A production RAG pipeline as a schematic: an <b>offline indexing path</b> that turns sources into a governed vector index, and an <b>online query path</b> that retrieves, reranks, grounds and generates — with an evaluation loop closing back on the index. Tap any node.</p>
+
+  <div class="bar">
+    <div class="toggle" id="toggle">
+      <button class="tg on" data-g="all">All</button>
+      <button class="tg" data-g="idx">Indexing</button>
+      <button class="tg" data-g="qry">Query</button>
+    </div>
+    <div class="legend">
+      <span><i style="border-color:var(--violet)"></i>indexing (offline)</span>
+      <span><i style="border-color:var(--accent)"></i>query (online)</span>
+      <span><i style="border-color:var(--amber);border-top-style:dashed"></i>eval loop</span>
+    </div>
+  </div>
+
+  <div class="canvas"><div id="svghost"></div></div>
+  <div class="info" id="info"><div class="empty"><b>TAP A NODE</b> — the violet chain builds the index offline; the cyan chain answers a query online. They meet at Retrieve, where access controls filter what can be pulled. The dashed amber loop is evaluation feeding back to re-index and tune.</div></div>
+
+  <div class="foot"><b>RAG Reference Pipeline</b> · governed retrieval · schematic view<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const N={
+ src:{x:40,y:40,w:200,h:58,g:"idx",l:"Sources",s:"docs · tables · APIs",info:"The raw material: documents, database tables, wikis, tickets and API payloads. Each source carries the access metadata that will later govern who can retrieve from it."},
+ chunk:{x:300,y:40,w:200,h:58,g:"idx",l:"Parse & chunk",s:"structure-aware",info:"Documents are parsed and split into retrieval-sized chunks along natural boundaries (headings, sections, rows), preserving enough context per chunk to be individually meaningful."},
+ embi:{x:560,y:40,w:200,h:58,g:"idx",l:"Embed",s:"embedding model",info:"Each chunk is turned into a vector by the embedding model. The same model must be used for documents and queries, or retrieval quality collapses."},
+ idx:{x:820,y:40,w:200,h:58,g:"idx",l:"Vector index",s:"+ metadata / ACL tags",info:"Vectors land in the index alongside metadata and access-control tags. Those tags are what let retrieval enforce per-user permissions later — the index is governed, not open."},
+ qry:{x:40,y:170,w:200,h:58,g:"qry",l:"User query",s:"chat · voice",info:"The incoming question from a chatbot or voice assistant, carrying the authenticated user's identity so downstream retrieval can scope to their entitlements."},
+ gin:{x:300,y:170,w:200,h:58,g:"qry",l:"Input guardrail",s:"PII · injection",info:"Before anything runs, the query is screened for prompt-injection and sensitive content, and normalized. A failed check stops here."},
+ embq:{x:560,y:170,w:200,h:58,g:"qry",l:"Embed query",s:"same model",info:"The query is embedded with the identical model used for the documents, producing a vector in the same space for similarity search."},
+ ret:{x:820,y:170,w:200,h:58,g:"qry",l:"Retrieve",s:"hybrid + ACL filter",info:"Hybrid search — vector similarity plus keyword — against the index, filtered by the user's access tags. Retrieval returns only chunks the user is allowed to see; this is where the AI inherits the permission model."},
+ rr:{x:820,y:300,w:200,h:58,g:"qry",l:"Rerank",s:"cross-encoder",info:"A cross-encoder reranks the candidate chunks by true relevance to the query, promoting the few that matter over the many that merely matched."},
+ ctx:{x:560,y:300,w:200,h:58,g:"qry",l:"Assemble context",s:"+ citations",info:"The top chunks are assembled into a grounded prompt with source citations attached, and trimmed to the model's context budget."},
+ gen:{x:300,y:300,w:200,h:58,g:"qry",l:"Generate",s:"grounded + output guard",info:"The LLM answers grounded only on the assembled context; an output guardrail then scans the response for leakage, unsafe content and unsupported claims before it leaves."},
+ resp:{x:40,y:300,w:200,h:58,g:"qry",l:"Response",s:"cited answer",info:"The final answer with citations back to the retrieved sources — so the user can verify, and the system can be audited."},
+};
+const E=[
+ ["src","chunk","idx","h"],["chunk","embi","idx","h"],["embi","idx","idx","h"],
+ ["qry","gin","qry","h"],["gin","embq","qry","h"],["embq","ret","qry","h"],
+ ["idx","ret","idx","v"],["ret","rr","qry","v"],
+ ["rr","ctx","qry","hr"],["ctx","gen","qry","hr"],["gen","resp","qry","hr"],
+ ["resp","idx","loop","loop"],
+];
+const VW=1120, VH=400;
+function anchor(n,side){const cx=n.x+n.w/2, cy=n.y+n.h/2; if(side==="r")return[n.x+n.w,cy]; if(side==="l")return[n.x,cy]; if(side==="t")return[cx,n.y]; if(side==="b")return[cx,n.y+n.h]; return[cx,cy];}
+function edgePath(e){
+ const a=N[e[0]],b=N[e[1]],kind=e[3];
+ if(kind==="h"){const[x1,y1]=anchor(a,"r"),[x2,y2]=anchor(b,"l");return `M${x1},${y1} L${x2},${y2}`;}
+ if(kind==="hr"){const[x1,y1]=anchor(a,"l"),[x2,y2]=anchor(b,"r");return `M${x1},${y1} L${x2},${y2}`;}
+ if(kind==="v"){const[x1,y1]=anchor(a,"b"),[x2,y2]=anchor(b,"t");return `M${x1},${y1} L${x2},${y2}`;}
+ if(kind==="loop"){const[x1,y1]=anchor(a,"b");const bx=b.x+b.w, by=b.y+b.h/2;return `M${x1},${y1} L${x1},372 L1092,372 L1092,${by} L${bx},${by}`;}
+ return "";
+}
+function build(){
+ let s=`<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+   <marker id="arw" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#5b6ea0"/></marker>
+   <marker id="arwv" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#7a5db0"/></marker>
+   <marker id="arwa" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#c79a2e"/></marker>
+  </defs>
+  <text class="lane-label" x="40" y="24">Indexing · offline</text>
+  <text class="lane-label" x="40" y="154">Query · online</text>`;
+ // edges first
+ E.forEach((e,i)=>{
+   const mk=e[3]==="loop"?"arwa":(e[2]==="idx"&&e[3]==="v"?"arwv":"arw");
+   s+=`<path class="edge ${e[2]}" data-edge="${e[0]}-${e[1]}" d="${edgePath(e)}" marker-end="url(#${mk})"></path>`;
+ });
+ // nodes
+ Object.entries(N).forEach(([id,n])=>{
+   const col=n.g==="idx"?"var(--violet)":"var(--accent)";
+   s+=`<g class="node" data-id="${id}" data-g="${n.g}">
+     <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="11"></rect>
+     <rect x="${n.x}" y="${n.y}" width="4" height="${n.h}" rx="2" fill="${col}"></rect>
+     <text class="nl" x="${n.x+16}" y="${n.y+25}">${n.l}</text>
+     <text class="ns" x="${n.x+16}" y="${n.y+43}">${n.s}</text>
+   </g>`;
+ });
+ s+=`</svg>`;
+ document.getElementById("svghost").innerHTML=s;
+ document.querySelectorAll(".node").forEach(g=>g.addEventListener("click",()=>select(g.getAttribute("data-id"))));
+}
+let sel=null, filter="all";
+function select(id){
+ sel=id; const n=N[id];
+ document.querySelectorAll(".node").forEach(g=>g.classList.toggle("sel",g.getAttribute("data-id")===id));
+ document.getElementById("info").innerHTML=`<div class="it">${n.g==="idx"?"Indexing · offline":"Query · online"}</div><h3>${n.l}</h3><p>${n.info}</p>`;
+ applyFilter();
+}
+function applyFilter(){
+ document.querySelectorAll(".node").forEach(g=>{
+   const gg=g.getAttribute("data-g");
+   const show=filter==="all"||gg===filter||(g.getAttribute("data-id")===sel);
+   g.classList.toggle("dim",!show);
+ });
+ document.querySelectorAll(".edge").forEach(p=>{
+   const cls=p.classList;
+   const show=filter==="all"||cls.contains(filter)||(filter!=="all"&&cls.contains("loop")&&false);
+   p.classList.toggle("dim",!show);
+ });
+}
+document.querySelectorAll(".tg").forEach(b=>b.addEventListener("click",()=>{
+ filter=b.getAttribute("data-g");
+ document.querySelectorAll(".tg").forEach(x=>x.classList.toggle("on",x===b));
+ applyFilter();
+}));
+build();
+</script>
+</body>
+</html>
