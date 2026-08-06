@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLOps · Model Lifecycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2efe4; --card:#fbfaf3; --ink:#17160f; --dim:#4b4a3f;
+    --blue:#2f5bff; --coral:#ff5a3c; --lime:#a6e22e; --yellow:#ffcf1a; --violet:#8b5cf6; --cyan:#19c6dd; --green:#1f9d55; --red:#e23b2e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --sh:5px 5px 0 var(--ink); --sh-sm:3px 3px 0 var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(var(--ink) 1px,transparent 1px);background-size:26px 26px;background-position:-13px -13px}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 22px 60px}
+
+  .eyebrow{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:var(--ink);color:var(--lime);padding:5px 10px;border:2.5px solid var(--ink)}
+  h1{margin:12px 0 8px;font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.02;text-transform:uppercase}
+  .lead{color:var(--dim);font-size:13.5px;max-width:820px;font-weight:500}
+  .lead b{color:var(--ink)}
+
+  .layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;margin-top:20px}
+  @media(max-width:940px){.layout{grid-template-columns:1fr}}
+  .stage-wrap{background:var(--card);border:2.5px solid var(--ink);box-shadow:var(--sh);padding:8px}
+  svg{width:100%;height:auto;display:block}
+  .cyc{cursor:pointer}
+  .cyc .box{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
+  .cyc.sel .box{fill:var(--yellow)}
+  .cyc .sh{fill:var(--ink)}
+  .cyc .num{fill:var(--ink);font-family:var(--mono);font-size:13px;font-weight:700}
+  .cyc.sel .num{fill:var(--ink)}
+  .cyc .nl{fill:var(--ink);font-family:var(--sans);font-size:12.5px;font-weight:700;text-transform:uppercase}
+  .cyc .ns{fill:var(--dim);font-family:var(--mono);font-size:8.5px;font-weight:600}
+  .cyc .gate{fill:var(--coral);stroke:var(--ink);stroke-width:2}
+  .cyc .gate-t{fill:#fff;font-family:var(--mono);font-size:7.5px;font-weight:700}
+  .ringarrow{fill:none;stroke:var(--ink);stroke-width:2.5}
+  .hub{fill:var(--ink)}
+  .hub-t{fill:var(--paper);font-family:var(--sans);font-size:15px;font-weight:700;text-transform:uppercase}
+  .hub-s{fill:var(--lime);font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.06em}
+  .hub-n{fill:var(--yellow);font-family:var(--mono);font-size:11px;font-weight:700}
+
+  .side{position:sticky;top:16px}
+  .ctrls{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap}
+  .b2{font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;border:2.5px solid var(--ink);padding:8px 13px;cursor:pointer;background:var(--card);color:var(--ink);box-shadow:var(--sh-sm);transition:transform .08s,box-shadow .08s}
+  .b2:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink)}
+  .b2.primary{background:var(--lime);color:var(--ink)}
+  .detail{background:var(--card);border:2.5px solid var(--ink);box-shadow:var(--sh);min-height:300px}
+  .detail .dh{background:var(--ink);color:var(--paper);padding:12px 15px;display:flex;align-items:center;gap:11px}
+  .detail .dh .bn{width:30px;height:30px;background:var(--lime);color:var(--ink);font-family:var(--mono);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--paper)}
+  .detail .dh h3{margin:0;font-size:14.5px;text-transform:uppercase}
+  .detail .db{padding:14px 15px}
+  .detail .db p{margin:0 0 12px;font-size:12.5px;line-height:1.55;font-weight:500}
+  .detail .kv2{display:flex;gap:9px;padding:8px 0;border-top:2px solid var(--ink)}
+  .detail .kv2 .k{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);flex:0 0 62px;font-weight:700;padding-top:2px}
+  .detail .kv2 .v{font-size:11.5px;flex:1;line-height:1.4;font-weight:500}
+  .detail .gate-note{margin-top:10px;background:var(--coral);color:#fff;border:2.5px solid var(--ink);padding:8px 11px;font-family:var(--mono);font-size:10px;font-weight:600;line-height:1.4}
+
+  .foot{margin-top:30px;font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.7;font-weight:600}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Cycle · MLOps</div>
+  <h1>Model Lifecycle Loop</h1>
+  <p class="lead">The model lifecycle drawn as what it actually is — <b>a loop, not a line</b>. Data becomes a model, the model is evaluated, gated, deployed and served, monitoring catches drift, and the trigger sends it back around. Two stages are hard <b>gates</b>. Walk the ring, or tap any stage.</p>
+
+  <div class="layout">
+    <div class="stage-wrap"><div id="svghost"></div></div>
+    <div class="side">
+      <div class="ctrls"><button class="b2 primary" id="play">▶ Walk</button><button class="b2" id="step">⏭ Step</button><button class="b2" id="reset">↺</button></div>
+      <div class="detail" id="detail"></div>
+    </div>
+  </div>
+
+  <div class="foot"><b>MLOps · Model Lifecycle</b> — data · train · evaluate · register · deploy · serve · monitor · retrain<br>architecture by Blake Medulan · for more information contact blake@3halves-labs.com</div>
+</div>
+
+<script>
+const S=[
+ {n:"Data & features",s:"curate train + eval",p:"Curate and version the training and evaluation data — deduplicated, filtered, decontaminated, with provenance. The dataset version is pinned so the run is reproducible.",in:"raw + labelled data",out:"versioned dataset",gate:false},
+ {n:"Train / fine-tune",s:"pretrain · SFT · RLHF",p:"Train or fine-tune the model on the pinned dataset — pretraining, supervised fine-tuning, or preference optimization — tracking every hyperparameter and metric.",in:"versioned dataset + config",out:"candidate checkpoint",gate:false},
+ {n:"Evaluate",s:"offline · safety · bench",p:"Score the candidate on held-out, decontaminated evals: capability benchmarks, safety and red-team suites, and task-specific metrics. This is a gate — it must clear thresholds to proceed.",in:"candidate checkpoint",out:"eval report + verdict",gate:true},
+ {n:"Register",s:"version · card · lineage",p:"Passing models are registered: an immutable version, a model card, and lineage linking back to the dataset version and forward to deployments.",in:"approved checkpoint",out:"registered model version",gate:false},
+ {n:"Deploy",s:"canary · blue-green",p:"Roll out to serving behind a canary or blue-green strategy — a slice of traffic first, watched for quality and latency. A second gate: promote only if the canary holds.",in:"registered version",out:"live endpoint (canary→full)",gate:true},
+ {n:"Serve",s:"inference · guardrails",p:"Serve inference through the gateway with guardrails, batching and the KV cache. Requests are governed, rate-limited and logged to inference tables.",in:"live endpoint",out:"served responses + logs",gate:false},
+ {n:"Monitor",s:"quality · drift · cost",p:"Watch quality, data and model drift, latency, cost and user feedback against thresholds. Inference tables and evaluation feed the dashboards and alerts.",in:"responses + feedback",out:"metrics · drift signals · alerts",gate:false},
+ {n:"Retrain trigger",s:"drift / new data",p:"When drift, decay or fresh data crosses a threshold, the trigger opens a new iteration — back to data and features. The loop is continuous, not one-shot.",in:"drift / schedule / new data",out:"iteration kicked off",gate:false},
+];
+const VW=820, VH=660, CX=410, CY=340, R=236, NW=150, NH=60;
+function P(deg,r){const a=deg*Math.PI/180;return [CX+r*Math.cos(a), CY+r*Math.sin(a)];}
+function build(){
+ let s=`<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="rar" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7.5,3 L0,6 Z" fill="#17160f"/></marker></defs>`;
+ // ring arrows in the gaps between stages
+ for(let i=0;i<8;i++){
+   const a1=-90+45*i, a2=-90+45*(i+1);
+   const [x1,y1]=P(a1+15,R), [x2,y2]=P(a2-15,R);
+   s+=`<path class="ringarrow" d="M${x1.toFixed(1)},${y1.toFixed(1)} A ${R} ${R} 0 0 1 ${x2.toFixed(1)},${y2.toFixed(1)}" marker-end="url(#rar)"></path>`;
+ }
+ // hub
+ s+=`<circle class="hub" cx="${CX}" cy="${CY}" r="86"></circle>
+     <text class="hub-n" x="${CX}" y="${CY-30}" text-anchor="middle">◗ CONTINUOUS</text>
+     <text class="hub-t" x="${CX}" y="${CY-6}" text-anchor="middle">Model</text>
+     <text class="hub-t" x="${CX}" y="${CY+16}" text-anchor="middle">Lifecycle</text>
+     <text class="hub-s" x="${CX}" y="${CY+40}" text-anchor="middle">a governed loop</text>`;
+ // stage nodes
+ S.forEach((st,i)=>{
+   const [cx,cy]=P(-90+45*i, R);
+   const x=cx-NW/2, y=cy-NH/2;
+   s+=`<g class="cyc" data-i="${i}">
+     <rect class="sh" x="${(x+4).toFixed(1)}" y="${(y+4).toFixed(1)}" width="${NW}" height="${NH}"></rect>
+     <rect class="box" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${NW}" height="${NH}"></rect>
+     <text class="num" x="${(x+12).toFixed(1)}" y="${(y+22).toFixed(1)}">${i+1}</text>
+     <text class="nl" x="${(x+28).toFixed(1)}" y="${(y+24).toFixed(1)}">${st.n}</text>
+     <text class="ns" x="${(x+12).toFixed(1)}" y="${(y+44).toFixed(1)}">${st.s}</text>`;
+   if(st.gate){ s+=`<rect class="gate" x="${(x+NW-42).toFixed(1)}" y="${(y-10).toFixed(1)}" width="42" height="17"></rect><text class="gate-t" x="${(x+NW-21).toFixed(1)}" y="${(y+1).toFixed(1)}" text-anchor="middle">GATE</text>`; }
+   s+=`</g>`;
+ });
+ s+=`</svg>`;
+ document.getElementById("svghost").innerHTML=s;
+ document.querySelectorAll(".cyc").forEach(g=>g.addEventListener("click",()=>{stop();select(+g.getAttribute("data-i"));}));
+}
+let cur=-1, timer=null;
+function select(i){
+ cur=i; const st=S[i];
+ document.querySelectorAll(".cyc").forEach(g=>g.classList.toggle("sel",+g.getAttribute("data-i")===i));
+ document.getElementById("detail").innerHTML=`<div class="dh"><div class="bn">${i+1}</div><h3>${st.n}</h3></div>
+  <div class="db"><p>${st.p}</p>
+  <div class="kv2"><span class="k">In</span><span class="v">${st.in}</span></div>
+  <div class="kv2"><span class="k">Out</span><span class="v">${st.out}</span></div>
+  ${st.gate?'<div class="gate-note">HARD GATE — the loop only proceeds if this stage passes its thresholds. Fail = stop and fix, never ship.</div>':''}</div>`;
+}
+function step(){cur=(cur+1)%S.length;select(cur);}
+function play(){stop();timer=setInterval(()=>{cur=(cur+1)%S.length;select(cur);},1000);}
+function stop(){if(timer){clearInterval(timer);timer=null;}}
+document.getElementById("play").onclick=play;
+document.getElementById("step").onclick=()=>{stop();step();};
+document.getElementById("reset").onclick=()=>{stop();cur=-1;document.querySelectorAll(".cyc").forEach(g=>g.classList.remove("sel"));document.getElementById("detail").innerHTML='<div class="db"><p style="color:var(--dim);font-family:var(--mono);font-size:11.5px;line-height:1.7">TAP A STAGE on the ring, or press Walk to travel the loop. The two coral GATE badges — Evaluate and Deploy — are where the cycle can stop and send work back.</p></div>';};
+build();
+document.getElementById("reset").onclick();
+</script>
+</body>
+</html>
