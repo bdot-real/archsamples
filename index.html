@@ -74,6 +74,15 @@
   .tag{font-family:var(--mono);font-size:9px;color:var(--ink-dim);border:1px solid var(--line);background:var(--panel2);border-radius:20px;padding:3px 9px}
   .fname{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:10px}
   .ai-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--violet);margin-left:7px;vertical-align:middle}
+  .card.hub{color:#fff;border-color:transparent}
+  .card.hub::before{display:none}
+  .card.hub h3{color:#fff}
+  .card.hub .sub{color:rgba(255,255,255,.82)}
+  .card.hub p{color:rgba(255,255,255,.93)}
+  .card.hub .open{color:rgba(255,255,255,.9)}
+  .card.hub .fname{color:rgba(255,255,255,.72)}
+  .card.hub .role-badge{color:#fff;background:rgba(255,255,255,.22)}
+  .card.hub .tag{color:#fff;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.14)}
 
   .card.planned{border-style:dashed;background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(245,248,252,.5));box-shadow:none;cursor:default}
   .card.planned::before{background:var(--line2)}
@@ -163,7 +172,7 @@
       <a class="card" href="llm-serving.html" style="--accent:#1f63c8">
         <div class="ctop"><span class="role-badge" style="color:#1f63c8;background:rgba(31,99,200,.10)">Runtime<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
         <h3>LLM Inference &amp; Serving</h3>
-        <div class="sub">the model-serving runtime</div>
+        <div class="sub">the model-serving runtime · brutalist style</div>
         <p>How a trained model becomes a fast, reliable API: the serving path (gateway → router → scheduler → continuous batching → KV cache → GPU workers → decoding → streaming → observability), the throughput and latency levers (continuous batching, paged attention, prefix caching, speculative decoding, quantization, parallelism) with the metrics that matter (TTFT, TPOT, throughput, concurrency), and scaling and reliability (autoscaling, fallback, canary, cost controls).</p>
         <div class="tags"><span class="tag">Batching · KV cache</span><span class="tag">TTFT / TPOT</span><span class="tag">Autoscale · canary</span></div>
         <div class="fname">llm-serving.html</div>
@@ -171,7 +180,7 @@
       <a class="card" href="llm-guardrails.html" style="--accent:#d62f26">
         <div class="ctop"><span class="role-badge" style="color:#d62f26;background:rgba(214,47,38,.10)">Safety<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
         <h3>LLM Guardrails &amp; Safety</h3>
-        <div class="sub">input guards · output guards · the loop</div>
+        <div class="sub">input guards · output guards · the loop · brutalist style</div>
         <p>The safety layer around an LLM app: input guards before the model (auth/rate-limit, prompt-injection and jailbreak detection, PII redaction, topic/policy filter, input validation), output guards after it (safety/toxicity, PII/secret-leak scan, groundedness, citation enforcement, schema validation, policy compliance), and a guarded-request walk showing least-privilege tools and human-in-the-loop around the loop — six of eight steps are enforcement points.</p>
         <div class="tags"><span class="tag">Input + output guards</span><span class="tag">Prompt-injection</span><span class="tag">Human-in-the-loop</span></div>
         <div class="fname">llm-guardrails.html</div>
@@ -401,6 +410,15 @@
     <p class="track-desc" style="margin-top:-4px">Built on Vault and vendor-neutral by design, where the operator's inability to read tenant secrets is enforced by policy and provable from the audit log — with an on-box AI substrate so its AI features never ship data to a third party.</p>
     <div class="grid">
 
+      <a class="card hub" href="/architecture-site/index.html" style="background:linear-gradient(135deg,#7c3fd6,#48208f)">
+        <div class="ctop"><span class="role-badge">Project · Sepulchre</span><span class="open">Open site ↗</span></div>
+        <h3>Sepulchre — the full architecture site</h3>
+        <div class="sub">zero-knowledge credential broker · complete deep-dive</div>
+        <p>Start here for the whole picture: the standalone Sepulchre architecture site brings the system design, the zero-knowledge guarantee and the on-box AI substrate together in one place, with the reasoning behind each. The individual diagrams below drill into the pieces.</p>
+        <div class="tags"><span class="tag">Vault core</span><span class="tag">Zero-knowledge</span><span class="tag">On-box AI</span></div>
+        <div class="fname">/architecture-site/index.html</div>
+      </a>
+
       <a class="card" href="sepulchre-system-architecture.html" style="--accent:var(--accent)">
         <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">System</span><span class="open">Open ↗</span></div>
         <h3>Sepulchre — System Architecture (v2)</h3>
@@ -430,8 +448,30 @@
 
     </div>
 
+    <div class="section-h">Structured Streaming · open-source engine</div>
+    <div class="grid">
+      <a class="card" href="oss-structured-streaming.html" style="--accent:var(--teal)">
+        <div class="ctop"><span class="role-badge" style="color:var(--teal);background:rgba(14,138,130,.10)">Open source · streaming</span><span class="open">Open ↗</span></div>
+        <h3>Structured Streaming, without Spark</h3>
+        <div class="sub">an OSS Spark Structured Streaming replacement</div>
+        <p>An open-source stream-processing engine that gives you Spark Structured Streaming's programming model and exactly-once guarantees — event-time windows, watermarks, stateful aggregations, replay — on commodity infrastructure: Kafka for the log, Redis for state, RabbitMQ for side-effects, and plain worker processes as the runtime (no JVM, no Spark cluster). Includes the engine architecture, a feature-for-feature Spark parity table with the pipeline API, the guarantees and internals, and Score as the reference application.</p>
+        <div class="tags"><span class="tag">Kafka · Redis · RabbitMQ</span><span class="tag">Exactly-once</span><span class="tag">Spark parity</span></div>
+        <div class="fname">oss-structured-streaming.html</div>
+      </a>
+    </div>
+
     <div class="section-h">Open Sports Scheduling Standard</div>
     <div class="grid">
+
+      <a class="card hub" href="https://github.com/open-sports-scheduling-standard/open-sports-scheduling" target="_blank" rel="noopener" style="background:linear-gradient(135deg,#2f6fe0,#12387f)">
+        <div class="ctop"><span class="role-badge">Project · OSSS repo</span><span class="open">GitHub ↗</span></div>
+        <h3>OSSS — the standard on GitHub</h3>
+        <div class="sub">open-sports-scheduling-standard/open-sports-scheduling</div>
+        <p>The Open Sports Scheduling Standard in the open: the spec modules and JSON schemas, the constraint and objective registries, the conformance suite and profiles. Read the spec, clone it, or open an issue — this is where the standard is governed.</p>
+        <div class="tags"><span class="tag">Spec + schemas</span><span class="tag">Conformance suite</span><span class="tag">Openly governed</span></div>
+        <div class="fname">github.com/open-sports-scheduling-standard</div>
+      </a>
+
       <a class="card" href="osss-architecture.html" style="--accent:var(--blue)">
         <div class="ctop"><span class="role-badge" style="color:var(--blue);background:rgba(31,99,200,.10)">Open standard</span><span class="open">Open ↗</span></div>
         <h3>OSSS — Open Sports Scheduling Standard</h3>
@@ -456,6 +496,15 @@
 
     <div class="section-h">AI tools</div>
     <div class="grid">
+      <a class="card hub" href="https://github.com/bdot-real/arch-review" target="_blank" rel="noopener" style="background:linear-gradient(135deg,#c85a1e,#7d2f0d)">
+        <div class="ctop"><span class="role-badge">Codebase · arch-review</span><span class="open">GitHub ↗</span></div>
+        <h3>arch-review — the codebase</h3>
+        <div class="sub">bdot-real/arch-review</div>
+        <p>The source behind the AI Enterprise Architecture Review Board: the Bedrock multi-agent orchestrator and specialist reviewers, the CDK stacks and the React front end. Clone it, read the code, or run it yourself.</p>
+        <div class="tags"><span class="tag">Bedrock agents</span><span class="tag">CDK stacks</span><span class="tag">React SPA</span></div>
+        <div class="fname">github.com/bdot-real/arch-review</div>
+      </a>
+
       <a class="card" href="aws-architecture.html" style="--accent:var(--violet)">
         <div class="ctop"><span class="role-badge" style="color:var(--violet);background:rgba(116,55,201,.10)">Bedrock agents<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
         <h3>AI Enterprise Architecture Review Board</h3>
@@ -518,7 +567,7 @@
 
   <div class="foot">
     Architecture collection by Blake Medulan &nbsp;·&nbsp; Score Anything (3 Halves Labs), independent open-source projects (Sepulchre, OSSS), and reference studies<br>
-    <span class="ai-dot" style="margin:0 5px 0 0"></span>marks an AI architecture &nbsp;·&nbsp; dashed cards are in progress &nbsp;·&nbsp; contact <a href="mailto:blake.medulan@gmail.com">mailto:blake.medulan@gmail.com</a>
+    <span class="ai-dot" style="margin:0 5px 0 0"></span>marks an AI architecture &nbsp;·&nbsp; dashed cards are in progress &nbsp;·&nbsp; contact <a href="mailto:blake@3halves-labs.com">blake@3halves-labs.com</a>
   </div>
 
 </div>
