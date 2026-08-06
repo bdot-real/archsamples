@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — Threat Model</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.72rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg3);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.pill{font-family:var(--mono);font-size:.7rem;padding:1px 7px;border-radius:999px;border:1px solid;white-space:nowrap;display:inline-block}
+.pill.no{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.pill.yes{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:color-mix(in srgb,var(--danger) 12%,transparent)}
+.pill.poc{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.pill.later{color:var(--muted);border-color:var(--border);background:var(--bg3)}
+.pill.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.defense{counter-reset:d;list-style:none;padding:0;margin:18px 0}
+.defense li{counter-increment:d;position:relative;padding:12px 0 12px 46px;border-bottom:1px solid var(--border)}
+.defense li:last-child{border-bottom:none}
+.defense li::before{content:counter(d);position:absolute;left:0;top:12px;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-family:var(--mono);font-weight:700;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.defense b{color:var(--text)}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+.path{font-family:var(--mono);color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="components.html">Components</a>
+    <a href="zero-knowledge.html">Zero-Knowledge</a>
+    <a href="data-flows.html">Data Flows</a>
+    <a href="threat-model.html" class="active">Threat Model</a>
+    <a href="audit-crypto.html">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · Threat Model</p>
+  <h1>Threat Model</h1>
+  <p class="lead">The trust boundaries, the adversaries defended against, and — explicitly — what is in scope for the POC versus deferred. The boundary that matters most: submitted inbound credentials cross from the recipient into Vault and <em>stop there</em>. They never enter Postgres, never enter a log, and are never returned by any operator-facing endpoint.</p>
+
+  <h2>Trust boundaries</h2>
+  <figure class="diagram">  Recipient ─┐                          ┌─ Operator (console, SameSite=Strict session)
+  (no acct)  │                          │
+             ▼                          ▼
+        ┌─────────────────── Edge (Traefik / TLS) ───────────────────┐
+        │  strict CSP per surface · HSTS · no body/header logging     │
+        └───────────────────────────┬────────────────────────────────┘
+                                     ▼
+                          ┌────────────────────┐
+                          │  Broker (stateless) │  holds NO inbound-read capability
+                          └─────────┬───────────┘
+              ┌──────────────────────┼─────────────────────────┐
+              ▼                      ▼                          ▼
+        ┌───────────┐        ┌──────────────┐          ┌────────────────┐
+        │   Vault   │        │  PostgreSQL  │          │  Audit sinks   │
+        │ KV/Transit│        │ metadata only│          │ PG + signed    │
+        │ deny gate │        │ (PgBouncer)  │          │ JSONL+WORM+SIEM│
+        └───────────┘        └──────────────┘          └────────────────┘
+              ▲
+              │  the ONLY identity that can read sepulchre/data/inbound/* :
+       Service account (Vault AppRole token) ── designated, every read audited
+</figure>
+
+  <h2>Adversary → capability → mitigation</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Adversary</th><th>What they can do</th><th>Cannot do</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Legitimate operator</strong></td>
+        <td>Create/revoke intakes &amp; shares; read all metadata; change tenant settings</td>
+        <td><span class="pill no">read inbound</span> <span class="pill no">read a share value back</span> <span class="pill no">forge audit</span></td>
+        <td>Explicit <code>deny</code> on the inbound path (deny before allow); share values never returned by operator endpoints; every action audited</td>
+      </tr>
+      <tr>
+        <td><strong>Compromised operator session</strong></td>
+        <td>Everything a legitimate operator can, for the session's lifetime</td>
+        <td><span class="pill no">read inbound</span> <span class="pill no">reuse cross-site</span></td>
+        <td><code>SameSite=Strict</code> + <code>HttpOnly</code> + <code>secure</code> cookie; 15-min inactivity expiry with server-side revocation; CSP <code>form-action 'self'</code>; all actions audited</td>
+      </tr>
+      <tr>
+        <td><strong>Compromised broker host</strong></td>
+        <td>Issue intake submission tokens; create bogus shares; read Postgres metadata</td>
+        <td><span class="pill no">read inbound credentials</span></td>
+        <td><b>Design intent:</b> the broker holds no inbound-read capability of its own. The one inbound-read endpoint reads as the caller's service token (<code>kvReadAs</code>); an attacker on the host has no service token</td>
+      </tr>
+      <tr>
+        <td><strong>Postgres compromise</strong></td>
+        <td>Read/alter metadata; read recipient hashed identifiers</td>
+        <td><span class="pill no">recover a secret</span> <span class="pill no">recover decryption material</span></td>
+        <td>Metadata only — no secret bodies, tokens, or decryption material; volume-level encryption at rest; access via PgBouncer, no interactive human read in prod</td>
+      </tr>
+      <tr>
+        <td><strong>Intercepted reveal link</strong></td>
+        <td>Attempt to reveal a one-time share before the intended recipient</td>
+        <td><span class="pill no">reveal silently</span></td>
+        <td>Single-use unwrap deletes the entry; a second attempt is denied and emits <code>possible_interception: true</code>; optional argon2id passphrase; short TTL; reveal rate-limited (10/IP/min)</td>
+      </tr>
+      <tr>
+        <td><strong>Intercepted intake link</strong></td>
+        <td>Submit values into an intake they shouldn't fulfil</td>
+        <td><span class="pill no">read anything back</span> <span class="pill no">reuse the link</span></td>
+        <td>Submission token is scoped (JWT bound to one intake id + <code>jti</code>), single-fulfilment, short-TTL, revocable; grants <em>write</em>, not read — even the writer can't read its own submission back</td>
+      </tr>
+      <tr>
+        <td><strong>Service-account abuse</strong> (stolen AppRole)</td>
+        <td>Read inbound submissions it is authorized for</td>
+        <td><span class="pill no">act as operator</span> <span class="pill no">escape Vault policy</span> <span class="pill no">read silently</span></td>
+        <td>The only identity allowed inbound read, by design; every read audited (<code>intake.read</code>, <code>actor_type: service</code>); short-lived <code>secret_id</code>; short-TTL tokens (15–30m). A leaked credential is contained and visible in the trail</td>
+      </tr>
+      <tr>
+        <td><strong>Insider at the operator</strong></td>
+        <td>Hardest case — privileged infrastructure access</td>
+        <td><span class="pill no">read inbound (policy layer)</span> <span class="pill no">tamper audit undetectably*</span></td>
+        <td>Policy-layer deny holds even for privileged human identities; no human shell to prod; audit log is the witness. <b>Strongest form is BYOK</b> (tenant-held seal key → data cryptographically inaccessible to the operator) — v0.2</td>
+      </tr>
+    </tbody>
+  </table></div>
+  <p style="font-size:.84rem;color:var(--muted)">* Undetectable audit tampering is prevented by the hash-chained, HMAC-signed log (#24, done) — see <a href="audit-crypto.html">Audit &amp; Crypto</a>.</p>
+
+  <h2>Defense-in-depth on the secret-bearing paths</h2>
+  <p>The three secret-bearing routes — <code>POST /api/v1/inbox/:id</code>, <code>POST /api/v1/shares</code>, and <code>GET|POST /api/v1/reveal/:token</code> — are protected at every layer, with no single point of failure (see <span class="path">traefik/dynamic/security.yml</span>):</p>
+  <ol class="defense">
+    <li><b>No body logging, anywhere.</b> Traefik never logs request/response bodies; the broker's structured log emits the templated route (<code>/api/v1/reveal/:id</code>) only — never the raw path (which itself carries a capability token) and never the body.</li>
+    <li><b>No header/token leakage.</b> Traefik access logs drop request headers (no <code>Authorization</code> / <code>Cookie</code> / <code>X-Vault-Token</code>). <code>Referrer-Policy: no-referrer</code> keeps URL-embedded tokens out of the <code>Referer</code> header. HSTS enforced; links HTTPS-only and short-TTL.</li>
+    <li><b>Static gate.</b> A semgrep rule (<span class="path">tools/semgrep/secret-leak.yml</span>, CI job <code>secret-leak-scan</code>) fails the build if any code path pipes a Vault-read value or a request body into a logger.</li>
+    <li><b>Runtime backstop.</b> The audit emitter throws (<code>MetadataLeakError</code>) before any sink sees an event whose metadata carries a forbidden key (<code>password</code>, <code>value</code>, <code>token</code>, …).</li>
+    <li><b>Strict CSP on the credential surfaces.</b> The intake portal and reveal page ship the strictest CSP of any surface — no third-party scripts, no analytics, minimal JS — built and served separately from the operator console, so a console compromise can't reach the intake/reveal DOM.</li>
+    <li><b>The AI never sees plaintext (#66).</b> The embedded-AI boundary consumes metadata only. Two semgrep rules in the same gate fail the build if a Vault-read value flows into a model call, or if any code under an <code>ai/</code> path touches the Vault read surface. A build-breaking boundary, not a convention.</li>
+  </ol>
+
+  <h2>In scope for the POC vs. deferred</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Control</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Policy-layer zero-knowledge (operator <code>deny</code>, proven by <code>verify-policy.sh</code>, CI-enforced)</td><td><span class="pill poc">POC · enforced</span></td></tr>
+      <tr><td>Secret-handling hardening (no body/token logging, semgrep gate, metadata backstop, AI-boundary guard)</td><td><span class="pill poc">POC · enforced</span></td></tr>
+      <tr><td>Operator auth (single admin, argon2id, SameSite=Strict cookie, 15-min expiry)</td><td><span class="pill poc">POC</span></td></tr>
+      <tr><td>Single-use reveal with interception signal; scoped single-fulfilment intake tokens</td><td><span class="pill poc">POC</span></td></tr>
+      <tr><td>Tamper-evident + immutable audit (hash chain + HMAC, WORM archive, SIEM) — #24</td><td><span class="pill done">DONE</span></td></tr>
+      <tr><td>BYOK — tenant-held KMS seal key (strongest form of the guarantee)</td><td><span class="pill later">v0.2</span></td></tr>
+      <tr><td>HA / DR — Vault Raft cluster, Postgres streaming replicas, multi-region</td><td><span class="pill later">v0.2+</span></td></tr>
+      <tr><td>OIDC SSO + MFA for operators; multi-tenancy hardening (RLS, per-tenant provisioning); client-side encryption; real SMTP</td><td><span class="pill later">v0.2 / v1.0</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <span class="k">Read the deferred list as a boundary</span>
+    <p>Do not assume a deferred control is present in the POC. The POC runs on one box with file storage; it proves the load-bearing property (operator-blind inbound) and ships the tamper-evident audit chain. Everything else in the "deferred" column is target-state — tracked, sequenced, and described on the <a href="roadmap.html">Roadmap</a>.</p>
+  </div>
+
+  <nav class="pagenav">
+    <a class="prev" href="data-flows.html"><span class="dir">← Prev</span><span class="ttl">Data Flows</span></a>
+    <a class="next" href="audit-crypto.html"><span class="dir">Next →</span><span class="ttl">Audit &amp; Cryptography</span></a>
+  </nav>
+</main>
+
+<footer class="site">Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0. Source of truth: <code>docs/threat-model.md</code>.</footer>
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>

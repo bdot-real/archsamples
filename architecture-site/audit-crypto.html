@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — Audit &amp; Cryptography</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+pre{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;overflow-x:auto;line-height:1.5;font-family:var(--mono);font-size:.8rem}
+pre code{background:none;border:none;padding:0;color:inherit}
+pre .cm{color:#6f7fa8}pre .st{color:var(--accent)}pre .nm{color:#e0a75e}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.74rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.callout.done{border-left-color:var(--ok)}.callout.done .k{color:var(--ok)}
+.grid{display:grid;gap:16px;margin:22px 0}
+.grid.c2{grid-template-columns:repeat(2,1fr)}.grid.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.grid.c2,.grid.c3{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 6px;font-size:1rem}
+.card p{margin:0;color:var(--muted);font-size:.92rem}
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg3);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tbody tr:last-child td{border-bottom:none}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+.path{font-family:var(--mono);color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="components.html">Components</a>
+    <a href="zero-knowledge.html">Zero-Knowledge</a>
+    <a href="data-flows.html">Data Flows</a>
+    <a href="threat-model.html">Threat Model</a>
+    <a href="audit-crypto.html" class="active">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · Audit &amp; Cryptography</p>
+  <h1>Audit &amp; Cryptography</h1>
+  <p class="lead">The audit log is the product. Zero-knowledge is only credible if you can <em>prove</em> what was and wasn't read — so every operation is signed into a tamper-evident chain, shipped to storage that even root can't erase, and backed by a key hierarchy where the strongest configuration locks out even the Sepulchre operator.</p>
+
+  <h2>Every operation is an audit event</h2>
+  <p>Each event is a structured record whose metadata <em>never</em> contains a secret value (enforced by the <code>MetadataLeakError</code> backstop). Two fields make the log tamper-evident:</p>
+  <pre><code>{
+  <span class="st">"event_id"</span>:   <span class="nm">"01HQ…"</span>,
+  <span class="st">"prev_hash"</span>:  <span class="nm">"sha256:…"</span>,           <span class="cm">// links to the previous event</span>
+  <span class="st">"timestamp"</span>:  <span class="nm">"2026-05-25T14:23:11.482Z"</span>,
+  <span class="st">"tenant_id"</span>:  <span class="nm">"t_abc"</span>,
+  <span class="st">"actor"</span>: {
+    <span class="st">"type"</span>:        <span class="nm">"service | human | recipient"</span>,
+    <span class="st">"identity"</span>:    <span class="nm">"service-deploy@tenant-abc"</span>,
+    <span class="st">"auth_method"</span>: <span class="nm">"approle | oidc | wrap-token"</span>,
+    <span class="st">"ip"</span>: <span class="nm">"…"</span>, <span class="st">"user_agent"</span>: <span class="nm">"…"</span>
+  },
+  <span class="st">"action"</span>:   <span class="nm">"intake.submit | intake.read | share.create | share.reveal | …"</span>,
+  <span class="st">"resource"</span>: <span class="nm">"sepulchre/data/t_abc/inbound/sub_xyz"</span>,
+  <span class="st">"result"</span>:   <span class="nm">"success | denied | error"</span>,
+  <span class="st">"metadata"</span>: { <span class="cm">/* never contains secret values */</span> },
+  <span class="st">"signature"</span>: <span class="nm">"hmac-sha256:…"</span>        <span class="cm">// per-tenant key, in Vault</span>
+}</code></pre>
+
+  <h2>Tamper-evidence: the hash chain</h2>
+  <p><code>prev_hash</code> embeds the SHA-256 of the previous event, so the log is a chain: edit, delete, insert, or reorder any event and every link after it breaks. The <code>signature</code> is an HMAC-SHA256 under a per-tenant key derived from a broker-held master key that is <em>never</em> in the database — so even the operator can't forge events post-hoc without leaving a detectable gap.</p>
+
+  <figure class="diagram">  event N-1                 event N                   event N+1
+ ┌─────────────┐          ┌─────────────┐           ┌─────────────┐
+ │ …           │   ┌─────▶│ prev_hash ──┼──┐  ┌─────▶│ prev_hash   │
+ │ signature   │   │      │ …           │  │  │      │ …           │
+ │ [hash]──────┼───┘      │ signature   │  └──┼──────┼─[hash]      │
+ └─────────────┘          │ [hash]──────┼─────┘      └─────────────┘
+                          └─────────────┘
+   verify walks the chain →  FAILS CLOSED on:
+     · edit          (hash mismatch)
+     · delete/insert (broken linkage)
+     · reorder       (broken linkage)
+     · forgery       (bad HMAC signature)
+</figure>
+
+  <div class="callout done">
+    <span class="k">Shipped — #24 complete</span>
+    <p><code>pnpm --filter @sepulchre/broker audit:verify</code> walks the chain and <b>fails closed</b> on any post-hoc edit, deletion, insertion, reorder, or forgery. This is not roadmap — it is the current behaviour of the POC.</p>
+  </div>
+
+  <h2>Immutability: WORM archival + SIEM</h2>
+  <p>A signed event is fanned out to sinks that make it independently verifiable and un-erasable off the box:</p>
+  <div class="grid c3">
+    <div class="card"><h3>Postgres</h3><p>An audit mirror for the operator console's fast timeline queries. Not the system of record for immutability — the object store is.</p></div>
+    <div class="card"><h3>WORM object store</h3><p>S3-API + Object Lock in <b>COMPLIANCE</b> mode: the version cannot be deleted or overwritten, even by root, until the configured retention expires.</p></div>
+    <div class="card"><h3>SIEM</h3><p>Shipped to the tenant's SIEM over syslog/webhook with <b>buffered retry</b> — no event is dropped if the sink is briefly unavailable. Per-tenant routing (#28).</p></div>
+  </div>
+  <p>Because every off-box copy is signed by the same per-tenant HMAC key and chained, a tenant can verify any copy independently of Sepulchre. The signed JSONL file on disk is a fourth, offline-verifiable copy.</p>
+
+  <h2>The key hierarchy</h2>
+  <p>Standard Vault at rest, with per-tenant derivation so a compromise or revocation is scoped to one tenant:</p>
+  <figure class="diagram">                  ┌─────────────────────────┐
+                  │   Root of Trust         │  KMS / HSM / Transit /
+                  │   (seal / auto-unseal)  │  Shamir  (configurable)
+                  └──────────┬──────────────┘
+                             │ unseal
+                  ┌──────────▼──────────────┐
+                  │   Vault root keys       │
+                  └──────────┬──────────────┘
+            ┌────────────────┼────────────────┐
+            ▼                ▼                ▼
+   ┌────────────────┐ ┌──────────────┐ ┌───────────────┐
+   │ Per-tenant     │ │ Per-tenant   │ │ Per-tenant    │
+   │ Transit master │ │ KV master    │ │ audit HMAC    │
+   └────────┬───────┘ └──────┬───────┘ └───────┬───────┘
+            │                │                 │
+   derives per-share /       │       chains + signs every
+   per-submission keys       │       event → tamper-evident
+                    encrypts each stored secret
+</figure>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Layer</th><th>How it works</th></tr></thead>
+    <tbody>
+      <tr><td><strong>At rest</strong></td><td>Each KV entry is encrypted with a key derived from the mount's master; the master is encrypted by the seal key from the configured root of trust.</td></tr>
+      <tr><td><strong>In transit</strong></td><td>TLS 1.3 everywhere, HSTS, certificate pinning in the CLI/SDK (RFC 7469 SPKI hashes; pin a long-lived CA and rotate leaves freely).</td></tr>
+      <tr><td><strong>Optional client-side encryption</strong></td><td>Paranoid tenants can have the intake portal derive a key from Vault Transit (<code>/transit/datakey/wrapped/&lt;tenant&gt;</code>) in the browser, encrypt before submission, and ship only ciphertext. The broker never sees plaintext. (Seam: <span class="path">broker/src/cse.ts</span>.)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Pluggable root of trust</h2>
+  <p>Vault's seal is abstracted, so the entire stack can be cloud-independent or bound to a cloud KMS as the deployment prefers. Reference configs ship in <span class="path">deploy/docker-compose/vault/seal/</span>:</p>
+  <div class="grid c3">
+    <div class="card"><h3>Cloud KMS</h3><p><code>awskms.hcl</code>, <code>gcpckms.hcl</code>, <code>azurekeyvault.hcl</code> — auto-unseal from a managed KMS.</p></div>
+    <div class="card"><h3>HSM &amp; Transit</h3><p><code>pkcs11.hcl</code> for a hardware HSM; <code>transit.hcl</code> to auto-unseal from a small secondary Vault (fully self-hosted).</p></div>
+    <div class="card"><h3>Air-gapped</h3><p><code>shamir.hcl</code> — Shamir key shares with sealed envelopes for fully offline operation.</p></div>
+  </div>
+
+  <h2>BYOK — the strongest form of the claim</h2>
+  <div class="callout warn">
+    <span class="k">v0.2</span>
+    <p>A tenant supplies their own KMS key; Vault uses it for seal. If the tenant <b>revokes the key</b>, that tenant's data becomes cryptographically inaccessible — <em>including to the Sepulchre operator</em>. This upgrades the guarantee from "operator is denied by policy" to "operator is denied by mathematics." The POC ships the policy-layer guarantee (see <a href="zero-knowledge.html">Zero-Knowledge</a>); BYOK is the v0.2 escalation (seam: <span class="path">broker/src/byok.ts</span>).</p>
+  </div>
+
+  <h2>Why this matters commercially</h2>
+  <p>Compliance buyers pay for evidence, not promises. A per-tenant continuous-attestation report — every identity with potential read access, every actual read with timestamp and identity, signed by the audit hash chain — is a first-class artifact. For a clean tenant, the human-read list is empty <em>and provably so</em>. That provability is the difference between "we don't look at your secrets" and "you can verify we can't."</p>
+
+  <nav class="pagenav">
+    <a class="prev" href="threat-model.html"><span class="dir">← Prev</span><span class="ttl">Threat Model</span></a>
+    <a class="next" href="roadmap.html"><span class="dir">Next →</span><span class="ttl">Tenancy, Lifecycle &amp; Roadmap</span></a>
+  </nav>
+</main>
+
+<footer class="site">Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0.</footer>
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>

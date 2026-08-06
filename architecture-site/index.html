@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — Architecture Overview</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+pre{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;overflow-x:auto;line-height:1.5;font-family:var(--mono);font-size:.82rem}
+pre code{background:none;border:none;padding:0;color:inherit}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.76rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.grid{display:grid;gap:16px;margin:22px 0}
+.grid.c2{grid-template-columns:repeat(2,1fr)}.grid.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.grid.c2,.grid.c3{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 6px;font-size:1rem}
+.card p{margin:0;color:var(--muted);font-size:.92rem}
+.card-link{text-decoration:none;color:inherit;display:block;transition:transform .12s,border-color .12s}
+.card-link:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card-link .more{color:var(--accent);font-size:.82rem;font-weight:600;margin-top:10px;display:inline-block}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+.badge{font-family:var(--mono);font-size:.74rem;color:var(--muted);border:1px solid var(--border);background:var(--bg2);border-radius:999px;padding:3px 11px}
+.badge b{color:var(--accent);font-weight:600}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+ul.clean{list-style:none;padding-left:0}ul.clean li{padding-left:22px;position:relative;margin:6px 0}
+ul.clean li::before{content:"→";position:absolute;left:0;color:var(--accent)}
+.path{font-family:var(--mono);color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html" class="active">Overview</a>
+    <a href="components.html">Components</a>
+    <a href="zero-knowledge.html">Zero-Knowledge</a>
+    <a href="data-flows.html">Data Flows</a>
+    <a href="threat-model.html">Threat Model</a>
+    <a href="audit-crypto.html">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · Overview</p>
+  <h1>Sepulchre</h1>
+  <p class="lead">A credential broker built on HashiCorp Vault whose defining property is <b>zero-knowledge by policy</b> — the operator's inability to read the credentials a recipient submits is enforced by a Vault <code>deny</code> policy and provable from the audit log, not promised in a privacy statement.</p>
+
+  <div class="badge-row">
+    <span class="badge">Apache-2.0</span>
+    <span class="badge">TypeScript · <b>Node 22</b></span>
+    <span class="badge">Hono · Drizzle · <b>PostgreSQL 16</b></span>
+    <span class="badge">Vault OSS · KV v2 · Transit</span>
+    <span class="badge">Astro · Traefik v3 · Docker</span>
+    <span class="badge">prod · <b>sepulchre.melx.xyz</b></span>
+  </div>
+
+  <p>Sepulchre solves a narrow, sharp problem: how do you let one party <em>hand a secret to another party through a service you run</em>, without that service — or the humans operating it — ever being able to read the secret? It does this with two flows and one uncompromising guarantee.</p>
+
+  <h2>The guarantee, in three sentences</h2>
+  <div class="grid c3">
+    <div class="card">
+      <h3>Operator-blind inbound</h3>
+      <p>Submitted credentials live only in Vault KV at <span class="path">sepulchre/data/&lt;tenant&gt;/inbound/*</span>. The operator role carries an explicit <code>deny</code> there; only a designated service account (Vault AppRole) can read it.</p>
+    </div>
+    <div class="card">
+      <h3>Never in Postgres or logs</h3>
+      <p>Postgres holds metadata only — no secret values, no tokens, no decryption material. Secret-bearing bodies and capability-token URLs are never written to any log, at any layer.</p>
+    </div>
+    <div class="card">
+      <h3>Proof you can run</h3>
+      <p>The published policy artifact is a file you can diff; <code>tools/verify-policy.sh</code> proves the live Vault enforces exactly it. CI re-proves it — and tampers it — on every push.</p>
+    </div>
+  </div>
+
+  <h2>Architecture at a glance</h2>
+  <figure class="diagram">                     Recipient browsers                 Operator browser
+                ┌──────────┴──────────┐                       │
+          Intake portal           Reveal page          Operator console
+          (Astro :4321)          (Astro :4322)          (Astro :4323)
+                └──────────┬──────────┴───────────────────────┘
+                           ▼  BROKER_URL  (Hono API, :8080)
+                   ┌───────────────────┐
+                   │   Broker (Hono)   │   AuthN/Z · workflow · audit emitter
+                   └─────────┬─────────┘   holds NO inbound-read capability
+              ┌──────────────┼───────────────┐
+              ▼              ▼                ▼
+          Vault          PostgreSQL        Audit sinks
+     KV v2 · Transit    (metadata only,    (Postgres audit_events
+     · response-wrap     via PgBouncer)     + signed JSONL + WORM + SIEM)
+</figure>
+  <p>Everything above the broker is a thin, separately-built presentation surface; everything below it is boring, replaceable infrastructure. The interesting part is the single line through the middle — the broker is <em>stateless</em> and, by design, <em>cannot itself read an inbound secret</em>. It reads on the caller's behalf, as the caller's token, or not at all.</p>
+
+  <h2>Two flows</h2>
+  <div class="grid c2">
+    <div class="card">
+      <h3>↓ Inbound — collect a secret</h3>
+      <p>The operator requests credentials; the recipient submits them via a one-time intake link straight into Vault. The operator can <em>never</em> read the submitted values — a bound service account can, and every such read is audited.</p>
+    </div>
+    <div class="card">
+      <h3>↑ Outbound — share a secret once</h3>
+      <p>The operator shares a secret one-time; the recipient reveals it once via a Vault response-wrap token. When the last allowed view is spent the underlying entry is destroyed, and a second attempt is flagged as possible interception.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <span class="k">POC scope vs. target state</span>
+    <p>The running proof-of-concept (v0.1) is single-box, TypeScript, with the zero-knowledge property genuinely enforced and the tamper-evident audit chain (#24) complete. The broader <a href="components.html">component design</a> describes the target state — HA Vault Raft, Postgres replicas, multi-region, BYOK, pluggable roots of trust. Where these pages describe something not yet shipped, they say so.</p>
+  </div>
+
+  <h2>Read the series</h2>
+  <div class="grid c2">
+    <a class="card card-link" href="components.html"><h3>Components &amp; Layers</h3><p>Edge surfaces, the stateless broker, Vault, Postgres, the audit pipeline, and the embedded-AI substrate — what each is responsible for and what it deliberately cannot do.</p><span class="more">Read →</span></a>
+    <a class="card card-link" href="zero-knowledge.html"><h3>The Zero-Knowledge Guarantee</h3><p>Three independent layers — policy, code, and operational — and the published artifact plus the script that proves the live cluster enforces it.</p><span class="more">Read →</span></a>
+    <a class="card card-link" href="data-flows.html"><h3>Data Flows</h3><p>The inbound submission and outbound one-time-reveal flows, drawn as sequence diagrams, with the exact Vault paths and policies at each step.</p><span class="more">Read →</span></a>
+    <a class="card card-link" href="threat-model.html"><h3>Threat Model</h3><p>Trust boundaries and an adversary → capability → mitigation table: operator, compromised session, broker host, Postgres, intercepted links, insiders.</p><span class="more">Read →</span></a>
+    <a class="card card-link" href="audit-crypto.html"><h3>Audit &amp; Cryptography</h3><p>The hash-chained, HMAC-signed audit log; WORM object-store archival; the seal/Transit/KV key hierarchy; and BYOK as the strongest form of the claim.</p><span class="more">Read →</span></a>
+    <a class="card card-link" href="roadmap.html"><h3>Tenancy, Lifecycle &amp; Roadmap</h3><p>Pooled vs. siloed tenancy, the credential lifecycle (standing → rotation → leased), the on-box AI substrate, and the sequenced roadmap.</p><span class="more">Read →</span></a>
+  </div>
+
+  <nav class="pagenav">
+    <a class="prev" style="visibility:hidden"></a>
+    <a class="next" href="components.html"><span class="dir">Next →</span><span class="ttl">Components &amp; Layers</span></a>
+  </nav>
+</main>
+
+<footer class="site">
+  Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0. These pages document the architecture; the authoritative specs live in <code>docs/architecture.md</code>, <code>docs/threat-model.md</code>, and <code>docs/zero-knowledge-proof.md</code>.
+</footer>
+
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>

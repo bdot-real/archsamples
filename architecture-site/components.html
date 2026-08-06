@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — Components &amp; Layers</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+pre{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;overflow-x:auto;line-height:1.5;font-family:var(--mono);font-size:.82rem}
+pre code{background:none;border:none;padding:0;color:inherit}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.72rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.grid{display:grid;gap:16px;margin:22px 0}
+.grid.c2{grid-template-columns:repeat(2,1fr)}.grid.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.grid.c2,.grid.c3{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 6px;font-size:1rem}
+.card p{margin:0;color:var(--muted);font-size:.92rem}
+.comp{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);margin:16px 0}
+.comp h3{margin:0 0 4px;font-size:1.12rem;display:flex;align-items:center;gap:10px}
+.comp .role{font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:1px 8px;font-weight:600}
+.comp .cant{margin-top:12px;padding:10px 14px;border-radius:8px;background:color-mix(in srgb,var(--danger) 8%,transparent);border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);font-size:.88rem}
+.comp .cant b{color:var(--danger)}
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg3);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tbody tr:last-child td{border-bottom:none}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+ul.clean{list-style:none;padding-left:0}ul.clean li{padding-left:22px;position:relative;margin:6px 0}
+ul.clean li::before{content:"→";position:absolute;left:0;color:var(--accent)}
+.path{font-family:var(--mono);color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="components.html" class="active">Components</a>
+    <a href="zero-knowledge.html">Zero-Knowledge</a>
+    <a href="data-flows.html">Data Flows</a>
+    <a href="threat-model.html">Threat Model</a>
+    <a href="audit-crypto.html">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · Components</p>
+  <h1>Components &amp; Layers</h1>
+  <p class="lead">Sepulchre is deliberately layered so that each component has one job and a short list of things it is <em>structurally unable</em> to do. The zero-knowledge property is not one component's responsibility — it is what remains true because no single component can violate it.</p>
+
+  <h2>Logical layers</h2>
+  <figure class="diagram">┌──────────────────────────────────────────────────────────────────┐
+│  EDGE / PRESENTATION                                             │
+│  Intake portal · Reveal page · Operator console · CLI · MCP     │
+│  Separately-built bundles, different CSP profiles               │
+└───────────────────────────────┬──────────────────────────────────┘
+┌───────────────────────────────┴──────────────────────────────────┐
+│  EDGE PROXY — Traefik v3                                         │
+│  TLS termination · rate limiting · request shaping              │
+│  Secret-bearing routes excluded from ALL body/header logging    │
+└───────────────────────────────┬──────────────────────────────────┘
+┌───────────────────────────────┴──────────────────────────────────┐
+│  BROKER SERVICE (Hono, stateless, horizontally scalable)        │
+│  AuthN/Z · tenant routing · workflow · Vault client · audit     │
+│  Has NO inbound-read capability of its own                      │
+└──────────┬─────────────────────┬──────────────────────┬──────────┘
+           ▼                     ▼                      ▼
+   ┌───────────────┐    ┌──────────────────┐   ┌──────────────────┐
+   │ VAULT         │    │ POSTGRESQL       │   │ AUDIT PIPELINE   │
+   │ KV v2·Transit │    │ metadata only    │   │ signed hash-chain│
+   │ resp-wrap·    │    │ RLS · PgBouncer  │   │ → PG · JSONL ·   │
+   │ audit device  │    │ WAL → object st. │   │   WORM · SIEM    │
+   └───────┬───────┘    └──────────────────┘   └──────────────────┘
+           ▼
+   ┌────────────────────────────────────────────────────────────┐
+   │ PLUGGABLE ROOT OF TRUST — seal / auto-unseal               │
+   │ AWS KMS · GCP KMS · Azure KV · Vault Transit · PKCS#11 · Shamir │
+   └────────────────────────────────────────────────────────────┘
+</figure>
+
+  <h2>Component responsibilities</h2>
+
+  <div class="comp">
+    <h3>Edge surfaces <span class="role">Astro · static bundles</span></h3>
+    <p>Four presentation surfaces, built and served independently so a compromise of one cannot reach another's DOM. The <b>intake portal</b> (:4321) and <b>reveal page</b> (:4322) ship the strictest CSP of any surface — no third-party scripts, no analytics, no externally-loaded fonts, minimal JS. The <b>operator console</b> (:4323) is a normal SPA. A <b>CLI</b> (<code>@sepulchre/sdk</code>) and an <b>MCP server</b> drive the same broker API from a terminal or an agent.</p>
+    <div class="cant"><b>Cannot:</b> the credential surfaces load no code that could exfiltrate a keystroke; the console is a separate origin/bundle from the intake DOM.</div>
+  </div>
+
+  <div class="comp">
+    <h3>Edge proxy <span class="role">Traefik v3</span></h3>
+    <p>TLS 1.3 termination, HSTS, rate limiting, and request shaping. It classifies routes into two kinds: <b>secret-bearing</b> (<code>POST /api/v1/inbox/:id</code>, <code>POST /api/v1/shares</code>, <code>GET|POST /api/v1/reveal/:token</code>) where request/response bodies and headers are never logged, and <b>metadata</b> routes where normal logging applies. The distinction is configured at the proxy — see <span class="path">traefik/dynamic/security.yml</span> — not left to the application. <code>Referrer-Policy: no-referrer</code> keeps URL-embedded capability tokens out of the <code>Referer</code> header.</p>
+    <div class="cant"><b>Cannot:</b> emit a secret-bearing body or an <code>Authorization</code>/<code>Cookie</code>/<code>X-Vault-Token</code> header into an access log.</div>
+  </div>
+
+  <div class="comp">
+    <h3>Broker service <span class="role">Hono · stateless</span></h3>
+    <p>The workflow core. It holds connections to Vault and Postgres and handles auth, tenant lookup, policy decisions, Vault calls, audit emission, and notifications. It is stateless — multiple replicas sit behind the proxy, and readiness is separated from liveness so rolling deploys don't drop a wrap-token unwrap mid-flight. Its source is organised by concern: <span class="path">auth/</span>, <span class="path">intake/</span>, <span class="path">share/</span>, <span class="path">tenant/</span>, <span class="path">vault/</span>, <span class="path">audit/</span>, plus <span class="path">byok.ts</span> and <span class="path">cse.ts</span> for the seal/client-side-encryption seams.</p>
+    <div class="cant"><b>Cannot:</b> read an inbound secret with a capability of its own. The single inbound-read endpoint reads <em>as the caller's service-account token</em> (<code>kvReadAs</code>) — Vault, not the broker, is the authority. A CI semgrep gate fails any code path from a Vault-read value to a logger, response body, or queue.</div>
+  </div>
+
+  <div class="comp">
+    <h3>Vault <span class="role">KV v2 · Transit · response-wrap</span></h3>
+    <p>The cryptographic core and the sole home of secret values. Per tenant: a <b>KV v2</b> mount for stored inbound secrets, a <b>Transit</b> mount for client-side encryption and key derivation, and <b>response wrapping</b> for one-time outbound shares. An <b>audit device</b> streams every operation. Tenant isolation on OSS Vault uses path prefixes plus policy templating (<span class="path">operator.hcl.tmpl</span>, <span class="path">service-account.hcl.tmpl</span>, <span class="path">intake-token.hcl.tmpl</span>) — operationally equivalent to Enterprise namespaces for this use case.</p>
+    <div class="cant"><b>Cannot:</b> be overridden by policy stacking — Vault evaluates <code>deny</code> before <code>allow</code>, so the operator's explicit deny on the inbound path always wins.</div>
+  </div>
+
+  <div class="comp">
+    <h3>PostgreSQL <span class="role">metadata only · via PgBouncer</span></h3>
+    <p>Holds tenants, users, tenant config, intake and share <em>metadata</em> (recipient hashed identifier, expiry, view count, status, version), an audit mirror for fast console queries, and OIDC identity links. It never contains a secret value and never contains anything that decrypts one. Row-level security keyed on <code>tenant_id</code> enforces tenant isolation in pooled deployments; PgBouncer pools connections in transaction mode; WAL is archived continuously to object storage for PITR. No vendor-specific features — vanilla Postgres 16.</p>
+    <div class="cant"><b>Cannot:</b> yield a secret to an attacker who compromises it — there is nothing secret to yield (schema note N-007).</div>
+  </div>
+
+  <div class="comp">
+    <h3>Audit pipeline <span class="role">signed · tamper-evident · WORM</span></h3>
+    <p>Every operation produces an audit event. Each event embeds the SHA-256 of the previous one (a hash chain) and is HMAC-signed under a per-tenant key, then fanned out to: <b>Postgres</b> (fast console queries), a <b>signed JSONL file</b>, a <b>WORM object-store archive</b> (S3-API + Object Lock, compliance mode — undeletable even by root until retention expires), and a <b>tenant SIEM</b> via syslog/webhook with buffered retry so no event is dropped. The chain <em>fails closed</em> on any post-hoc edit, deletion, reorder, or forgery. Covered in depth on the <a href="audit-crypto.html">Audit &amp; Crypto</a> page.</p>
+    <div class="cant"><b>Cannot:</b> accept an event whose metadata carries a forbidden key (<code>password</code>, <code>value</code>, <code>token</code>, …) — the emitter throws <code>MetadataLeakError</code> before any sink sees it.</div>
+  </div>
+
+  <div class="comp">
+    <h3>Embedded AI substrate <span class="role">on-box · metadata-only</span></h3>
+    <p>An optional, on-box tiny LLM (<code>node-llama-cpp</code>, GGUF, grammar-constrained output) for audit Q&amp;A and compliance narratives, running in a dedicated worker with <em>no Vault credentials at all</em>. It consumes metadata, audit records, and policy documents only. Natural-language questions are mapped to a whitelisted audit-query object — never free-form SQL — which the broker compiles to a parameterized, tenant-scoped query. See the <a href="roadmap.html">Roadmap</a>.</p>
+    <div class="cant"><b>Cannot:</b> see plaintext. Two semgrep rules (the "AI never sees plaintext" gate, #66) fail the build if a Vault-read value flows into a model call, or if any code under an <code>ai/</code> path touches the Vault read surface.</div>
+  </div>
+
+  <div class="comp">
+    <h3>Pluggable root of trust <span class="role">seal / auto-unseal</span></h3>
+    <p>Vault's seal is abstracted behind a configured provider — AWS KMS, GCP KMS, Azure Key Vault, another Vault's Transit engine, a PKCS#11 HSM, or Shamir for air-gapped. Reference seal configs ship in <span class="path">deploy/docker-compose/vault/seal/</span>. Self-hosters stay fully cloud-independent via Transit auto-unseal from a small secondary Vault; enterprise tenants can BYOK on any provider.</p>
+    <div class="cant"><b>Cannot:</b> unseal tenant data if a BYOK tenant revokes their key — that data becomes cryptographically inaccessible, including to the Sepulchre operator.</div>
+  </div>
+
+  <h2>Repository shape</h2>
+  <p>A pnpm + Turborepo TypeScript monorepo. The split mirrors the layers above:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Path</th><th>What lives there</th></tr></thead>
+    <tbody>
+      <tr><td><span class="path">apps/broker</span></td><td>The Hono broker — routes, auth, intake/share/tenant logic, Vault client, audit sinks, BYOK &amp; CSE seams, mailer.</td></tr>
+      <tr><td><span class="path">apps/portal</span> · <span class="path">reveal</span> · <span class="path">console</span></td><td>The three Astro presentation surfaces (intake, one-time reveal, operator console).</td></tr>
+      <tr><td><span class="path">apps/mcp</span></td><td>MCP server exposing "request a credential" as an agent tool over the audited backbone.</td></tr>
+      <tr><td><span class="path">packages/vault-client</span></td><td>Typed Vault client — KV v2, Transit, response-wrap, <code>kvReadAs</code>.</td></tr>
+      <tr><td><span class="path">packages/db</span></td><td>Drizzle schema &amp; migrations (metadata only).</td></tr>
+      <tr><td><span class="path">packages/audit</span></td><td>Hash-chain + HMAC signing, sink fan-out, chain verification.</td></tr>
+      <tr><td><span class="path">packages/ai</span></td><td>The AI substrate config &amp; boundary (metadata-only, no Vault reach).</td></tr>
+      <tr><td><span class="path">packages/sdk</span></td><td>The <code>sepulchre</code> CLI + language SDK, cert-pinned transport.</td></tr>
+      <tr><td><span class="path">packages/shared-types</span> · <span class="path">ui</span></td><td>Cross-package types; the design-system CSS tokens / components.</td></tr>
+      <tr><td><span class="path">deploy/</span></td><td>docker-compose (dev, prod, HA), Traefik security config, Vault policies &amp; seal configs, backup/restore.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <span class="k">POC vs. target</span>
+    <p>The running POC is a single box: file-storage Vault, one Postgres, one broker, TypeScript throughout. HA (Vault Raft cluster, Postgres streaming replicas, multi-region DR) and pooled multi-tenant hardening are described here as the target topology — see the <a href="roadmap.html">Roadmap</a> for what is shipped, in flight, and deferred.</p>
+  </div>
+
+  <nav class="pagenav">
+    <a class="prev" href="index.html"><span class="dir">← Prev</span><span class="ttl">Overview</span></a>
+    <a class="next" href="zero-knowledge.html"><span class="dir">Next →</span><span class="ttl">The Zero-Knowledge Guarantee</span></a>
+  </nav>
+</main>
+
+<footer class="site">Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0.</footer>
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>

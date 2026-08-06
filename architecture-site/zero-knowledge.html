@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — The Zero-Knowledge Guarantee</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+pre{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;overflow-x:auto;line-height:1.5;font-family:var(--mono);font-size:.82rem}
+pre code{background:none;border:none;padding:0;color:inherit}
+pre .cm{color:#6f7fa8}pre .ok{color:var(--ok)}pre .no{color:var(--danger)}pre .kw{color:var(--accent)}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.76rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.callout.ok{border-left-color:var(--ok)}.callout.ok .k{color:var(--ok)}
+.grid{display:grid;gap:16px;margin:22px 0}
+.grid.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.grid.c3{grid-template-columns:1fr}}
+.layer{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);position:relative}
+.layer .n{font-family:var(--mono);font-size:.72rem;color:var(--accent);font-weight:700}
+.layer h3{margin:6px 0 6px;font-size:1.04rem}
+.layer p{margin:0;color:var(--muted);font-size:.9rem}
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg3);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tbody tr:last-child td{border-bottom:none}
+.pill{font-family:var(--mono);font-size:.72rem;padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.pill.no{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.pill.yes{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent);background:color-mix(in srgb,var(--danger) 12%,transparent)}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+.path{font-family:var(--mono);color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="components.html">Components</a>
+    <a href="zero-knowledge.html" class="active">Zero-Knowledge</a>
+    <a href="data-flows.html">Data Flows</a>
+    <a href="threat-model.html">Threat Model</a>
+    <a href="audit-crypto.html">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · The core guarantee</p>
+  <h1>The Zero-Knowledge Guarantee</h1>
+  <p class="lead">The central claim is <b>zero-knowledge-by-policy</b>: the operator — a human running the console, or anyone who compromises an operator session — can manage credential requests but can <em>never</em> read the credentials a recipient submits. This is the property everything else in the architecture exists to protect.</p>
+
+  <div class="callout">
+    <span class="k">The claim, precisely</span>
+    <p>No operator-scoped identity has any Vault capability that permits reading its tenant's <span class="path">sepulchre/data/&lt;tenant&gt;/inbound/*</span>. Submitted credentials live <em>only</em> there. The single identity class allowed to read them is a <b>service account</b> authenticating with an AppRole token.</p>
+  </div>
+
+  <h2>Three independent layers</h2>
+  <p>The guarantee is not one control; it is three, each sufficient to embarrass an attacker who defeats the others.</p>
+  <div class="grid c3">
+    <div class="layer">
+      <span class="n">LAYER 1</span>
+      <h3>Policy</h3>
+      <p>Operator identities carry an explicit <code>deny</code> on the tenant inbound path. Vault evaluates <code>deny</code> before <code>allow</code>; no policy stacking, token wrapping, or capability union can override it. The policy is published and diffable.</p>
+    </div>
+    <div class="layer">
+      <span class="n">LAYER 2</span>
+      <h3>Code</h3>
+      <p>The broker has no function that reads an inbound secret into a log, response, or queue. A CI semgrep gate fails any PR that introduces a path from a Vault-read value to a sink. Sensitive routes use distinct types from metadata routes.</p>
+    </div>
+    <div class="layer">
+      <span class="n">LAYER 3</span>
+      <h3>Operational</h3>
+      <p>No human shell access to production; policy-touching changes need two-person approval; secret-adjacent columns are filtered from interactive DB sessions; continuous attestation alerts on any inbound read by a non-service identity.</p>
+    </div>
+  </div>
+
+  <h2>The published artifact</h2>
+  <p>The proof is not a paragraph of prose — it is a policy file you can read and diff. <span class="path">operator.hcl.tmpl</span> is rendered per tenant (<code>{{TENANT}}</code> → tenant id) and written to Vault as <code>operator-&lt;tenant&gt;</code>:</p>
+  <pre><code><span class="cm"># ── Inbound: operator sees metadata, NEVER the secret data (per tenant) ──</span>
+path <span class="kw">"sepulchre/data/{{TENANT}}/inbound/*"</span> {
+  capabilities = [<span class="no">"deny"</span>]
+}
+path <span class="kw">"sepulchre/metadata/{{TENANT}}/inbound/*"</span> {
+  capabilities = [<span class="ok">"list"</span>, <span class="ok">"read"</span>]
+}</code></pre>
+  <p>Two things make this airtight in Vault:</p>
+  <ol>
+    <li><b><code>deny</code> is explicit, not merely absent.</b> The operator can list intake <em>metadata</em> so the console can show "fulfilled / pending" — but the secret <em>data</em> path carries an explicit <code>deny</code>.</li>
+    <li><b>Vault evaluates <code>deny</code> before <code>allow</code>.</b> Even if a future policy mistakenly granted <code>read</code> on the same path, the <code>deny</code> still wins.</li>
+  </ol>
+  <p>Because the secret never enters Postgres (metadata only — schema note N-007) and never enters a log (issue #15), the Vault policy is the <em>only</em> gate that matters, and it is shut.</p>
+
+  <h2>Verifying it yourself</h2>
+  <p>A published policy is worthless if the <em>running</em> Vault enforces something looser. <span class="path">tools/verify-policy.sh</span> closes that gap — it reads the live policy and proves the operator is actually denied. Two independent checks:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Check</th><th>What it does</th><th>Fails when</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Policy diff</strong></td><td>Reads <code>vault policy read operator-&lt;tenant&gt;</code> from the live cluster, normalizes whitespace/comments, diffs against the rendered template.</td><td>Any drift → exit 1 with a diff.</td></tr>
+      <tr><td><strong>Behavioral assertion</strong></td><td>Mints a real operator-scoped token and attempts <code>vault kv get sepulchre/&lt;tenant&gt;/inbound/probe</code>.</td><td>If that read <em>succeeds</em>, zero-knowledge is broken → exit non-zero. The guarantee is proven by the read being <em>denied</em>, not by reading the policy text.</td></tr>
+    </tbody>
+  </table></div>
+
+  <pre><code><span class="cm"># From the repo root, with the dev stack provisioned:</span>
+bash tools/verify-policy.sh
+
+<span class="cm"># Expected:</span>
+<span class="ok">OK</span>: live policy matches the published artifact (tenant t_default)
+<span class="ok">OK</span>: operator-t_default denied on sepulchre/data/t_default/inbound/* (zero-knowledge holds)
+==&gt; zero-knowledge property verified for tenant 't_default'.</code></pre>
+
+  <div class="callout ok">
+    <span class="k">Watch it fail</span>
+    <p>A guard you have only ever seen pass is not a guard you trust. Grant the operator a <code>read</code> capability on the inbound path and the script rejects it — <span class="no" style="font-family:var(--mono)">FAIL + diff, exit 1</span>. Restore by re-running <code>vault/provision.sh</code>, which re-renders and re-writes the per-tenant policies.</p>
+  </div>
+
+  <h2>Enforced continuously in CI</h2>
+  <p>This isn't a one-time demo. The <code>zero-knowledge-proof</code> job in <span class="path">.gitea/workflows/ci.yml</span> runs on every push and pull request: it stands up an ephemeral Vault, provisions it from the published policies, runs <code>verify-policy.sh</code>, and then <b>deliberately tampers</b> the live policy to confirm the guard still bites. A change that loosens the operator policy — anywhere in the repo — fails the build.</p>
+
+  <h2>Where this sits in the threat model</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Adversary</th><th>Reads inbound?</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Operator (legitimate)</td><td><span class="pill no">No</span></td><td><code>deny</code> on the tenant inbound path (their tenant only)</td></tr>
+      <tr><td>Compromised operator session</td><td><span class="pill no">No</span></td><td>Same policy; session inherits operator capabilities only</td></tr>
+      <tr><td>Compromised broker host</td><td><span class="pill no">No</span></td><td>Broker reads inbound only <em>as the caller's service token</em>; holds no inbound-read capability of its own</td></tr>
+      <tr><td>Postgres compromise</td><td><span class="pill no">No</span></td><td>Metadata only — no secret values, nothing that decrypts one</td></tr>
+      <tr><td>Service account (designated)</td><td><span class="pill yes">Yes</span></td><td><code>service-account-&lt;tenant&gt;</code> grants <code>read</code> on its own tenant only; every read is audited</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <span class="k">The strongest form — BYOK</span>
+    <p>When a tenant supplies their own KMS seal key, revoking it makes their data cryptographically inaccessible <em>including to the Sepulchre operator</em>. The POC ships the policy-layer guarantee above; BYOK is v0.2. See <a href="audit-crypto.html">Audit &amp; Crypto</a> for the key hierarchy.</p>
+  </div>
+
+  <h3>Requirements traceability</h3>
+  <ul>
+    <li><b>N-011</b> — a Vault policy file exists showing the operator's explicit <code>deny</code> on the inbound path; it is the published proof. ✅ <code>operator.hcl.tmpl</code></li>
+    <li><b>F-025</b> — the operator session has no Vault policy permitting read on the inbound path, enforced at the policy layer. ✅ verified by <code>verify-policy.sh</code></li>
+  </ul>
+
+  <nav class="pagenav">
+    <a class="prev" href="components.html"><span class="dir">← Prev</span><span class="ttl">Components &amp; Layers</span></a>
+    <a class="next" href="data-flows.html"><span class="dir">Next →</span><span class="ttl">Data Flows</span></a>
+  </nav>
+</main>
+
+<footer class="site">Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0. Source of truth: <code>docs/zero-knowledge-proof.md</code>.</footer>
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>

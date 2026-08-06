@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sepulchre — Data Flows</title>
+<style>
+:root{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);--r:12px;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="light"]{--bg:#f6f8fc;--bg2:#fff;--bg3:#eef2fa;--text:#172038;--muted:#55617e;--border:#d8e0ee;--accent:#0c8f80;--accent2:#3550c8;--warnbg:#fff5e6;--warnbd:#f0c27a;--warntx:#8a5a00;--danger:#c0392b;--ok:#17805a;--codebg:#0f1526;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--bg:#0b1020;--bg2:#111830;--bg3:#1a2340;--text:#dce3f4;--muted:#92a0bd;--border:#26304d;--accent:#34d3c0;--accent2:#8aa2ff;--warnbg:#2a2210;--warnbd:#6b5620;--warntx:#f5c265;--danger:#ff7a6b;--ok:#57e39a;--codebg:#060a16;--codetx:#d7e0f5;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.62;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--text);font-size:1.02rem;white-space:nowrap}
+.brand .glyph{width:26px;height:26px;flex:none;display:grid;place-items:center;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:var(--mono);font-size:.8rem}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{text-decoration:none;color:var(--muted);padding:6px 11px;border-radius:8px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.nav a:hover{color:var(--text);background:var(--bg3)}
+.nav a.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.theme-btn{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:8px;width:34px;height:32px;cursor:pointer;font-size:.95rem;display:grid;place-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:34px 22px 90px}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--accent);margin:0 0 10px}
+h1{font-size:2.15rem;line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+h2{font-size:1.4rem;margin:44px 0 14px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h2 .dir{font-family:var(--mono);color:var(--accent);font-size:1.5rem}
+h3{font-size:1.08rem;margin:26px 0 8px}
+.lead{font-size:1.14rem;color:var(--muted);margin:0 0 8px;max-width:70ch}
+p,li{max-width:74ch}
+a{color:var(--accent2);text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .4em;border-radius:5px;border:1px solid var(--border)}
+.diagram{background:var(--codebg);color:var(--codetx);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:.72rem;line-height:1.45;white-space:pre;margin:18px 0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--bg2);border-radius:10px;padding:14px 18px;margin:20px 0;box-shadow:var(--shadow)}
+.callout .k{font-weight:700;color:var(--accent);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:var(--warnbd);background:var(--warnbg)}.callout.warn .k{color:var(--warntx)}
+.callout.danger{border-left-color:var(--danger)}.callout.danger .k{color:var(--danger)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:18px 0}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 44px;border-bottom:1px solid var(--border)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(s);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-family:var(--mono);font-weight:700;font-size:.82rem;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--bg3);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tbody tr:last-child td{border-bottom:none}
+.path{font-family:var(--mono);color:var(--accent)}
+.pagenav{display:flex;justify-content:space-between;gap:14px;margin-top:56px;padding-top:22px;border-top:1px solid var(--border)}
+.pagenav a{text-decoration:none;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);flex:1;box-shadow:var(--shadow)}
+.pagenav a:hover{border-color:var(--accent)}.pagenav a.next{text-align:right}
+.pagenav .dir{display:block;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pagenav .ttl{color:var(--text);font-weight:600}
+footer.site{max-width:980px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:.82rem}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="index.html"><span class="glyph">▚</span> Sepulchre <span style="color:var(--muted);font-weight:500;font-size:.74rem">architecture</span></a>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="components.html">Components</a>
+    <a href="zero-knowledge.html">Zero-Knowledge</a>
+    <a href="data-flows.html" class="active">Data Flows</a>
+    <a href="threat-model.html">Threat Model</a>
+    <a href="audit-crypto.html">Audit &amp; Crypto</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <button class="theme-btn" id="tt" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+  <p class="eyebrow">Architecture · Data Flows</p>
+  <h1>The Two Canonical Flows</h1>
+  <p class="lead">Everything Sepulchre does reduces to two motions: a secret coming <b>in</b> that the operator must never see, and a secret going <b>out</b> that may be revealed exactly once. Each is drawn below with the components it touches, the Vault path it lands on, and the policy that guards it.</p>
+
+  <h2><span class="dir">↓</span> Inbound — collect a secret the operator can't see</h2>
+  <p>The operator asks a recipient for credentials. The recipient submits them through a one-time intake link straight into Vault. The submitted value never returns to the operator, never touches Postgres, and never lands in a log.</p>
+
+  <figure class="diagram">Recipient browser        Edge          Broker         Vault         Audit
+     │                    │              │              │             │
+     │  open intake link  │              │              │             │
+     ├───────────────────▶├─────────────▶│  validate    │             │
+     │                    │              │  submission  │             │
+     │                    │              │  token (JWT) │             │
+     │◀───────────────────┤◀─────────────┤  render form │             │
+     │   form + token     │              │              │             │
+     │                    │              │              │             │
+     │  POST /api/v1/inbox/:id   [body NOT logged]      │             │
+     ├───────────────────▶├─────────────▶│  write KV    │             │
+     │                    │              ├─────────────▶│             │
+     │                    │              │              ├────────────▶│ intake.submit
+     │◀───────────────────┤◀─────────────┤   202        │◀────────────┤
+     │  "submitted"       │              │              │             │
+     │                    │              │              │             │
+     ·  ── later ──       │              │              │             │
+  Service acct  ─ Bearer service token ─▶│  read KV     │             │
+  (AppRole)               │              │  AS caller   ├─────────────▶│ intake.read
+                          │              │◀─────────────┤              │  actor=service
+                          │◀── payload ──┤              │             │
+</figure>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Identity</th><th>Capability on <span class="path">sepulchre/data/&lt;tenant&gt;/inbound/*</span></th></tr></thead>
+    <tbody>
+      <tr><td>Submission token (the recipient)</td><td><code>create</code> only — cannot read its own submission back</td></tr>
+      <tr><td>Operator (human / session)</td><td>explicit <code>deny</code> on read</td></tr>
+      <tr><td>Designated service account (per tenant)</td><td><code>read</code> — the one allowed reader; every read audited</td></tr>
+    </tbody>
+  </table></div>
+
+  <ul class="steps">
+    <li><b>Request.</b> The operator creates an intake in the console — naming the recipient and the fields to collect. The broker mints a scoped submission token (HS256 JWT bound to one intake id + <code>jti</code>, short TTL) and returns a copyable intake link. The POC mailer only logs that a notification <em>would</em> be sent — the link itself is in the create response, never a log.</li>
+    <li><b>Submit.</b> The recipient opens the link on the intake portal and posts values to <code>POST /api/v1/inbox/:id</code>. The broker writes them to Vault KV. The body is never logged at any layer; the broker's request log emits the templated route only.</li>
+    <li><b>Blind.</b> Nothing in the console ever shows the submitted values, and an operator-scoped Vault token is denied on the inbound data path — provable at any time with <code>verify-policy.sh</code>.</li>
+    <li><b>Consume.</b> A bound service account (AppRole token) calls the one inbound-read endpoint. The broker performs the read <em>as the caller's token</em> (<code>kvReadAs</code>) — Vault, not the broker, authorizes it — and records <code>intake.read</code> with <code>actor_type: service</code>.</li>
+  </ul>
+
+  <div class="callout warn">
+    <span class="k">Standing by default</span>
+    <p>A fulfilled intake is <b>standing</b>: the value persists in Vault and a bound reader can fetch it across many runs (CI jobs, containers). Rotation re-opens the same intake with a fresh token and bumps <code>version</code>, so bound readers keep working without reconfiguration. See the <a href="roadmap.html">credential lifecycle</a>.</p>
+  </div>
+
+  <h2><span class="dir">↑</span> Outbound — share a secret, reveal it once</h2>
+  <p>The operator sends a secret to a recipient one-time. Vault response wrapping does the work: the wrap token reveals nothing about the underlying secret, unwrap is single-use, and a second attempt is a signal that someone else read it.</p>
+
+  <figure class="diagram">Operator               Broker          Vault              Recipient
+   │                     │                │                    │
+   │  POST /api/v1/shares │                │                    │
+   │  {value, max_views, │                │                    │
+   │   ttl, passphrase?} │                │                    │
+   ├────────────────────▶│  write KV      │                    │
+   │                     ├───────────────▶│                    │
+   │                     │  response-wrap │                    │
+   │                     ├───────────────▶│                    │
+   │                     │◀───────────────┤ wrap token         │
+   │◀── reveal link ─────┤                │                    │
+   │                     │  notify (link) ─┼───────────────────▶│
+   │                     │                │                    │
+   │                     │◀── GET /api/v1/reveal/:token ────────┤
+   │                     │  verify pass-  │                    │
+   │                     │  phrase (2FA)  │                    │
+   │                     │  unwrap        │                    │
+   │                     ├───────────────▶│                    │
+   │                     │◀───────────────┤ secret (one-shot)  │
+   │                     ├── secret, TLS only ────────────────▶│
+   │                     │  last view? →  │                    │
+   │                     │  delete KV     │                    │
+   │                     ├───────────────▶│                    │
+</figure>
+
+  <ul class="steps">
+    <li><b>Create.</b> The operator posts a value, a max-view count, a TTL, and optionally a sender-set passphrase to <code>POST /api/v1/shares</code>. The broker writes it to Vault, response-wraps it, and returns a reveal link keyed by the accessor.</li>
+    <li><b>Notify.</b> The recipient receives the reveal link (out of band in the POC).</li>
+    <li><b>Reveal.</b> The recipient opens the reveal page and hits <code>GET|POST /api/v1/reveal/:token</code>. If a passphrase was set (argon2id), it's verified as a second factor. The broker unwraps the secret and streams it once, over TLS.</li>
+    <li><b>Destroy.</b> When the last allowed view is spent, the underlying Vault entry is deleted. The reveal endpoint is rate-limited (10/IP/min) and the link is short-TTL.</li>
+  </ul>
+
+  <div class="callout danger">
+    <span class="k">Interception is detectable, not silent</span>
+    <p>Open a spent reveal link again and you get the same generic "unavailable" response — <em>and</em> the audit log records <code>share.reveal</code> with <code>result: denied</code>, <code>reason: exceeded</code>, <code>possible_interception: true</code>. A legitimate recipient who finds their link already consumed learns their channel was compromised. The runbook covers the response procedure.</p>
+  </div>
+
+  <h2>Why the broker can't cheat on either flow</h2>
+  <p>Both flows route through the broker, so it's the natural place to worry about. The design removes the worry structurally rather than by trust:</p>
+  <ul style="list-style:none;padding:0">
+    <li style="padding:8px 0 8px 24px;position:relative"><span style="position:absolute;left:0;color:var(--accent)">→</span> <b>Inbound reads run as the caller's token.</b> The broker has no standing inbound-read capability; an attacker who owns the broker host still has no service token, so Vault denies them.</li>
+    <li style="padding:8px 0 8px 24px;position:relative"><span style="position:absolute;left:0;color:var(--accent)">→</span> <b>Secret-bearing routes are excluded from logging</b> at the proxy and the app — the broker's structured log emits templated routes only, never the raw path (which carries a capability token) or the body.</li>
+    <li style="padding:8px 0 8px 24px;position:relative"><span style="position:absolute;left:0;color:var(--accent)">→</span> <b>A CI semgrep gate</b> fails the build if any code path pipes a Vault-read value or a request body into a logger; a runtime backstop (<code>MetadataLeakError</code>) throws before any audit sink sees a forbidden key.</li>
+  </ul>
+
+  <p>For the full local walkthrough of both flows end-to-end — including the exact commands to prove the operator is blind and a service token is not — see the project <code>README.md</code> quickstart, or run <code>pnpm verify:poc</code> to exercise all seven POC acceptance criteria against the live API at once.</p>
+
+  <nav class="pagenav">
+    <a class="prev" href="zero-knowledge.html"><span class="dir">← Prev</span><span class="ttl">The Zero-Knowledge Guarantee</span></a>
+    <a class="next" href="threat-model.html"><span class="dir">Next →</span><span class="ttl">Threat Model</span></a>
+  </nav>
+</main>
+
+<footer class="site">Sepulchre · zero-knowledge-by-policy credential broker · Apache-2.0.</footer>
+<script>
+(function(){var r=document.documentElement,b=document.getElementById('tt');
+try{var s=localStorage.getItem('sep-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+b.addEventListener('click',function(){var cur=r.getAttribute('data-theme');
+if(!cur)cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+var nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);
+try{localStorage.setItem('sep-theme',nx);}catch(e){}});})();
+</script>
+</body>
+</html>
