@@ -393,9 +393,27 @@
       <span class="tk">Reference &amp; studies</span>
       <span class="tktag" style="color:var(--orange);background:rgba(191,79,23,.10)">study · not my product</span>
     </div>
-    <p class="track-desc">Reference architectures and interactive tools built to study a pattern or a published design, rather than a product of mine.</p>
+    <p class="track-desc">Reference and solution architectures, plus interactive tools — some designed from scratch for a platform or a role, some built to study a published design.</p>
 
     <div class="grid" style="margin-top:16px">
+
+      <a class="card" href="databricks-secure-ai.html" style="--accent:var(--accent)">
+        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Solution architecture<span class="ai-dot"></span></span><span class="open">Open ↗</span></div>
+        <h3>Secure AI on Azure Databricks</h3>
+        <div class="sub">conversational + agentic AI on the Lakehouse</div>
+        <p>A reference architecture for conversational and autonomous-agent AI on the Azure Databricks Lakehouse: ingestion → medallion → Unity Catalog governance → serving, the chat/voice/agent layer with governed retrieval and tools (plus Vertex AI / Gemini as a multi-cloud model option), six security pillars (Entra ID, Unity Catalog row/column security, Private Link, customer-managed keys, Mosaic AI Gateway guardrails, audit), a quality layer (data-quality tests, agent evaluation, a CI gate, and Lakehouse Monitoring for data and model drift), and a governed request walk. The through-line: the AI inherits the platform's access controls, so it can never surface data the user isn't entitled to.</p>
+        <div class="tags"><span class="tag">Databricks + Unity Catalog</span><span class="tag">Row/column security into RAG</span><span class="tag">CMK · Private Link · Gateway</span><span class="tag">Eval + drift monitoring</span></div>
+        <div class="fname">databricks-secure-ai.html</div>
+      </a>
+
+      <a class="card" href="databricks-deployment-scaling.html" style="--accent:var(--accent)">
+        <div class="ctop"><span class="role-badge" style="color:var(--accent);background:rgba(13,110,168,.10)">Deployment · scaling</span><span class="open">Open ↗</span></div>
+        <h3>Azure Databricks — Landing Zone, Compute &amp; Cost</h3>
+        <div class="sub">deploy · scale · cost the secure-AI platform</div>
+        <p>The deployment and scaling companion to the secure-AI architecture: the Azure landing zone (control-plane vs data-plane split, injected VNet with host/container subnets, front-end and back-end Private Link, ADLS and Key Vault behind private endpoints, controlled egress), compute scaling (serverless vs classic per workload, model-serving concurrency, Vector Search sizing), and a cost model showing what each component's bill is proportional to and which lever bends it — including the monitoring and evaluation costs that scale with traffic.</p>
+        <div class="tags"><span class="tag">Control / data plane</span><span class="tag">Serverless vs classic</span><span class="tag">Cost &amp; attribution</span></div>
+        <div class="fname">databricks-deployment-scaling.html</div>
+      </a>
 
       <a class="card" href="open-banking-aws.html" style="--accent:var(--orange)">
         <div class="ctop"><span class="role-badge" style="color:var(--orange);background:rgba(191,79,23,.10)">Reference arch</span><span class="open">Open ↗</span></div>
