@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quebec French Drift Detection Pipeline</title>
+<style>
+  :root {
+    --bg:#0B0B0D; --panel:#141418; --panel-2:#1B1B21;
+    --line:#2E2E38; --line-hot:#45454F;
+    --ink:#E9E9E4; --ink-dim:#8D8D86; --ink-faint:#5E5E5A;
+    --acid:#E8FF59; --cyan:#59D5FF; --violet:#B48CFF; --red:#FF5964;
+    --mono: ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--mono); font-size:14px; line-height:1.6;
+    padding:32px 20px 80px;
+  }
+  .card { max-width:1040px; margin:0 auto; }
+
+  .eyebrow { color:var(--acid); font-size:11px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px; }
+  h1 { font-size:26px; font-weight:700; letter-spacing:-.01em; margin:0 0 10px; line-height:1.2; }
+  .dek { color:var(--ink-dim); max-width:66ch; margin:0 0 26px; }
+
+  .tabs { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab {
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-dim); background:var(--panel); border:2px solid var(--line);
+    padding:9px 16px; cursor:pointer; box-shadow:3px 3px 0 #000;
+  }
+  .tab:hover { color:var(--ink); border-color:var(--line-hot); }
+  .tab[aria-selected="true"] { color:#0B0B0D; background:var(--acid); border-color:var(--acid); }
+
+  .stage {
+    background:var(--panel); border:2px solid var(--line);
+    box-shadow:6px 6px 0 #000; padding:18px 18px 8px; margin-bottom:22px;
+  }
+  svg { display:block; width:100%; height:auto; }
+
+  .node { cursor:pointer; }
+  .node:hover rect { stroke-width:2.6; }
+  .node:focus { outline:none; }
+  .node:focus rect, .node[data-active="true"] rect { stroke:var(--acid); stroke-width:2.6; }
+
+  text { font-family:var(--mono); }
+  .lbl   { font-size:13px; font-weight:700; fill:var(--ink); }
+  .sub   { font-size:10.5px; fill:var(--ink-dim); }
+  .mono9 { font-size:9.5px; fill:var(--cyan); }
+  .tag   { font-size:9.5px; fill:var(--ink-faint); letter-spacing:.16em; }
+  .edgelbl { font-size:9px; fill:var(--ink-faint); letter-spacing:.06em; }
+  .edge  { stroke:var(--line-hot); stroke-width:1.5; fill:none; }
+  .edge-hot { stroke:var(--red); stroke-width:1.5; fill:none; stroke-dasharray:5 4; }
+
+  .detail {
+    background:var(--panel-2); border:2px solid var(--line); border-left:6px solid var(--acid);
+    box-shadow:6px 6px 0 #000; padding:20px 22px; min-height:200px;
+  }
+  .detail h2 { font-size:15px; margin:0 0 4px; }
+  .detail .kicker { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--acid); margin-bottom:12px; }
+  .detail p { margin:0 0 12px; color:var(--ink-dim); max-width:78ch; }
+  .detail ul { margin:0 0 12px; padding-left:18px; color:var(--ink-dim); }
+  .detail li { margin-bottom:5px; }
+  .detail code { color:var(--cyan); background:#000; border:1px solid var(--line); padding:1px 5px; font-size:12px; }
+  .detail pre {
+    background:#000; border:1px solid var(--line); border-left:3px solid var(--cyan);
+    padding:12px 14px; overflow-x:auto; font-size:11.5px; line-height:1.55;
+    color:var(--ink-dim); margin:0 0 12px;
+  }
+  .detail pre b { color:var(--acid); font-weight:400; }
+  .detail .eq {
+    background:#000; border:1px solid var(--line); padding:10px 14px;
+    color:var(--acid); font-size:12.5px; margin:0 0 12px; overflow-x:auto;
+  }
+  .halt { border-left-color:var(--red); }
+  .halt .kicker { color:var(--red); }
+
+  .legend {
+    display:flex; gap:20px; flex-wrap:wrap; margin-top:14px; padding-top:14px;
+    border-top:1px solid var(--line); font-size:11px; color:var(--ink-dim); letter-spacing:.04em;
+  }
+  .swatch { display:inline-block; width:11px; height:11px; border:1px solid #000; margin-right:7px; vertical-align:-1px; }
+
+  .offstage { position:absolute; left:-10000px; top:0; width:1000px; }
+  .hidden { display:none; }
+
+  footer { margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:11.5px; }
+  footer a { color:var(--cyan); }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  @media (max-width:620px) {
+    h1 { font-size:21px; }
+    body { padding:22px 14px 60px; }
+    .stage,.detail { box-shadow:4px 4px 0 #000; }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+
+  <p class="eyebrow">AI / ML &middot; Evaluation infrastructure</p>
+  <h1>Quebec French drift detection</h1>
+  <p class="dek">
+    Three clocks move Metropolitan Drift Rate: the instrument, the models, and the language.
+    Frozen controls separate them. Ollama-served open weights, matched-pair corpus,
+    McNemar on discordant pairs. Select any node.
+  </p>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" id="tab-flow"   aria-selected="true"  aria-controls="view-flow">Pipeline</button>
+    <button class="tab" role="tab" id="tab-matrix" aria-selected="false" aria-controls="view-matrix">Run matrix</button>
+    <button class="tab" role="tab" id="tab-spec"   aria-selected="false" aria-controls="view-spec">Contracts</button>
+  </div>
+
+  <section class="stage" id="view-flow" role="tabpanel" aria-labelledby="tab-flow">
+    <h2 class="sr-only">Pipeline flow from trigger through a control gate to scoring</h2>
+    <svg viewBox="0 0 900 446" role="img" aria-label="Pipeline flow diagram">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="square"/>
+        </marker>
+      </defs>
+
+      <text class="tag" x="36" y="34">01 TRIGGER</text>
+      <text class="tag" x="218" y="34">02 PIN</text>
+      <text class="tag" x="400" y="34">03 CONTROL</text>
+      <text class="tag" x="582" y="34">04 MEASURE</text>
+      <text class="tag" x="764" y="34">05 GATE</text>
+
+      <g class="node" data-id="trigger" tabindex="0" role="button" aria-label="Trigger">
+        <rect x="36" y="50" width="152" height="92" fill="#141418" stroke="#59D5FF" stroke-width="1.6"/>
+        <text class="lbl" x="52" y="74">Change event</text>
+        <text class="sub" x="52" y="94" data-w="120" data-lh="13">digest poll · prompt commit · adapter push · cron</text>
+      </g>
+
+      <g class="node" data-id="pin" tabindex="0" role="button" aria-label="Resolve and pin">
+        <rect x="218" y="50" width="152" height="92" fill="#141418" stroke="#59D5FF" stroke-width="1.6"/>
+        <text class="lbl" x="234" y="74">Resolve + pin</text>
+        <text class="sub" x="234" y="94" data-w="120" data-lh="13">sha256 digests, corpus manifest, prompt hash</text>
+      </g>
+
+      <g class="node" data-id="control" tabindex="0" role="button" aria-label="Control run">
+        <rect x="400" y="50" width="152" height="92" fill="#141418" stroke="#E8FF59" stroke-width="2"/>
+        <text class="lbl" x="416" y="74">Control run</text>
+        <text class="sub" x="416" y="94" data-w="120" data-lh="13">frozen model, corpus and prompt</text>
+        <text class="mono9" x="416" y="132">McNemar vs baseline</text>
+      </g>
+
+      <g class="node" data-id="measure" tabindex="0" role="button" aria-label="Measure">
+        <rect x="582" y="50" width="152" height="92" fill="#141418" stroke="#B48CFF" stroke-width="1.6"/>
+        <text class="lbl" x="598" y="74">Run matrix</text>
+        <text class="sub" x="598" y="94" data-w="120" data-lh="13">regression and longitudinal, T=0, fixed seed</text>
+      </g>
+
+      <g class="node" data-id="gate" tabindex="0" role="button" aria-label="Gate and report">
+        <rect x="764" y="50" width="100" height="92" fill="#141418" stroke="#B48CFF" stroke-width="1.6"/>
+        <text class="lbl" x="780" y="74">Gate</text>
+        <text class="sub" x="780" y="94" data-w="70" data-lh="13">block or alert</text>
+      </g>
+
+      <line x1="190" y1="96" x2="214" y2="96" class="edge" marker-end="url(#ar)"/>
+      <line x1="372" y1="96" x2="396" y2="96" class="edge" marker-end="url(#ar)"/>
+      <line x1="554" y1="96" x2="578" y2="96" class="edge" marker-end="url(#ar)"/>
+      <line x1="736" y1="96" x2="760" y2="96" class="edge" marker-end="url(#ar)"/>
+      <text class="edgelbl" x="202" y="88" text-anchor="middle">ref</text>
+      <text class="edgelbl" x="384" y="88" text-anchor="middle">lock</text>
+      <text class="edgelbl" x="566" y="88" text-anchor="middle">ok</text>
+      <text class="edgelbl" x="748" y="88" text-anchor="middle">rows</text>
+
+      <path d="M476 144 L476 194" class="edge-hot" marker-end="url(#ar)"/>
+      <text class="edgelbl" x="484" y="172">b+c &gt; 0</text>
+      <g class="node" data-id="halt" tabindex="0" role="button" aria-label="Halt on instrument drift">
+        <rect x="400" y="198" width="152" height="66" fill="#141418" stroke="#FF5964" stroke-width="1.6"/>
+        <text class="lbl" x="416" y="222" fill="#FF5964">HALT</text>
+        <text class="sub" x="416" y="242" data-w="120" data-lh="13">instrument drift, emit environment</text>
+      </g>
+
+      <text class="tag" x="36" y="316">FROZEN ARTEFACTS, CONTENT ADDRESSED</text>
+      <g class="node" data-id="corpus" tabindex="0" role="button" aria-label="Golden corpus">
+        <rect x="36" y="330" width="272" height="82" fill="#141418" stroke="#2E2E38" stroke-width="1.6"/>
+        <text class="lbl" x="52" y="354">Golden corpus</text>
+        <text class="sub" x="52" y="374" data-w="240" data-lh="13">9 categories, matched pairs, neutral controls</text>
+      </g>
+      <g class="node" data-id="metrics" tabindex="0" role="button" aria-label="Metric layer">
+        <rect x="324" y="330" width="272" height="82" fill="#141418" stroke="#2E2E38" stroke-width="1.6"/>
+        <text class="lbl" x="340" y="354">Metric layer</text>
+        <text class="sub" x="340" y="374" data-w="240" data-lh="13">MDR, CLR, QFCR, matched-pair asymmetry</text>
+      </g>
+      <g class="node" data-id="store" tabindex="0" role="button" aria-label="Run store">
+        <rect x="612" y="330" width="252" height="82" fill="#141418" stroke="#2E2E38" stroke-width="1.6"/>
+        <text class="lbl" x="628" y="354">Run store</text>
+        <text class="sub" x="628" y="374" data-w="220" data-lh="13">per-pair JSONL, lockfile, trend series</text>
+      </g>
+    </svg>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:#E8FF59"></i>control gate</span>
+      <span><i class="swatch" style="background:#59D5FF"></i>inputs</span>
+      <span><i class="swatch" style="background:#B48CFF"></i>measurement</span>
+      <span><i class="swatch" style="background:#FF5964"></i>halt path</span>
+    </div>
+  </section>
+
+  <section class="stage offstage" id="view-matrix" role="tabpanel" aria-labelledby="tab-matrix">
+    <h2 class="sr-only">Run matrix crossing frozen and rotating model against frozen and rotating corpus</h2>
+    <svg viewBox="0 0 900 340" role="img" aria-label="Run matrix">
+      <text class="tag" x="310" y="44" text-anchor="middle">CORPUS FROZEN</text>
+      <text class="tag" x="640" y="44" text-anchor="middle">CORPUS ROTATING</text>
+      <text class="tag" x="132" y="126" text-anchor="middle">MODEL FROZEN</text>
+      <text class="tag" x="132" y="256" text-anchor="middle">MODEL ROTATING</text>
+
+      <g class="node" data-id="control" tabindex="0" role="button" aria-label="Control cell">
+        <rect x="210" y="66" width="200" height="110" fill="#141418" stroke="#E8FF59" stroke-width="2"/>
+        <text class="lbl" x="228" y="94">Control</text>
+        <text class="sub" x="228" y="114" data-w="168" data-lh="13">is the instrument stable?</text>
+        <text class="mono9" x="228" y="158">every trigger</text>
+      </g>
+      <g class="node" data-id="longitudinal" tabindex="0" role="button" aria-label="Longitudinal cell">
+        <rect x="540" y="66" width="200" height="110" fill="#141418" stroke="#B48CFF" stroke-width="1.6"/>
+        <text class="lbl" x="558" y="94">Longitudinal</text>
+        <text class="sub" x="558" y="114" data-w="168" data-lh="13">did the language move?</text>
+        <text class="mono9" x="558" y="158">monthly</text>
+      </g>
+      <g class="node" data-id="regression" tabindex="0" role="button" aria-label="Regression cell">
+        <rect x="210" y="196" width="200" height="110" fill="#141418" stroke="#B48CFF" stroke-width="1.6"/>
+        <text class="lbl" x="228" y="224">Regression</text>
+        <text class="sub" x="228" y="244" data-w="168" data-lh="13">did a model or adapter drift?</text>
+        <text class="mono9" x="228" y="288">on tag change</text>
+      </g>
+      <g class="node" data-id="void" tabindex="0" role="button" aria-label="Uninterpretable cell">
+        <rect x="540" y="196" width="200" height="110" fill="#141418" stroke="#FF5964" stroke-width="1.6"/>
+        <text class="lbl" x="558" y="224" fill="#FF5964">Uninterpretable</text>
+        <text class="sub" x="558" y="244" data-w="168" data-lh="13">both clocks moving, no attribution</text>
+        <text class="mono9" x="558" y="288" fill="#FF5964">never</text>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><i class="swatch" style="background:#E8FF59"></i>gate, not a measurement</span>
+      <span><i class="swatch" style="background:#B48CFF"></i>attributable result</span>
+      <span><i class="swatch" style="background:#FF5964"></i>excluded structurally</span>
+    </div>
+  </section>
+
+  <section class="stage offstage" id="view-spec" role="tabpanel" aria-labelledby="tab-spec">
+    <h2 class="sr-only">Data contracts and statistical thresholds</h2>
+    <svg viewBox="0 0 900 364" role="img" aria-label="Data contracts">
+      <text class="tag" x="36" y="34">CORPUS CATEGORIES</text>
+      <g class="node" data-id="cats" tabindex="0" role="button" aria-label="Corpus categories">
+        <rect x="36" y="48" width="252" height="280" fill="#141418" stroke="#59D5FF" stroke-width="1.6"/>
+        <text class="mono9" x="52" y="76">lexical/</text>
+        <text class="mono9" x="52" y="100">meals/</text>
+        <text class="mono9" x="52" y="124">anglicism-accept/</text>
+        <text class="mono9" x="52" y="148">anglicism-reject/</text>
+        <text class="mono9" x="52" y="172">syntax/</text>
+        <text class="mono9" x="52" y="196">morphology/</text>
+        <text class="mono9" x="52" y="220">feminisation/</text>
+        <text class="mono9" x="52" y="244">typography/</text>
+        <text class="mono9" x="52" y="268" fill="#E8FF59">neutral-control/</text>
+        <text class="sub" x="52" y="292" data-w="220" data-lh="12">two anglicism directions, one false-positive detector</text>
+      </g>
+
+      <text class="tag" x="312" y="34">STATISTICS</text>
+      <g class="node" data-id="stats" tabindex="0" role="button" aria-label="Statistical design">
+        <rect x="312" y="48" width="276" height="280" fill="#141418" stroke="#E8FF59" stroke-width="1.6"/>
+        <text class="sub" x="328" y="76">McNemar, continuity corrected</text>
+        <text class="mono9" x="328" y="102" fill="#E8FF59">chi2 = (|b - c| - 1)^2 / (b + c)</text>
+        <text class="sub" x="328" y="132">discordant pairs required</text>
+        <text class="mono9" x="328" y="158">p=0.70  n_disc = 49</text>
+        <text class="mono9" x="328" y="180">p=0.65  n_disc = 87</text>
+        <text class="mono9" x="328" y="202">p=0.60  n_disc = 196</text>
+        <text class="sub" x="328" y="234" data-w="244" data-lh="13">exact binomial when b+c &lt; 25</text>
+        <text class="sub" x="328" y="272" data-w="244" data-lh="13">total pairs = n_disc / discordance rate</text>
+      </g>
+
+      <text class="tag" x="612" y="34">GATES</text>
+      <g class="node" data-id="thresholds" tabindex="0" role="button" aria-label="Gate thresholds">
+        <rect x="612" y="48" width="252" height="280" fill="#141418" stroke="#FF5964" stroke-width="1.6"/>
+        <text class="sub" x="628" y="76" fill="#FF5964">BLOCK</text>
+        <text class="mono9" x="628" y="100">control b+c &gt; 0</text>
+        <text class="mono9" x="628" y="122">neutral_drift &gt; 0</text>
+        <text class="mono9" x="628" y="144">corpus_sha mismatch</text>
+        <text class="mono9" x="628" y="166">digest unpinned</text>
+        <text class="mono9" x="628" y="188">n_disc &lt; 49</text>
+        <text class="sub" x="628" y="222" fill="#B48CFF">ALERT ONLY</text>
+        <text class="mono9" x="628" y="246">MDR delta by category</text>
+        <text class="mono9" x="628" y="268">CLR / QFCR trend</text>
+        <text class="mono9" x="628" y="290">asymmetry drift</text>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><i class="swatch" style="background:#E8FF59"></i>deterministic, blocks</span>
+      <span><i class="swatch" style="background:#B48CFF"></i>statistical, alerts</span>
+      <span><i class="swatch" style="background:#59D5FF"></i>corpus structure</span>
+    </div>
+  </section>
+
+  <div class="detail" id="detail" aria-live="polite">
+    <p class="kicker" id="d-kicker">Select a node</p>
+    <h2 id="d-title">Three clocks, one metric</h2>
+    <div id="d-body">
+      <p>MDR moves when Ollama ships a build, when a model is released, and when Quebec French
+      changes. Benchmarking cannot tell these apart. The frozen control can.</p>
+    </div>
+  </div>
+
+  <footer>
+    archsamples &middot; single-file interactive schematic &middot;
+    companion to <a href="https://thebdot.substack.com/">When French isn't French</a>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  /* Runtime wrapping. SVG text does not wrap, so any label long enough to
+     overflow its rect would silently run outside the tile. Measuring with
+     getComputedTextLength and splitting into tspans makes overflow impossible
+     regardless of what the label says or which monospace font resolves. */
+  function wrapAll() {
+    document.querySelectorAll("text[data-w]").forEach(function (t) {
+      if (t.dataset.wrapped) return;
+      var max = parseFloat(t.dataset.w);
+      var lh  = parseFloat(t.dataset.lh || 13);
+      var x   = t.getAttribute("x");
+      var words = (t.textContent || "").trim().split(/\s+/);
+      if (!words.length) return;
+
+      var probe = document.createElementNS(SVGNS, "tspan");
+      t.textContent = "";
+      t.appendChild(probe);
+
+      var lines = [], line = [];
+      words.forEach(function (w) {
+        line.push(w);
+        probe.textContent = line.join(" ");
+        if (probe.getComputedTextLength() > max && line.length > 1) {
+          line.pop();
+          lines.push(line.join(" "));
+          line = [w];
+        }
+      });
+      lines.push(line.join(" "));
+      t.removeChild(probe);
+
+      lines.forEach(function (ln, i) {
+        var ts = document.createElementNS(SVGNS, "tspan");
+        ts.setAttribute("x", x);
+        ts.setAttribute("dy", i === 0 ? 0 : lh);
+        ts.textContent = ln;
+        t.appendChild(ts);
+      });
+      t.dataset.wrapped = "1";
+    });
+  }
+
+  var DETAIL = {
+    trigger: {
+      kicker: "Stage 01",
+      title: "Change event",
+      body: "<p>Four triggers. Three of them are things you did not do.</p>" +
+        "<pre>" +
+        "on:\n" +
+        "  schedule:  [cron: <b>'0 4 * * 1'</b>]      # regression\n" +
+        "             [cron: <b>'0 4 1 * *'</b>]      # longitudinal\n" +
+        "  push:      paths: [prompts/**, corpus/**]\n" +
+        "  repository_dispatch:\n" +
+        "    types:   [ollama-digest-change, adapter-published]" +
+        "</pre>" +
+        "<p>The digest poller is the one that matters. It diffs the manifest sha256 behind " +
+        "each tracked tag against the lockfile and dispatches on change, which is how you " +
+        "find out that <code>llama3.1:8b</code> is not the weights it was last week.</p>"
+    },
+    pin: {
+      kicker: "Stage 02",
+      title: "Resolve and pin",
+      body: "<p>Every reference resolved to an immutable identifier before anything executes. " +
+        "Unpinned input is a hard failure, not a warning.</p>" +
+        "<pre>" +
+        "$ ollama show llama3.1:8b --modelfile | grep -i from\n" +
+        "FROM <b>sha256:8eeb52dfb3bb9aefdf9d1ef24b3bdbcfbe82238798c4b918278320b6fcef18fe</b>\n\n" +
+        "$ jq '.subjects[] | {name, digest, quant}' lockfile.json" +
+        "</pre>" +
+        "<ul>" +
+        "<li>Models to the manifest <code>sha256</code>, never the tag</li>" +
+        "<li>Adapters to a HuggingFace commit sha, with the base digest they were trained against</li>" +
+        "<li>Corpus to its manifest hash, recomputed and verified on read</li>" +
+        "<li>Prompt to a content hash, so two prompt variants cannot be compared by accident</li>" +
+        "</ul>" +
+        "<p>Adapter version skew is the silent one: a LoRA trained against one base digest and " +
+        "applied to another produces fluent output and no error.</p>"
+    },
+    control: {
+      kicker: "Stage 03 — the whole design",
+      title: "Control run",
+      body: "<p>Frozen model, frozen corpus, frozen prompt, fixed seed, temperature zero. " +
+        "Per-pair outcomes compared to the stored baseline.</p>" +
+        "<div class='eq'>chi2 = (|b - c| - 1)^2 / (b + c)&nbsp;&nbsp;&nbsp;df = 1</div>" +
+        "<p>where <code>b</code> and <code>c</code> are the discordant cells: pairs the baseline " +
+        "scored as retained and this run scored as drifted, and the reverse. A stable instrument " +
+        "produces <code>b + c = 0</code>.</p>" +
+        "<p>Any discordance at all halts the run. This is deliberately stricter than statistical " +
+        "significance: the corpus and the model are byte-identical, so a single flipped pair means " +
+        "sampling, quantisation, tokenizer or kernel changed underneath you.</p>" +
+        "<p>Cost is one model over a fixed corpus, which makes it the cheapest stage and the only " +
+        "one that makes the others interpretable.</p>"
+    },
+    measure: {
+      kicker: "Stage 04",
+      title: "Run matrix",
+      body: "<p>Executes only once the control has held. Sharded by category so one model failure " +
+        "does not lose the run.</p>" +
+        "<pre>" +
+        "subjects:\n" +
+        "  - llama3.1:8b            @ sha256:8eeb52df...\n" +
+        "  - mistral:7b             @ sha256:f974a74b...\n" +
+        "  - phi4                   @ sha256:ac896e5b...\n" +
+        "  - qwen2.5:7b-instruct    @ sha256:845dbda0...\n" +
+        "  - qwen2.5:14b-instruct   @ sha256:7cdf5a0a...\n" +
+        "adapters:\n" +
+        "  - hf://&lt;org&gt;/&lt;qc-lora&gt;  @ commit, base=sha256:8eeb52df...\n" +
+        "sampling:\n" +
+        "  temperature: 0    seed: 42    num_predict: 512" +
+        "</pre>" +
+        "<p>Temperature zero reduces variance and does not give determinism. That is precisely " +
+        "what the control stage exists to detect.</p>"
+    },
+    gate: {
+      kicker: "Stage 05",
+      title: "Gate and report",
+      body: "<p>Deterministic signals block the merge. Statistical signals post and accumulate.</p>" +
+        "<p>The split is a power argument, not a taste one. Near-zero baselines such as schema " +
+        "violations and neutral-control drift are detectable at CI sample sizes. A shift in MDR " +
+        "from 0.12 to 0.15 is not, so gating on it produces a green light that means nothing and " +
+        "gets read as evidence.</p>" +
+        "<pre>" +
+        "BLOCK   control_discordant &gt; 0\n" +
+        "BLOCK   neutral_control_drift &gt; 0\n" +
+        "BLOCK   corpus_sha != manifest_sha\n" +
+        "BLOCK   any subject digest unpinned\n" +
+        "BLOCK   n_discordant &lt; 49        # underpowered, refuse to rule\n" +
+        "ALERT   MDR delta by category, 3-run rolling\n" +
+        "ALERT   matched-pair asymmetry |MDR_qc-fr - MDR_fr-qc|" +
+        "</pre>"
+    },
+    halt: {
+      kicker: "Failure path",
+      title: "Instrument drift",
+      halt: true,
+      body: "<p>The control moved on a byte-identical corpus. The run stops and emits the " +
+        "environment instead of a result.</p>" +
+        "<pre>" +
+        "{\n" +
+        "  \"halt\": \"control_discordance\",\n" +
+        "  \"discordant\": {\"b\": 3, \"c\": 1},\n" +
+        "  \"reference\": {\"digest\": \"sha256:8eeb52df...\", \"quant\": \"Q4_K_M\"},\n" +
+        "  \"runtime\":   {\"ollama\": \"0.14.2\", \"prev\": \"0.14.1\"},\n" +
+        "  \"host\":      {\"gpu\": \"RTX 4090\", \"driver\": \"565.57\", \"cuda\": \"12.6\"}\n" +
+        "}" +
+        "</pre>" +
+        "<p>Halting and reporting that nothing happened linguistically is the pipeline working. " +
+        "An unattributable result is worse than no result, because it enters the literature and " +
+        "cannot be unpicked afterwards.</p>"
+    },
+    corpus: {
+      kicker: "Frozen artefact",
+      title: "Golden corpus",
+      body: "<p>Content-addressed matched pairs. Versioned, append-only, never edited in place.</p>" +
+        "<pre>" +
+        "corpus/golden-v1/\n" +
+        "  manifest.json          sha256 per file, counts per category\n" +
+        "  pairs/lexical/         courriel|email, magasiner|shopping, char|voiture\n" +
+        "       /meals/           dejeuner-diner-souper vs the Metropolitan set\n" +
+        "       /anglicism-accept/ forms QC accepts that FR does not\n" +
+        "       /anglicism-reject/ forms FR accepts that QC does not\n" +
+        "       /syntax/          interrogative <b>tu</b>, a cause que\n" +
+        "       /morphology/      y for il/ils, a for elle\n" +
+        "       /feminisation/    auteure, professeure, OQLF forms\n" +
+        "       /typography/      spacing and quotation conventions\n" +
+        "       /neutral-control/ no regional marker at all" +
+        "</pre>" +
+        "<p>Both anglicism directions are mandatory. Quebec rejects borrowings France accepts " +
+        "and accepts calques France does not, so a single anglicism count scores a model as more " +
+        "Quebec for being less Quebec.</p>" +
+        "<p><code>neutral-control</code> is the false positive detector. Drift there means you " +
+        "are measuring rewriting aggression and every other category is inflated by it.</p>"
+    },
+    metrics: {
+      kicker: "Scoring",
+      title: "Metric layer",
+      body: "<div class='eq'>" +
+        "MDR&nbsp;&nbsp;= qc_forms_rewritten / qc_forms_presented<br>" +
+        "CLR&nbsp;&nbsp;= ca_lexemes_retained / ca_lexemes_presented<br>" +
+        "QFCR = valid_qc_flagged_as_error / valid_qc_presented<br>" +
+        "ASYM = MDR(qc-&gt;fr) - MDR(fr-&gt;qc)" +
+        "</div>" +
+        "<ul>" +
+        "<li>Report <strong>per category</strong>. A model can hold lexical retention while " +
+        "collapsing on syntax, and the aggregate hides it</li>" +
+        "<li>Report <strong>intervals</strong>. &ldquo;MDR 12%&rdquo; is not a finding; " +
+        "&ldquo;12%, &plusmn;4 at n=320&rdquo; tells a reader whether it moved</li>" +
+        "<li>Log <strong>n_discordant</strong> beside the total. 500 pairs with 11 discordant " +
+        "has almost no power and the total looks reassuring</li>" +
+        "<li>Log the <strong>neutral-control rate</strong> on every result. It is the " +
+        "denominator for interpreting the rest</li>" +
+        "</ul>" +
+        "<p>Guard against silent truncation: a model stopping mid-sentence scores as having " +
+        "retained everything past the cutoff. Compare output length to input length before scoring " +
+        "and treat a large shortfall as a harness failure rather than a result.</p>"
+    },
+    store: {
+      kicker: "Persistence",
+      title: "Run store",
+      body: "<p>Per-pair rows, not summaries. Re-analysing old runs with new metrics is only " +
+        "possible if the raw outcomes survive.</p>" +
+        "<pre>" +
+        "runs/2026-09-16T0400Z-a3f91c/\n" +
+        "  lockfile.json      every digest, sha and version\n" +
+        "  control.jsonl      per-pair, frozen model\n" +
+        "  regression.jsonl   per-pair, per model, per category\n" +
+        "  metrics.json       MDR/CLR/QFCR + intervals + n_discordant\n" +
+        "  environment.json   ollama, gpu, driver, quant\n\n" +
+        "{\"pair_id\":\"angl-rej-0042\",\"category\":\"anglicism-reject\",\n" +
+        " \"variant\":\"qc\",\"model\":\"sha256:8eeb52df\",\"drift\":true,\n" +
+        " \"qc_form\":\"stationnement\",\"output_form\":\"parking\",\n" +
+        " \"len_ratio\":0.98,\"latency_ms\":412}" +
+        "</pre>" +
+        "<p><code>environment.json</code> exists because instrument drift is usually " +
+        "environmental. It is the first file anyone opens when the control gate fires.</p>"
+    },
+    longitudinal: {
+      kicker: "Run type",
+      title: "Longitudinal",
+      body: "<p>Frozen model, rotating corpus. The only configuration that can attribute movement " +
+        "to Quebec French rather than to your tooling.</p>" +
+        "<p>Monthly sampling from dated contemporary sources held stable in register, frozen on " +
+        "capture, versioned, append-only. The old samples are the comparison.</p>" +
+        "<p>Register is the confound to design against. Quebec French has a wider formal-to-familiar " +
+        "spread than Metropolitan French, so a model normalising register looks like a model " +
+        "normalising dialect. Hold register constant within pairs and keep a register-varied set " +
+        "aside to measure the confound directly.</p>" +
+        "<p>Build this last. It depends on an instrument you already trust.</p>"
+    },
+    regression: {
+      kicker: "Run type",
+      title: "Regression",
+      body: "<p>Rotating models, frozen corpus. The CI job, firing on a digest change or a prompt " +
+        "commit.</p>" +
+        "<p>Two prompt conditions, never compared to each other:</p>" +
+        "<pre>" +
+        "proofread-neutral   \"Corrige ce texte.\"\n" +
+        "proofread-qc        \"Corrige ce texte en francais quebecois.\"" +
+        "</pre>" +
+        "<p>Both are worth running. The prompt hash is in the lockfile so that a cross-condition " +
+        "comparison cannot happen by accident, which is otherwise an easy and invisible mistake.</p>"
+    },
+    void: {
+      kicker: "Do not run",
+      title: "Uninterpretable",
+      halt: true,
+      body: "<p>Newest models over freshly gathered text. The configuration benchmarking falls " +
+        "into naturally, and it produces numbers that look like findings.</p>" +
+        "<p>If both the model set and the source material moved since the last run, the delta " +
+        "has two candidate causes and no way to separate them. Exclude the cell structurally in " +
+        "the runner, not by convention in a README.</p>"
+    },
+    cats: {
+      kicker: "Corpus design",
+      title: "Nine categories",
+      body: "<p>Eight measure drift. One measures the instrument's tendency to rewrite anything " +
+        "at all.</p>" +
+        "<ul>" +
+        "<li><code>anglicism-accept</code> and <code>anglicism-reject</code> exist separately " +
+        "because the asymmetry is the finding. Summing them destroys it</li>" +
+        "<li><code>typography</code> catches tokenizer boundary effects: apostrophes, elision " +
+        "and Quebec orthography tokenize differently across model families, producing apparent " +
+        "drift that is an encoding artefact</li>" +
+        "<li><code>neutral-control</code> should return zero. A non-zero rate is the correction " +
+        "factor for everything else</li>" +
+        "</ul>" +
+        "<p>Run a tokenization-invariance check on the golden set once. It is cheap and it " +
+        "removes a whole class of false positive permanently.</p>"
+    },
+    stats: {
+      kicker: "Statistical design",
+      title: "McNemar and power",
+      body: "<p>Paired binary outcomes, so the test operates on discordant cells only. Concordant " +
+        "pairs carry no information about direction.</p>" +
+        "<div class='eq'>n_disc = (z&alpha;/2 + z&beta;)^2 / (2p - 1)^2</div>" +
+        "<p>At &alpha;=0.05 and 80% power the numerator is 7.84, so:</p>" +
+        "<pre>" +
+        "p = 0.70   n_disc =  49    strong directional effect\n" +
+        "p = 0.65   n_disc =  87\n" +
+        "p = 0.60   n_disc = 196    modest effect\n\n" +
+        "total_pairs = n_disc / observed_discordance_rate\n" +
+        "e.g. 49 / 0.15 = <b>327 pairs</b> to detect a strong effect" +
+        "</pre>" +
+        "<p>Use the exact binomial test when <code>b + c &lt; 25</code>; the chi-square " +
+        "approximation is unreliable there and will overstate significance.</p>" +
+        "<p>The effective sample size is the discordant count, never the pair count. This is the " +
+        "single easiest way to publish an underpowered result that looks well powered.</p>"
+    },
+    thresholds: {
+      kicker: "Gate policy",
+      title: "Block against alert",
+      body: "<p>Block on deterministic near-zero signals. Alert on statistical ones and accumulate " +
+        "across releases.</p>" +
+        "<p>The unusual entry is <code>n_discordant &lt; 49</code> as a blocking condition. The " +
+        "pipeline refuses to report a comparison it lacks the power to make, rather than reporting " +
+        "one with a wide interval that gets quoted without it.</p>" +
+        "<p>Alerting fires on sustained directional movement over three or more runs, where the " +
+        "samples accumulate, not on a single run's delta. A single regression run does not have " +
+        "the power to justify an alert, and alerting on it trains everyone to ignore the channel.</p>"
+    }
+  };
+
+  var detail = document.getElementById("detail"),
+      kicker = document.getElementById("d-kicker"),
+      title  = document.getElementById("d-title"),
+      body   = document.getElementById("d-body");
+
+  function select(id, node) {
+    var d = DETAIL[id];
+    if (!d) return;
+    document.querySelectorAll('.node[data-active]').forEach(function (n) {
+      n.removeAttribute("data-active");
+    });
+    if (node) node.setAttribute("data-active", "true");
+    kicker.textContent = d.kicker;
+    title.textContent  = d.title;
+    body.innerHTML     = d.body;
+    detail.classList.toggle("halt", !!d.halt);
+  }
+
+  document.querySelectorAll(".node").forEach(function (node) {
+    var id = node.getAttribute("data-id");
+    node.addEventListener("click", function () { select(id, node); });
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(id, node); }
+    });
+  });
+
+  var views = { "tab-flow": "view-flow", "tab-matrix": "view-matrix", "tab-spec": "view-spec" };
+
+  /* Wrap while every panel is still laid out offscreen, because
+     getComputedTextLength returns 0 under display:none. Then hide. */
+  wrapAll();
+  Object.keys(views).forEach(function (t) {
+    var panel = document.getElementById(views[t]);
+    panel.classList.remove("offstage");
+    if (document.getElementById(t).getAttribute("aria-selected") !== "true") {
+      panel.classList.add("hidden");
+    }
+  });
+
+  Object.keys(views).forEach(function (tabId) {
+    document.getElementById(tabId).addEventListener("click", function () {
+      Object.keys(views).forEach(function (t) {
+        var on = t === tabId;
+        document.getElementById(t).setAttribute("aria-selected", String(on));
+        document.getElementById(views[t]).classList.toggle("hidden", !on);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
